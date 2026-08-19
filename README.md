@@ -28,21 +28,26 @@ feedback and attendance attach to **occurrences**.
 
 ## Current state
 
-The database layer, the email pipeline and the documentation are complete. Application scaffolds
-are Phase 0 work.
+**Phase 0 is complete.** The stack runs end to end: API, worker, web shell, and the
+n8n email pipeline are all live and verified.
 
 | Delivered | Location |
 |---|---|
-| Design document | `docs/01-design-document.md` |
-| Phased implementation plan | `docs/02-implementation-plan.md` |
-| Data model reference | `docs/03-data-model.md` |
-| API specification | `docs/04-api-specification.md` |
-| Screen inventory (33 screens mapped) | `docs/05-screen-inventory.md` |
-| Gap analysis (prototype vs v1 model) | `docs/06-gap-analysis.md` |
-| Schema — 36 tables, 8 views, 6 business functions | `database/migrations/V001`–`V009` |
+| Design docs (design, plan, data model, API, screens, gaps) | `docs/` |
+| Schema — 36 tables, 8 views, 6 business functions | `database/migrations/` |
 | Reference + demo data | `database/seeds/` |
-| n8n email workflow and contract | `n8n/` |
-| Local Docker stack | `docker-compose.yml` |
+| NestJS API + worker (one image, ROLE-gated) | `apps/api/` |
+| Email pipeline: outbox → n8n → SMTP → signed callback | `apps/api/src/modules/notifications/` |
+| n8n workflow + SMTP credential (imported via CLI) | `n8n/` |
+| React 18 + MUI web shell: theme, layouts, 33 routes stubbed | `apps/web/` |
+| CI: lint, typecheck, tests, migration + workflow checks | `.github/workflows/ci.yml` |
+
+**Verified end to end**: a test email travels API → n8n → Mailpit and the signed
+callback marks it `sent`; an unsigned callback is rejected 401; killing n8n leaves
+mail safely `queued` and the outbox sweeper delivers it on recovery.
+
+Next: **Phase 1 — identity, onboarding and compliance consent.**
+
 
 ---
 
@@ -78,7 +83,7 @@ docker compose exec db psql -U parinaam -d parinaam_vms \
 ```
 
 Once the application exists (Phase 0): `docker compose --profile app up -d --build` adds the API
-(`:3000`), worker and web app (`:5173`).
+(`:3001`), worker and web app (`:5174`).
 
 ### One-time n8n setup
 
