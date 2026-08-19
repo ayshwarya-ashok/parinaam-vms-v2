@@ -18,6 +18,11 @@ import { VolunteerDashboard } from '@/pages/volunteer/VolunteerDashboard';
 import { BrowseSessions } from '@/pages/volunteer/BrowseSessions';
 import { SessionDetailPage } from '@/pages/volunteer/SessionDetail';
 import { CalendarPage } from '@/pages/volunteer/CalendarPage';
+import { MyTrainings } from '@/pages/volunteer/MyTrainings';
+import { TrainingView } from '@/pages/volunteer/TrainingView';
+import { TrainingsList } from '@/pages/admin/TrainingsList';
+import { TrainingForm } from '@/pages/admin/TrainingForm';
+import { AssessmentsPage } from '@/pages/admin/AssessmentsPage';
 import { Landing } from '@/pages/Landing';
 import { Placeholder } from '@/pages/Placeholder';
 
@@ -83,8 +88,8 @@ export const router = createBrowserRouter([
       { path: 'events/:id', element: <SessionDetailPage />, handle: { crumb: 'Detail' } },
       { path: 'calendar', element: <CalendarPage />, handle: { crumb: 'Calendar' } },
       { path: 'consent', element: <Consent />, handle: { crumb: 'Consent' } },
-      { path: 'trainings', element: <ConsentGate>{stub('Volunteer', 'My Required Trainings', 'Phase 4')}</ConsentGate>, handle: { crumb: 'Trainings' } },
-      { path: 'trainings/:id', element: <ConsentGate>{stub('My Trainings', 'Training', 'Phase 4')}</ConsentGate>, handle: { crumb: 'Training' } },
+      { path: 'trainings', element: <ConsentGate><MyTrainings /></ConsentGate>, handle: { crumb: 'Trainings' } },
+      { path: 'trainings/:id', element: <ConsentGate><TrainingView /></ConsentGate>, handle: { crumb: 'Training' } },
       { path: 'certificates', element: stub('Volunteer', 'My Certificates', 'Phase 6'), handle: { crumb: 'Certificates' } },
       { path: 'feedback', element: stub('Volunteer', 'Share Your Experience', 'Phase 6'), handle: { crumb: 'Feedback' } },
       { path: 'profile', element: <ProfilePage />, handle: { crumb: 'Profile' } },
@@ -113,10 +118,10 @@ export const router = createBrowserRouter([
       { path: 'activities/:activityId/events/new', element: <ScheduleEventForm />, handle: { crumb: 'Schedule' } },
       { path: 'events/:id/edit', element: stub('Admin › Schedule', 'Edit Occurrence', 'Phase 2'), handle: { crumb: 'Edit Occurrence' } },
       { path: 'calendar', element: <CalendarPage />, handle: { crumb: 'Calendar' } },
-      { path: 'trainings', element: stub('Admin › Trainings', 'Trainings', 'Phase 4'), handle: { crumb: 'Trainings' } },
-      { path: 'trainings/new', element: stub('Admin › Trainings', 'Add Training', 'Phase 4'), handle: { crumb: 'New' } },
-      { path: 'trainings/:id/edit', element: stub('Admin › Trainings', 'Edit Training', 'Phase 4'), handle: { crumb: 'Edit' } },
-      { path: 'trainings/:id/assessments', element: stub('Admin › Trainings', 'Assessment Status', 'Phase 4'), handle: { crumb: 'Assessments' } },
+      { path: 'trainings', element: <TrainingsList />, handle: { crumb: 'Trainings' } },
+      { path: 'trainings/new', element: <TrainingForm />, handle: { crumb: 'New' } },
+      { path: 'trainings/:id/edit', element: <TrainingForm />, handle: { crumb: 'Edit' } },
+      { path: 'trainings/:id/assessments', element: <AssessmentsPage />, handle: { crumb: 'Assessments' } },
       { path: 'field-execution', element: stub('Admin', 'Field Execution & Attendance', 'Phase 5'), handle: { crumb: 'Field Execution' } },
       { path: 'recognition', element: stub('Admin', 'Recognition & Retention', 'Phase 6'), handle: { crumb: 'Recognition' } },
       { path: 'recognition/certificates', element: stub('Admin › Recognition', 'Issue Certificates', 'Phase 6'), handle: { crumb: 'Certificates' } },
