@@ -1,0 +1,8 @@
+# Everything text stays LF — these files run inside Linux containers, where
+# CRLF in a shell script or SQL file is a runtime failure, not a style issue.
+* text=auto eol=lf
+*.sh text eol=lf
+*.sql text eol=lf
+*.png binary
+*.jpg binary
+*.pdf binary
