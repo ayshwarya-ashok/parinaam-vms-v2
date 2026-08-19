@@ -1,0 +1,117 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  # ── API: lint, typecheck, unit tests ─────────────────────────────────────────
+  api:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/api/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+
+  # ── Web: lint, typecheck, production build ──────────────────────────────────
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+
+  # ── Migrations: every SQL file applies cleanly to an empty Postgres 16 ──────
+  migrations:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: parinaam
+          POSTGRES_PASSWORD: ci_pw
+          POSTGRES_DB: parinaam_vms
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U parinaam"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply migrations, reference data and demo data
+        env:
+          PGPASSWORD: ci_pw
+        run: |
+          for f in database/migrations/V*.sql; do
+            echo "applying $f"
+            psql -h localhost -U parinaam -d parinaam_vms -v ON_ERROR_STOP=1 -q -f "$f"
+          done
+          for f in database/seeds/S*.sql; do
+            echo "seeding $f"
+            psql -h localhost -U parinaam -d parinaam_vms -v ON_ERROR_STOP=1 -q -f "$f"
+          done
+      - name: Assert business rules hold on seeded data
+        env:
+          PGPASSWORD: ci_pw
+        run: |
+          psql -h localhost -U parinaam -d parinaam_vms -v ON_ERROR_STOP=1 <<'SQL'
+          -- Discontinuation cascade: nothing under a non-active program/activity is enrollable
+          DO $$
+          DECLARE bad int;
+          BEGIN
+            SELECT count(*) INTO bad FROM events e
+            JOIN activities a ON a.id = e.activity_id
+            JOIN programs p ON p.id = a.program_id
+            WHERE fn_is_event_enrollable(e.id)
+              AND (a.status <> 'active' OR p.status <> 'active');
+            IF bad > 0 THEN RAISE EXCEPTION 'cascade violated: % rows', bad; END IF;
+          END $$;
+          -- Capacity is never negative and never stored
+          DO $$
+          DECLARE bad int;
+          BEGIN
+            SELECT count(*) INTO bad FROM v_event_capacity WHERE spots_left < 0;
+            IF bad > 0 THEN RAISE EXCEPTION 'negative capacity: % rows', bad; END IF;
+          END $$;
+          SQL
+
+  # ── n8n workflow file: valid JSON, all connections resolve ──────────────────
+  n8n-workflow:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate workflow JSON integrity
+        run: |
+          node -e "
+            const w = require('./n8n/workflows/vms-email-dispatch.json');
+            const names = new Set(w.nodes.map(n => n.name));
+            const bad = [];
+            for (const [src, c] of Object.entries(w.connections)) {
+              if (!names.has(src)) bad.push('missing source ' + src);
+              for (const grp of c.main) for (const t of grp)
+                if (!names.has(t.node)) bad.push('missing target ' + t.node);
+            }
+            if (bad.length) { console.error(bad.join('\n')); process.exit(1); }
+            console.log('workflow ok:', w.nodes.length, 'nodes');
+          "

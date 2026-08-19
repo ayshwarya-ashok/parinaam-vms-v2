@@ -1,0 +1,242 @@
+# =============================================================================
+# Parinaam VMS v2 — local Docker stack
+#
+#   docker compose up -d                 # db, redis, n8n, mailpit, adminer
+#   docker compose --profile app up -d   # + api, worker, web  (from Phase 0)
+#   docker compose down -v               # wipe volumes and re-bootstrap
+#
+# Sample mailbox: http://localhost:8025  (Mailpit — catches every message)
+# n8n editor:     http://localhost:5678
+# =============================================================================
+
+name: parinaam-vms-v2
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL — schema created on first boot from ./database
+  # Also hosts n8n's own database, created by the bootstrap script.
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: pvms-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-parinaam}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-parinaam_dev_pw}
+      POSTGRES_DB: ${POSTGRES_DB:-parinaam_vms}
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
+      N8N_DB_NAME: ${N8N_DB_NAME:-n8n}
+      TZ: Asia/Kolkata
+      PGTZ: Asia/Kolkata
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pvms_db_data:/var/lib/postgresql/data
+      - ./database/docker-init:/docker-entrypoint-initdb.d:ro
+      - ./database:/database:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-parinaam} -d ${POSTGRES_DB:-parinaam_vms}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ---------------------------------------------------------------------------
+  # Redis — BullMQ: outbox handoff, PDF rendering, scheduled reports
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: pvms-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - pvms_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # Mailpit — the sample mailbox. Accepts every message, delivers none onward.
+  # UI + search API at http://localhost:8025
+  # ---------------------------------------------------------------------------
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: pvms-mailpit
+    restart: unless-stopped
+    environment:
+      MP_MAX_MESSAGES: 5000
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+      MP_DATABASE: /data/mailpit.db
+    ports:
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+    volumes:
+      - pvms_mailpit_data:/data
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # n8n — owns delivery for every outbound email.
+  # Import n8n/workflows/vms-email-dispatch.json on first run; see n8n/README.md
+  # ---------------------------------------------------------------------------
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: pvms-n8n
+    restart: unless-stopped
+    environment:
+      # Persistence in the shared Postgres server, separate database
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: db
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: ${N8N_DB_NAME:-n8n}
+      DB_POSTGRESDB_USER: ${POSTGRES_USER:-parinaam}
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD:-parinaam_dev_pw}
+      # Instance
+      N8N_HOST: ${N8N_HOST:-localhost}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      WEBHOOK_URL: ${N8N_WEBHOOK_URL:-http://localhost:5678/}
+      GENERIC_TIMEZONE: Asia/Kolkata
+      TZ: Asia/Kolkata
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:-dev_n8n_encryption_key_change_me}
+      N8N_USER_MANAGEMENT_DISABLED: ${N8N_USER_MANAGEMENT_DISABLED:-true}
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_RUNNERS_ENABLED: "true"
+      # Shared secret the workflow uses to verify and sign VMS payloads
+      VMS_WEBHOOK_SECRET: ${VMS_WEBHOOK_SECRET:-dev_n8n_shared_secret_change_me}
+      # Allow require('crypto') inside Code nodes, for the HMAC verification
+      NODE_FUNCTION_ALLOW_BUILTIN: crypto
+      # Code nodes must read VMS_WEBHOOK_SECRET from $env; n8n blocks this by default
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+    ports:
+      - "${N8N_PORT:-5678}:5678"
+    volumes:
+      - pvms_n8n_data:/home/node/.n8n
+      - ./n8n/workflows:/workflows:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+
+  # ---------------------------------------------------------------------------
+  # Adminer — DB browser. Dev only.
+  # ---------------------------------------------------------------------------
+  adminer:
+    image: adminer:latest
+    container_name: pvms-adminer
+    restart: unless-stopped
+    ports:
+      - "${ADMINER_PORT:-8081}:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # NestJS API — created in Phase 0.
+  # ---------------------------------------------------------------------------
+  api:
+    profiles: ["app"]
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+      target: ${BUILD_TARGET:-development}
+    container_name: pvms-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      ROLE: api
+      PORT: 3000
+      DATABASE_URL: postgres://${POSTGRES_USER:-parinaam}:${POSTGRES_PASSWORD:-parinaam_dev_pw}@db:5432/${POSTGRES_DB:-parinaam_vms}
+      REDIS_URL: redis://redis:6379
+      # Email goes to n8n, never straight to SMTP
+      N8N_WEBHOOK_URL: http://n8n:5678/webhook/vms-email
+      N8N_CALLBACK_URL: http://api:3000/api/v1/webhooks/n8n/email-status
+      VMS_WEBHOOK_SECRET: ${VMS_WEBHOOK_SECRET:-dev_n8n_shared_secret_change_me}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-Parinaam Foundation}
+      MAIL_FROM_EMAIL: ${MAIL_FROM_EMAIL:-noreply@parinaam.org}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev_access_secret_change_me}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev_refresh_secret_change_me}
+      LINK_TOKEN_SECRET: ${LINK_TOKEN_SECRET:-dev_link_secret_change_me}
+      UPLOAD_DIR: /app/uploads
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:5173}
+    ports:
+      - "${API_PORT:-3000}:3000"
+    volumes:
+      - ./apps/api:/app
+      - /app/node_modules
+      - pvms_uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # Background worker — outbox dispatch to n8n, PDF rendering, reports
+  # ---------------------------------------------------------------------------
+  worker:
+    profiles: ["app"]
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+      target: ${BUILD_TARGET:-development}
+    container_name: pvms-worker
+    restart: unless-stopped
+    command: ["npm", "run", "start:worker"]
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      ROLE: worker
+      DATABASE_URL: postgres://${POSTGRES_USER:-parinaam}:${POSTGRES_PASSWORD:-parinaam_dev_pw}@db:5432/${POSTGRES_DB:-parinaam_vms}
+      REDIS_URL: redis://redis:6379
+      N8N_WEBHOOK_URL: http://n8n:5678/webhook/vms-email
+      N8N_CALLBACK_URL: http://api:3000/api/v1/webhooks/n8n/email-status
+      VMS_WEBHOOK_SECRET: ${VMS_WEBHOOK_SECRET:-dev_n8n_shared_secret_change_me}
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - ./apps/api:/app
+      - /app/node_modules
+      - pvms_uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # React + MUI front end (Vite dev server)
+  # ---------------------------------------------------------------------------
+  web:
+    profiles: ["app"]
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+      target: ${BUILD_TARGET:-development}
+    container_name: pvms-web
+    restart: unless-stopped
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3000/api/v1}
+    ports:
+      - "${WEB_PORT:-5173}:5173"
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+    depends_on:
+      - api
+
+volumes:
+  pvms_db_data:
+  pvms_redis_data:
+  pvms_mailpit_data:
+  pvms_n8n_data:
+  pvms_uploads:

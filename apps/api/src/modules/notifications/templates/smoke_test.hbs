@@ -1,0 +1,8 @@
+<h1 style="margin:0 0 12px;font-size:22px;">The email pipeline works</h1>
+<p style="margin:0 0 16px;">This message travelled the full path:</p>
+<ol style="margin:0 0 16px;padding-left:20px;color:#5e6a62;">
+  <li>The API wrote an <code>email_logs</code> row and rendered this template.</li>
+  <li>A signed webhook handed it to the <strong>n8n</strong> workflow.</li>
+  <li>n8n delivered it over SMTP and called back with the outcome.</li>
+</ol>
+<p style="margin:0;color:#5e6a62;font-size:13px;">Email log id: <code>{{emailLogId}}</code></p>
