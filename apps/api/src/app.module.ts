@@ -10,6 +10,7 @@ import { AppConfig } from './config/app.config';
 import { DatabaseModule } from './database';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
 import { HealthModule } from './modules/health/health.module';
 import { InternalModule } from './modules/internal/internal.module';
 import { NotificationsModule } from './modules/notifications';
@@ -63,6 +64,7 @@ const isProduction = process.env.NODE_ENV === 'production';
     VolunteersModule,
     ProgramsModule,
     TrainingsModule,
+    EnrollmentsModule,
     HealthModule,
     // Diagnostics endpoints exist only outside production.
     ...(isProduction ? [] : [InternalModule]),

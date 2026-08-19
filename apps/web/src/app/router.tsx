@@ -14,6 +14,10 @@ import { ActivityForm } from '@/pages/admin/ActivityForm';
 import { ActivityDetail } from '@/pages/admin/ActivityDetail';
 import { ScheduleEventForm } from '@/pages/admin/ScheduleEventForm';
 import { VolunteerDirectory } from '@/pages/admin/VolunteerDirectory';
+import { VolunteerDashboard } from '@/pages/volunteer/VolunteerDashboard';
+import { BrowseSessions } from '@/pages/volunteer/BrowseSessions';
+import { SessionDetailPage } from '@/pages/volunteer/SessionDetail';
+import { CalendarPage } from '@/pages/volunteer/CalendarPage';
 import { Landing } from '@/pages/Landing';
 import { Placeholder } from '@/pages/Placeholder';
 
@@ -74,10 +78,10 @@ export const router = createBrowserRouter([
     ),
     handle: { crumb: 'Home' },
     children: [
-      { path: 'dashboard', element: stub('Volunteer', 'Welcome to Parinaam', 'Phase 3'), handle: { crumb: 'Dashboard' } },
-      { path: 'events', element: stub('Volunteer › Events', 'Browse Sessions', 'Phase 3'), handle: { crumb: 'Events' } },
-      { path: 'events/:id', element: stub('Volunteer › Events', 'Session Detail', 'Phase 3'), handle: { crumb: 'Detail' } },
-      { path: 'calendar', element: stub('Volunteer', 'Activity Calendar', 'Phase 3'), handle: { crumb: 'Calendar' } },
+      { path: 'dashboard', element: <VolunteerDashboard />, handle: { crumb: 'Dashboard' } },
+      { path: 'events', element: <BrowseSessions />, handle: { crumb: 'Events' } },
+      { path: 'events/:id', element: <SessionDetailPage />, handle: { crumb: 'Detail' } },
+      { path: 'calendar', element: <CalendarPage />, handle: { crumb: 'Calendar' } },
       { path: 'consent', element: <Consent />, handle: { crumb: 'Consent' } },
       { path: 'trainings', element: <ConsentGate>{stub('Volunteer', 'My Required Trainings', 'Phase 4')}</ConsentGate>, handle: { crumb: 'Trainings' } },
       { path: 'trainings/:id', element: <ConsentGate>{stub('My Trainings', 'Training', 'Phase 4')}</ConsentGate>, handle: { crumb: 'Training' } },
@@ -108,7 +112,7 @@ export const router = createBrowserRouter([
       { path: 'activities/:id/edit', element: <ActivityForm />, handle: { crumb: 'Edit Activity' } },
       { path: 'activities/:activityId/events/new', element: <ScheduleEventForm />, handle: { crumb: 'Schedule' } },
       { path: 'events/:id/edit', element: stub('Admin › Schedule', 'Edit Occurrence', 'Phase 2'), handle: { crumb: 'Edit Occurrence' } },
-      { path: 'calendar', element: stub('Admin', 'Activity Calendar', 'Phase 3'), handle: { crumb: 'Calendar' } },
+      { path: 'calendar', element: <CalendarPage />, handle: { crumb: 'Calendar' } },
       { path: 'trainings', element: stub('Admin › Trainings', 'Trainings', 'Phase 4'), handle: { crumb: 'Trainings' } },
       { path: 'trainings/new', element: stub('Admin › Trainings', 'Add Training', 'Phase 4'), handle: { crumb: 'New' } },
       { path: 'trainings/:id/edit', element: stub('Admin › Trainings', 'Edit Training', 'Phase 4'), handle: { crumb: 'Edit' } },
