@@ -30,6 +30,8 @@ interface AuthState {
   login: (email: string, password: string) => Promise<SessionUser>;
   signup: (email: string, password: string) => Promise<SessionUser>;
   logout: () => Promise<void>;
+  /** Re-fetch /auth/me — call after mutations that change profile state. */
+  refresh: () => Promise<SessionUser>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -99,8 +101,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [queryClient]);
 
   const value = useMemo(
-    () => ({ status, user, login, signup, logout }),
-    [status, user, login, signup, logout],
+    () => ({ status, user, login, signup, logout, refresh: loadMe }),
+    [status, user, login, signup, logout, loadMe],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

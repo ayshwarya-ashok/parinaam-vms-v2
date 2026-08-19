@@ -2,6 +2,10 @@ import { createBrowserRouter } from 'react-router-dom';
 import { AppLayout } from './layouts/AppLayout';
 import { RequireAuth } from './guards';
 import { AdminLogin } from '@/pages/AdminLogin';
+import { Consent } from '@/pages/Consent';
+import { ProfilePage } from '@/pages/Profile';
+import { Register } from '@/pages/Register';
+import { ConsentGate } from './consent-gate';
 import { Landing } from '@/pages/Landing';
 import { Placeholder } from '@/pages/Placeholder';
 
@@ -39,7 +43,7 @@ const stub = (eyebrow: string, title: string, phase: string) => (
 export const router = createBrowserRouter([
   // ── Public ──────────────────────────────────────────────────────────────────
   { path: '/', element: <Landing /> },
-  { path: '/register', element: stub('Sign up', 'Volunteer Registration', 'Phase 1') },
+  { path: '/register', element: <Register /> },
   { path: '/admin/login', element: <AdminLogin /> },
   { path: '/impact', element: stub('Parinaam Foundation', 'Impact Report', 'Phase 8') },
   // Link-token forms — no session, standalone pages.
@@ -66,12 +70,12 @@ export const router = createBrowserRouter([
       { path: 'events', element: stub('Volunteer › Events', 'Browse Sessions', 'Phase 3'), handle: { crumb: 'Events' } },
       { path: 'events/:id', element: stub('Volunteer › Events', 'Session Detail', 'Phase 3'), handle: { crumb: 'Detail' } },
       { path: 'calendar', element: stub('Volunteer', 'Activity Calendar', 'Phase 3'), handle: { crumb: 'Calendar' } },
-      { path: 'consent', element: stub('Volunteer Orientation', 'Compliance Agreement', 'Phase 1'), handle: { crumb: 'Consent' } },
-      { path: 'trainings', element: stub('Volunteer', 'My Required Trainings', 'Phase 4'), handle: { crumb: 'Trainings' } },
-      { path: 'trainings/:id', element: stub('My Trainings', 'Training', 'Phase 4'), handle: { crumb: 'Training' } },
+      { path: 'consent', element: <Consent />, handle: { crumb: 'Consent' } },
+      { path: 'trainings', element: <ConsentGate>{stub('Volunteer', 'My Required Trainings', 'Phase 4')}</ConsentGate>, handle: { crumb: 'Trainings' } },
+      { path: 'trainings/:id', element: <ConsentGate>{stub('My Trainings', 'Training', 'Phase 4')}</ConsentGate>, handle: { crumb: 'Training' } },
       { path: 'certificates', element: stub('Volunteer', 'My Certificates', 'Phase 6'), handle: { crumb: 'Certificates' } },
       { path: 'feedback', element: stub('Volunteer', 'Share Your Experience', 'Phase 6'), handle: { crumb: 'Feedback' } },
-      { path: 'profile', element: stub('Volunteer', 'My Profile', 'Phase 1'), handle: { crumb: 'Profile' } },
+      { path: 'profile', element: <ProfilePage />, handle: { crumb: 'Profile' } },
     ],
   },
 
