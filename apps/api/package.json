@@ -50,7 +50,8 @@
     "@nestjs/jwt": "^10.2.0",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.7",
-    "@nestjs/throttler": "^6.2.1"
+    "@nestjs/throttler": "^6.2.1",
+    "sharp": "^0.33.5"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.4.5",

@@ -23,6 +23,9 @@ import { TrainingView } from '@/pages/volunteer/TrainingView';
 import { TrainingsList } from '@/pages/admin/TrainingsList';
 import { TrainingForm } from '@/pages/admin/TrainingForm';
 import { AssessmentsPage } from '@/pages/admin/AssessmentsPage';
+import { FieldExecution } from '@/pages/admin/FieldExecution';
+import { AttendanceFormPage } from '@/pages/public/AttendanceForm';
+import { CoordinatorReportPage } from '@/pages/public/CoordinatorReport';
 import { Landing } from '@/pages/Landing';
 import { Placeholder } from '@/pages/Placeholder';
 
@@ -64,14 +67,8 @@ export const router = createBrowserRouter([
   { path: '/admin/login', element: <AdminLogin /> },
   { path: '/impact', element: stub('Parinaam Foundation', 'Impact Report', 'Phase 8') },
   // Link-token forms — no session, standalone pages.
-  {
-    path: '/attendance/:token',
-    element: stub('Volunteer Attendance', 'Mark Your Attendance', 'Phase 5'),
-  },
-  {
-    path: '/report/:token',
-    element: stub('Field Coordinator', 'Event Occurrence Report', 'Phase 5'),
-  },
+  { path: '/attendance/:token', element: <AttendanceFormPage /> },
+  { path: '/report/:token', element: <CoordinatorReportPage /> },
 
   // ── Volunteer ───────────────────────────────────────────────────────────────
   {
@@ -122,7 +119,7 @@ export const router = createBrowserRouter([
       { path: 'trainings/new', element: <TrainingForm />, handle: { crumb: 'New' } },
       { path: 'trainings/:id/edit', element: <TrainingForm />, handle: { crumb: 'Edit' } },
       { path: 'trainings/:id/assessments', element: <AssessmentsPage />, handle: { crumb: 'Assessments' } },
-      { path: 'field-execution', element: stub('Admin', 'Field Execution & Attendance', 'Phase 5'), handle: { crumb: 'Field Execution' } },
+      { path: 'field-execution', element: <FieldExecution />, handle: { crumb: 'Field Execution' } },
       { path: 'recognition', element: stub('Admin', 'Recognition & Retention', 'Phase 6'), handle: { crumb: 'Recognition' } },
       { path: 'recognition/certificates', element: stub('Admin › Recognition', 'Issue Certificates', 'Phase 6'), handle: { crumb: 'Certificates' } },
       { path: 'recognition/feedback', element: stub('Admin › Recognition', 'Volunteer Feedback', 'Phase 6'), handle: { crumb: 'Feedback' } },

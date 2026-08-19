@@ -35,6 +35,7 @@ export class TemplateService implements OnModuleInit {
     waitlist_promoted: "A place opened up — you're in for {{eventName}}",
     attendance_volunteer: 'Action required: mark your attendance — {{eventName}}',
     attendance_coordinator: 'Action required: submit your report — {{eventName}}',
+    attendance_reminder: 'Reminder: mark your attendance — {{eventName}}',
     program_announcement: '🎉 New volunteering opportunity — {{programName}}',
     certificate_issued: 'Your certificate of appreciation — {{programName}}',
     compliance_expiring: 'Your {{trainingName}} certification expires soon',
