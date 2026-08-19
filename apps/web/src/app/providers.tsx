@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SnackbarProvider } from 'notistack';
 import type { ReactNode } from 'react';
 import { theme } from '@/theme';
+import { AuthProvider } from './auth';
 
 import '@fontsource/space-grotesk/400.css';
 import '@fontsource/space-grotesk/500.css';
@@ -33,7 +34,7 @@ export function Providers({ children }: { children: ReactNode }) {
           autoHideDuration={2800}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         >
-          {children}
+          <AuthProvider>{children}</AuthProvider>
         </SnackbarProvider>
       </ThemeProvider>
     </QueryClientProvider>

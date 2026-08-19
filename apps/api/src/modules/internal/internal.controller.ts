@@ -2,6 +2,7 @@ import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { IsEmail, IsOptional, IsString } from 'class-validator';
 import { AppConfig } from '../../config';
+import { Public } from '../../common/decorators/auth.decorators';
 import { NotificationsService, TemplateService } from '../notifications';
 
 class TestEmailDto {
@@ -19,6 +20,7 @@ class TestEmailDto {
  *
  * Mounted only outside production — see AppModule.
  */
+@Public() // dev-only diagnostics; the whole module is absent in production
 @ApiTags('internal')
 @Controller('internal')
 export class InternalController {

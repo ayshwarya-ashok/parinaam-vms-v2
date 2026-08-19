@@ -12,6 +12,7 @@ import {
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { BusinessErrors } from '../../common';
+import { Public } from '../../common/decorators/auth.decorators';
 import { EmailStatusCallbackDto } from './dto/email-status.dto';
 import { N8nClient } from './n8n.client';
 import { NotificationsService } from './notifications.service';
@@ -23,6 +24,7 @@ import { NotificationsService } from './notifications.service';
  * the HMAC signature is the only thing standing between it and an attacker
  * marking every queued message as delivered.
  */
+@Public() // n8n has no JWT — the HMAC signature is the authentication
 @ApiTags('webhooks')
 @Controller('webhooks/n8n')
 export class N8nWebhooksController {

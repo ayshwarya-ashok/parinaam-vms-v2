@@ -147,6 +147,7 @@ services:
   # ---------------------------------------------------------------------------
   api:
     profiles: ["app"]
+    image: parinaam-vms-v2-app
     build:
       context: ./apps/api
       dockerfile: Dockerfile
@@ -156,6 +157,7 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       ROLE: api
+      TSC_WATCHFILE: DynamicPriorityPolling
       PORT: 3000
       DATABASE_URL: postgres://${POSTGRES_USER:-parinaam}:${POSTGRES_PASSWORD:-parinaam_dev_pw}@db:5432/${POSTGRES_DB:-parinaam_vms}
       REDIS_URL: redis://redis:6379
@@ -169,7 +171,8 @@ services:
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev_refresh_secret_change_me}
       LINK_TOKEN_SECRET: ${LINK_TOKEN_SECRET:-dev_link_secret_change_me}
       UPLOAD_DIR: /app/uploads
-      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:5173}
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:5174}
+      CORS_ORIGINS: ${PUBLIC_WEB_URL:-http://localhost:5174}
     ports:
       - "${API_PORT:-3000}:3000"
     volumes:
@@ -187,16 +190,14 @@ services:
   # ---------------------------------------------------------------------------
   worker:
     profiles: ["app"]
-    build:
-      context: ./apps/api
-      dockerfile: Dockerfile
-      target: ${BUILD_TARGET:-development}
+    image: parinaam-vms-v2-app
     container_name: pvms-worker
     restart: unless-stopped
     command: ["npm", "run", "start:worker"]
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       ROLE: worker
+      TSC_WATCHFILE: DynamicPriorityPolling
       DATABASE_URL: postgres://${POSTGRES_USER:-parinaam}:${POSTGRES_PASSWORD:-parinaam_dev_pw}@db:5432/${POSTGRES_DB:-parinaam_vms}
       REDIS_URL: redis://redis:6379
       N8N_WEBHOOK_URL: http://n8n:5678/webhook/vms-email

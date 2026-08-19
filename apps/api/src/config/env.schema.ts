@@ -51,7 +51,7 @@ export const envSchema = z.object({
 
   // ── Web ────────────────────────────────────────────────────────────────────
   PUBLIC_WEB_URL: z.string().url().default('http://localhost:5173'),
-  CORS_ORIGINS: z.string().default('http://localhost:5173'),
+  CORS_ORIGINS: z.string().default('http://localhost:5174'),
 });
 
 export type Env = z.infer<typeof envSchema>;

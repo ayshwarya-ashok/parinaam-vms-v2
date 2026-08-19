@@ -1,4 +1,5 @@
 import {
+  Alert,
   Box,
   Button,
   Container,
@@ -10,7 +11,8 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { authErrorMessage, useAuth, type SessionUser } from '@/app/auth';
 
 const stats = [
   { value: '120+', label: 'Active volunteers' },
@@ -18,14 +20,45 @@ const stats = [
   { value: '96%', label: 'Shift attendance' },
 ];
 
-/**
- * The prototype's landing: hero on the left, glassy auth card on the right.
- * Form submission wires to /auth in Phase 1; the layout and theme are the
- * Phase 0 deliverable.
- */
+function landingFor(user: SessionUser): string {
+  if (user.role === 'admin') return '/admin/dashboard';
+  // A volunteer without a profile finishes registration first.
+  return user.profileComplete ? '/app/dashboard' : '/register';
+}
+
+/** The prototype's landing: hero on the left, glassy auth card on the right. */
 export function Landing() {
   const [tab, setTab] = useState<'login' | 'signup'>('login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const { status, user, login, signup } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Already signed in? The landing page is not for you.
+  if (status === 'authenticated' && user) {
+    return <Navigate to={landingFor(user)} replace />;
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setBusy(true);
+    try {
+      const sessionUser = await (tab === 'login' ? login(email, password) : signup(email, password));
+      const from = (location.state as { from?: string } | null)?.from;
+      navigate(from && sessionUser.role === 'volunteer' ? from : landingFor(sessionUser), {
+        replace: true,
+      });
+    } catch (err) {
+      setError(authErrorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <Container maxWidth="xl" sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center' }}>
@@ -72,7 +105,10 @@ export function Landing() {
           >
             <Tabs
               value={tab}
-              onChange={(_, v: 'login' | 'signup') => setTab(v)}
+              onChange={(_, v: 'login' | 'signup') => {
+                setTab(v);
+                setError(null);
+              }}
               variant="fullWidth"
               sx={{
                 bgcolor: 'rgba(19,35,37,0.06)',
@@ -96,24 +132,34 @@ export function Landing() {
                 {tab === 'login' ? 'Access your volunteer dashboard' : 'Create your account'}
               </Typography>
 
-              <Box
-                component="form"
-                sx={{ display: 'grid', gap: 2 }}
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  // Phase 1 wires this to POST /auth/login and /auth/signup.
-                  navigate(tab === 'login' ? '/app/dashboard' : '/register');
-                }}
-              >
-                <TextField label="Email ID" type="email" fullWidth />
+              {error && (
+                <Alert severity="error" sx={{ mb: 2, borderRadius: 3 }}>
+                  {error}
+                </Alert>
+              )}
+
+              <Box component="form" sx={{ display: 'grid', gap: 2 }} onSubmit={handleSubmit}>
+                <TextField
+                  label="Email ID"
+                  type="email"
+                  required
+                  fullWidth
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                />
                 <TextField
                   label="Password"
                   type="password"
+                  required
                   fullWidth
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   autoComplete={tab === 'login' ? 'current-password' : 'new-password'}
+                  helperText={tab === 'signup' ? 'At least 8 characters' : undefined}
                 />
-                <Button variant="pill" type="submit" size="large">
-                  {tab === 'login' ? 'Login' : 'Create account →'}
+                <Button variant="pill" type="submit" size="large" disabled={busy}>
+                  {busy ? 'Please wait…' : tab === 'login' ? 'Login' : 'Create account →'}
                 </Button>
               </Box>
 

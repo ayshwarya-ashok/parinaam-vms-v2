@@ -6,9 +6,11 @@ import {
   TypeOrmHealthIndicator,
 } from '@nestjs/terminus';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Public } from '../../common/decorators/auth.decorators';
 import { RedisHealthIndicator } from './redis.health';
 import { N8nHealthIndicator } from './n8n.health';
 
+@Public() // Docker healthchecks and load balancers carry no token
 @ApiTags('health')
 @Controller('health')
 export class HealthController {

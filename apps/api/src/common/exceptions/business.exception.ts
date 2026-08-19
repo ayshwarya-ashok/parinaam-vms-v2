@@ -11,7 +11,7 @@ export class BusinessException extends HttpException {
   constructor(
     readonly code: string,
     message: string,
-    status: HttpStatus = HttpStatus.CONFLICT,
+    status: number = HttpStatus.CONFLICT,
     readonly details?: unknown,
   ) {
     super({ code, message, details }, status);

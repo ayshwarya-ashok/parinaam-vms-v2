@@ -7,9 +7,8 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material';
-import { useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink, Outlet, useMatches, useNavigate } from 'react-router-dom';
-import { api, setAccessToken } from '@/api/client';
+import { useAuth } from '../auth';
 
 interface RouteHandle {
   crumb?: string;
@@ -33,19 +32,14 @@ interface AppLayoutProps {
 export function AppLayout({ variant, nav }: AppLayoutProps) {
   const matches = useMatches();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const crumbs = matches
     .map((m) => (m.handle as RouteHandle | undefined)?.crumb)
     .filter((c): c is string => Boolean(c));
 
+  const { logout } = useAuth();
+
   const handleLogout = async () => {
-    // Best-effort server-side revocation — the endpoint lands in Phase 1, and
-    // logging out locally must never be blocked on the network anyway.
-    await api.post('/auth/logout').catch(() => undefined);
-    // Drop the in-memory access token and every cached query, so nothing from
-    // this session survives into the next user's.
-    setAccessToken(null);
-    queryClient.clear();
+    await logout();
     navigate('/', { replace: true });
   };
 

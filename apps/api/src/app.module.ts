@@ -1,9 +1,14 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { RolesGuard } from './common/guards/roles.guard';
 import { ConfigModule } from './config';
 import { AppConfig } from './config/app.config';
 import { DatabaseModule } from './database';
+import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
 import { InternalModule } from './modules/internal/internal.module';
 import { NotificationsModule } from './modules/notifications';
@@ -44,12 +49,21 @@ const isProduction = process.env.NODE_ENV === 'production';
       }),
     }),
     ScheduleModule.forRoot(),
+    // Baseline 100 req/min per client; auth endpoints tighten this per-route.
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
     DatabaseModule,
     StorageModule,
     NotificationsModule,
+    AuthModule,
     HealthModule,
     // Diagnostics endpoints exist only outside production.
     ...(isProduction ? [] : [InternalModule]),
+  ],
+  providers: [
+    // Order matters: authenticate, then throttle, then authorise.
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })
 export class AppModule {}

@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import 'reflect-metadata';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter, TraceIdInterceptor } from './common';
@@ -21,6 +22,7 @@ async function bootstrap(): Promise<void> {
   app.setGlobalPrefix('api/v1');
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: false as never });
 
+  app.use(cookieParser());
   app.use(helmet({ contentSecurityPolicy: config.isProduction ? undefined : false }));
 
   app.enableCors({

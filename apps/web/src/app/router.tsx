@@ -1,5 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 import { AppLayout } from './layouts/AppLayout';
+import { RequireAuth } from './guards';
+import { AdminLogin } from '@/pages/AdminLogin';
 import { Landing } from '@/pages/Landing';
 import { Placeholder } from '@/pages/Placeholder';
 
@@ -38,7 +40,7 @@ export const router = createBrowserRouter([
   // ── Public ──────────────────────────────────────────────────────────────────
   { path: '/', element: <Landing /> },
   { path: '/register', element: stub('Sign up', 'Volunteer Registration', 'Phase 1') },
-  { path: '/admin/login', element: stub('Parinaam Admin', 'Administrator Sign In', 'Phase 1') },
+  { path: '/admin/login', element: <AdminLogin /> },
   { path: '/impact', element: stub('Parinaam Foundation', 'Impact Report', 'Phase 8') },
   // Link-token forms — no session, standalone pages.
   {
@@ -53,7 +55,11 @@ export const router = createBrowserRouter([
   // ── Volunteer ───────────────────────────────────────────────────────────────
   {
     path: '/app',
-    element: <AppLayout variant="volunteer" nav={volunteerNav} />,
+    element: (
+      <RequireAuth role="volunteer">
+        <AppLayout variant="volunteer" nav={volunteerNav} />
+      </RequireAuth>
+    ),
     handle: { crumb: 'Home' },
     children: [
       { path: 'dashboard', element: stub('Volunteer', 'Welcome to Parinaam', 'Phase 3'), handle: { crumb: 'Dashboard' } },
@@ -72,7 +78,11 @@ export const router = createBrowserRouter([
   // ── Admin ───────────────────────────────────────────────────────────────────
   {
     path: '/admin',
-    element: <AppLayout variant="admin" nav={adminNav} />,
+    element: (
+      <RequireAuth role="admin">
+        <AppLayout variant="admin" nav={adminNav} />
+      </RequireAuth>
+    ),
     handle: { crumb: 'Admin' },
     children: [
       { path: 'dashboard', element: stub('Parinaam Admin', 'Admin Dashboard', 'Phase 2'), handle: { crumb: 'Dashboard' } },
