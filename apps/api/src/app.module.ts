@@ -8,6 +8,7 @@ import { RolesGuard } from './common/guards/roles.guard';
 import { ConfigModule } from './config';
 import { AppConfig } from './config/app.config';
 import { DatabaseModule } from './database';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -18,6 +19,7 @@ import { HealthModule } from './modules/health/health.module';
 import { InternalModule } from './modules/internal/internal.module';
 import { NotificationsModule } from './modules/notifications';
 import { ProgramsModule } from './modules/programs/programs.module';
+import { ReportsModule } from './modules/reports/reports.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { TrainingsModule } from './modules/trainings/trainings.module';
 import { VolunteersModule } from './modules/volunteers/volunteers.module';
@@ -71,6 +73,8 @@ const isProduction = process.env.NODE_ENV === 'production';
     AttendanceModule,
     CertificatesModule,
     FeedbackModule,
+    AnalyticsModule,
+    ReportsModule,
     HealthModule,
     // Diagnostics endpoints exist only outside production.
     ...(isProduction ? [] : [InternalModule]),

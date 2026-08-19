@@ -349,7 +349,7 @@ export class CertificatesService {
         hours: this.fmtHours(cert.hours),
         eventsAttended: cert.eventsAttended,
       },
-      attachmentUrl: this.signer.internalUrl(cert.filePath!),
+      attachmentUrl: this.signer.internalUrl(cert.filePath!, `${cert.certificateNumber}.pdf`),
       attachmentName: `${cert.certificateNumber}.pdf`,
     });
   }

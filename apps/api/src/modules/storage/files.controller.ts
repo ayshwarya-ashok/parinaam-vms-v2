@@ -36,6 +36,7 @@ export class FilesController {
     @Query('exp') exp: string,
     @Query('sig') sig: string,
     @Res() res: Response,
+    @Query('name') name?: string,
   ): Promise<void> {
     if (!this.signer.verify(path, Number(exp) || 0, sig ?? '')) {
       throw new UnauthorizedException('Invalid or expired file signature');
@@ -48,9 +49,11 @@ export class FilesController {
       throw new NotFoundException('File not found');
     }
 
+    // Display name only — sanitised to a basename so it can't smuggle paths.
+    const filename = basename(name || basename(path)).replace(/["\\]/g, '');
     res
       .type(CONTENT_TYPES[extname(path).toLowerCase()] ?? 'application/octet-stream')
-      .setHeader('Content-Disposition', `attachment; filename="${basename(path)}"`)
+      .setHeader('Content-Disposition', `attachment; filename="${filename}"`)
       .send(data);
   }
 }

@@ -22,12 +22,18 @@ export class SignedUrlService {
       .digest('base64url');
   }
 
-  /** Internal (container-network) URL, e.g. for n8n attachment fetches. */
-  internalUrl(path: string, ttlMinutes = DEFAULT_TTL_MINUTES): string {
+  /**
+   * Internal (container-network) URL, e.g. for n8n attachment fetches.
+   * `name` sets the served filename (Content-Disposition) — n8n names the
+   * email attachment after it. It is display-only, so it sits outside the
+   * signature: tampering renames the file, never grants access.
+   */
+  internalUrl(path: string, name?: string, ttlMinutes = DEFAULT_TTL_MINUTES): string {
     const exp = Math.floor(Date.now() / 1000) + ttlMinutes * 60;
     const sig = this.hmac(path, exp);
     const base = this.config.get('INTERNAL_API_URL');
-    return `${base}/files/signed?path=${encodeURIComponent(path)}&exp=${exp}&sig=${sig}`;
+    const namePart = name ? `&name=${encodeURIComponent(name)}` : '';
+    return `${base}/files/signed?path=${encodeURIComponent(path)}&exp=${exp}&sig=${sig}${namePart}`;
   }
 
   verify(path: string, exp: number, sig: string): boolean {

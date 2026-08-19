@@ -27,6 +27,9 @@ import { FieldExecution } from '@/pages/admin/FieldExecution';
 import { RecognitionHub } from '@/pages/admin/RecognitionHub';
 import { CertificatesAdmin } from '@/pages/admin/CertificatesAdmin';
 import { FeedbackAdmin } from '@/pages/admin/FeedbackAdmin';
+import { MetricsDashboard } from '@/pages/admin/MetricsDashboard';
+import { ReportsPage } from '@/pages/admin/ReportsPage';
+import { ScheduledReportsPage } from '@/pages/admin/ScheduledReportsPage';
 import { MyCertificates } from '@/pages/volunteer/MyCertificates';
 import { FeedbackPage } from '@/pages/volunteer/FeedbackPage';
 import { AttendanceFormPage } from '@/pages/public/AttendanceForm';
@@ -128,9 +131,9 @@ export const router = createBrowserRouter([
       { path: 'recognition', element: <RecognitionHub />, handle: { crumb: 'Recognition' } },
       { path: 'recognition/certificates', element: <CertificatesAdmin />, handle: { crumb: 'Certificates' } },
       { path: 'recognition/feedback', element: <FeedbackAdmin />, handle: { crumb: 'Feedback' } },
-      { path: 'metrics', element: stub('Admin', 'Metrics Dashboard', 'Phase 7'), handle: { crumb: 'Metrics' } },
-      { path: 'reports', element: stub('Admin', 'Reports', 'Phase 7'), handle: { crumb: 'Reports' } },
-      { path: 'reports/scheduled', element: stub('Admin › Reports', 'Automated Reports', 'Phase 7'), handle: { crumb: 'Automated' } },
+      { path: 'metrics', element: <MetricsDashboard />, handle: { crumb: 'Metrics' } },
+      { path: 'reports', element: <ReportsPage />, handle: { crumb: 'Reports' } },
+      { path: 'reports/scheduled', element: <ScheduledReportsPage />, handle: { crumb: 'Automated' } },
     ],
   },
 

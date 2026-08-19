@@ -39,6 +39,7 @@ export class TemplateService implements OnModuleInit {
     program_announcement: '🎉 New volunteering opportunity — {{programName}}',
     certificate_issued: 'Your certificate of appreciation — {{programName}}',
     feedback_request: 'How was {{eventName}}? Two minutes of feedback',
+    report_ready: '📊 {{reportName}} — your scheduled report',
     compliance_expiring: 'Your {{trainingName}} certification expires soon',
   };
 
