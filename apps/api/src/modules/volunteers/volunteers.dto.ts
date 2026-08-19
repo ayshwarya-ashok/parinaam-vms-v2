@@ -5,9 +5,10 @@ import {
   IsIn,
   IsOptional,
   IsString,
-  IsUUID,
   MaxLength,
+  Matches,
 } from 'class-validator';
+import { UUID_PATTERN } from '../../common/pipes/uuid.pipe';
 
 export class RegisterVolunteerDto {
   @IsString()
@@ -46,7 +47,7 @@ export class RegisterVolunteerDto {
 
   /** Required when category = CSR (BR-01). */
   @IsOptional()
-  @IsUUID()
+  @Matches(UUID_PATTERN, { message: 'must be a UUID' })
   organizationId?: string;
 
   @IsOptional()

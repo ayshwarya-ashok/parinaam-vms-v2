@@ -13,7 +13,9 @@ import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
 import { InternalModule } from './modules/internal/internal.module';
 import { NotificationsModule } from './modules/notifications';
+import { ProgramsModule } from './modules/programs/programs.module';
 import { StorageModule } from './modules/storage/storage.module';
+import { TrainingsModule } from './modules/trainings/trainings.module';
 import { VolunteersModule } from './modules/volunteers/volunteers.module';
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -59,6 +61,8 @@ const isProduction = process.env.NODE_ENV === 'production';
     AuditModule,
     AuthModule,
     VolunteersModule,
+    ProgramsModule,
+    TrainingsModule,
     HealthModule,
     // Diagnostics endpoints exist only outside production.
     ...(isProduction ? [] : [InternalModule]),

@@ -3,12 +3,12 @@ import {
   Controller,
   Get,
   Param,
-  ParseUUIDPipe,
-  Patch,
+    Patch,
   Post,
   Query,
   Req,
 } from '@nestjs/common';
+import { UuidPipe } from '../../common/pipes/uuid.pipe';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 import {
@@ -104,7 +104,7 @@ export class VolunteersController {
   @Get('volunteers/:id')
   @Roles('admin')
   @ApiOperation({ summary: 'Full volunteer profile' })
-  adminGet(@Param('id', ParseUUIDPipe) id: string) {
+  adminGet(@Param('id', UuidPipe) id: string) {
     return this.service.adminGet(id);
   }
 
@@ -113,7 +113,7 @@ export class VolunteersController {
   @ApiOperation({ summary: 'Admin update — phase override, activate/deactivate' })
   adminUpdate(
     @CurrentUser() user: AuthPrincipal,
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', UuidPipe) id: string,
     @Body() dto: AdminUpdateVolunteerDto,
   ) {
     return this.service.adminUpdate(user, id, dto);

@@ -6,6 +6,14 @@ import { Consent } from '@/pages/Consent';
 import { ProfilePage } from '@/pages/Profile';
 import { Register } from '@/pages/Register';
 import { ConsentGate } from './consent-gate';
+import { AdminDashboard } from '@/pages/admin/AdminDashboard';
+import { ProgramsList } from '@/pages/admin/ProgramsList';
+import { ProgramDetail } from '@/pages/admin/ProgramDetail';
+import { ProgramForm } from '@/pages/admin/ProgramForm';
+import { ActivityForm } from '@/pages/admin/ActivityForm';
+import { ActivityDetail } from '@/pages/admin/ActivityDetail';
+import { ScheduleEventForm } from '@/pages/admin/ScheduleEventForm';
+import { VolunteerDirectory } from '@/pages/admin/VolunteerDirectory';
 import { Landing } from '@/pages/Landing';
 import { Placeholder } from '@/pages/Placeholder';
 
@@ -89,16 +97,16 @@ export const router = createBrowserRouter([
     ),
     handle: { crumb: 'Admin' },
     children: [
-      { path: 'dashboard', element: stub('Parinaam Admin', 'Admin Dashboard', 'Phase 2'), handle: { crumb: 'Dashboard' } },
-      { path: 'volunteers', element: stub('Admin › People', 'Volunteer Directory', 'Phase 2'), handle: { crumb: 'Volunteers' } },
-      { path: 'programs', element: stub('Admin › Programs', 'Programs', 'Phase 2'), handle: { crumb: 'Programs' } },
-      { path: 'programs/new', element: stub('Admin › Programs', 'Add Program', 'Phase 2'), handle: { crumb: 'New' } },
-      { path: 'programs/:id', element: stub('Admin › Programs', 'Program Detail', 'Phase 2'), handle: { crumb: 'Detail' } },
-      { path: 'programs/:id/edit', element: stub('Admin › Programs', 'Edit Program', 'Phase 2'), handle: { crumb: 'Edit' } },
-      { path: 'programs/:id/activities/new', element: stub('Admin › Programs', 'Add Activity', 'Phase 2'), handle: { crumb: 'Add Activity' } },
-      { path: 'activities/:id', element: stub('Admin › Activities', 'Activity Detail', 'Phase 2'), handle: { crumb: 'Activity' } },
-      { path: 'activities/:id/edit', element: stub('Admin › Activities', 'Edit Activity', 'Phase 2'), handle: { crumb: 'Edit Activity' } },
-      { path: 'activities/:id/events/new', element: stub('Admin › Schedule', 'Schedule Occurrence', 'Phase 2'), handle: { crumb: 'Schedule' } },
+      { path: 'dashboard', element: <AdminDashboard />, handle: { crumb: 'Dashboard' } },
+      { path: 'volunteers', element: <VolunteerDirectory />, handle: { crumb: 'Volunteers' } },
+      { path: 'programs', element: <ProgramsList />, handle: { crumb: 'Programs' } },
+      { path: 'programs/new', element: <ProgramForm />, handle: { crumb: 'New' } },
+      { path: 'programs/:id', element: <ProgramDetail />, handle: { crumb: 'Detail' } },
+      { path: 'programs/:id/edit', element: <ProgramForm />, handle: { crumb: 'Edit' } },
+      { path: 'programs/:programId/activities/new', element: <ActivityForm />, handle: { crumb: 'Add Activity' } },
+      { path: 'activities/:id', element: <ActivityDetail />, handle: { crumb: 'Activity' } },
+      { path: 'activities/:id/edit', element: <ActivityForm />, handle: { crumb: 'Edit Activity' } },
+      { path: 'activities/:activityId/events/new', element: <ScheduleEventForm />, handle: { crumb: 'Schedule' } },
       { path: 'events/:id/edit', element: stub('Admin › Schedule', 'Edit Occurrence', 'Phase 2'), handle: { crumb: 'Edit Occurrence' } },
       { path: 'calendar', element: stub('Admin', 'Activity Calendar', 'Phase 3'), handle: { crumb: 'Calendar' } },
       { path: 'trainings', element: stub('Admin › Trainings', 'Trainings', 'Phase 4'), handle: { crumb: 'Trainings' } },

@@ -1,7 +1,12 @@
 import { Global, Module } from '@nestjs/common';
+import { types } from 'pg';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppConfig } from '../config';
 import { ALL_ENTITIES } from './entities';
+
+// DATE columns come back as calendar strings, not JS Dates — a date has no
+// timezone, and Date objects serialise them as midnight-UTC timestamps.
+types.setTypeParser(types.builtins.DATE, (v) => v);
 
 @Global()
 @Module({
