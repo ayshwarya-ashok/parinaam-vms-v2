@@ -61,7 +61,10 @@ export const theme = createTheme({
     button: { textTransform: 'none', fontWeight: 700 },
   },
 
-  shape: { borderRadius: 16 },
+  // NOTE: sx numeric borderRadius values MULTIPLY this base (sx borderRadius: 4
+  // renders at 4 x base px). Screens use values 2-6, so a base of 3 yields
+  // 6-18px corners across cards, dialogs and panels.
+  shape: { borderRadius: 3 },
 
   components: {
     MuiCssBaseline: {
@@ -142,7 +145,7 @@ export const theme = createTheme({
     MuiOutlinedInput: {
       styleOverrides: {
         root: {
-          borderRadius: 12,
+          borderRadius: 8,
           background: 'rgba(255,255,255,0.75)',
           '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
             borderColor: alpha(tokens.accent, 0.7),
