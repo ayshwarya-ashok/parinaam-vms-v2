@@ -8,8 +8,6 @@ import { TemplateService } from './template.service';
 
 interface SendJob {
   emailLogId: string;
-  attachmentUrl?: string | null;
-  attachmentName?: string | null;
 }
 
 /**
@@ -31,7 +29,7 @@ export class EmailProcessor extends WorkerHost {
   }
 
   async process(job: Job<SendJob>): Promise<void> {
-    const { emailLogId, attachmentUrl, attachmentName } = job.data;
+    const { emailLogId } = job.data;
 
     const log = await this.notifications.findById(emailLogId);
     if (!log) {
@@ -64,8 +62,8 @@ export class EmailProcessor extends WorkerHost {
         text: '',
         fromName: this.config.get('MAIL_FROM_NAME'),
         fromEmail: this.config.get('MAIL_FROM_EMAIL'),
-        attachmentUrl: attachmentUrl ?? null,
-        attachmentName: attachmentName ?? null,
+        attachmentUrl: log.attachmentUrl ?? null,
+        attachmentName: log.attachmentName ?? null,
         callbackUrl: this.config.get('N8N_CALLBACK_URL'),
       });
 

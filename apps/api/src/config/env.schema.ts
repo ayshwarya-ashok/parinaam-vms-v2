@@ -45,6 +45,12 @@ export const envSchema = z.object({
   MAIL_FROM_NAME: z.string().default('Parinaam Foundation'),
   MAIL_FROM_EMAIL: z.string().email().default('noreply@parinaam.org'),
 
+  /**
+   * How OTHER containers reach this API — n8n fetches email attachments from
+   * here. Container-network address, never exposed to browsers.
+   */
+  INTERNAL_API_URL: z.string().url().default('http://api:3000/api/v1'),
+
   // ── Storage ────────────────────────────────────────────────────────────────
   UPLOAD_DIR: z.string().default('/app/uploads'),
   MAX_UPLOAD_MB: z.coerce.number().int().positive().default(25),

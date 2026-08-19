@@ -82,6 +82,12 @@ export class EmailLog {
   @Column({ name: 'error_message', type: 'text', nullable: true })
   errorMessage!: string | null;
 
+  @Column({ name: 'attachment_url', type: 'varchar', length: 600, nullable: true })
+  attachmentUrl!: string | null;
+
+  @Column({ name: 'attachment_name', type: 'varchar', length: 255, nullable: true })
+  attachmentName!: string | null;
+
   @Column({ name: 'attempt_count', type: 'smallint', default: 0 })
   attemptCount!: number;
 

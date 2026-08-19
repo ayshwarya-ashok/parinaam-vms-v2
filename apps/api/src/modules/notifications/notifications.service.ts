@@ -67,15 +67,15 @@ export class NotificationsService {
       eventId: params.eventId ?? null,
       volunteerId: params.volunteerId ?? null,
       coordinatorId: params.coordinatorId ?? null,
+      attachmentUrl: params.attachmentUrl ?? null,
+      attachmentName: params.attachmentName ?? null,
     });
 
     const saved = await repo.save(log);
 
     // Enqueue after the row exists. If this throws, the sweeper picks it up.
-    await this.enqueue(saved.id, {
-      attachmentUrl: params.attachmentUrl,
-      attachmentName: params.attachmentName,
-    });
+    // Attachment info lives on the row itself, so sweep retries keep it.
+    await this.enqueue(saved.id);
 
     return saved.id;
   }
@@ -83,8 +83,6 @@ export class NotificationsService {
   async enqueue(
     emailLogId: string,
     extra: {
-      attachmentUrl?: string | null;
-      attachmentName?: string | null;
       /**
        * Sweep retries need a fresh job id: BullMQ silently dedupes an add
        * against a completed or failed job with the same id (failed jobs are

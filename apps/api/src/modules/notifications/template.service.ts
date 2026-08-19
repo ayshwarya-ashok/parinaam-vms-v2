@@ -38,6 +38,7 @@ export class TemplateService implements OnModuleInit {
     attendance_reminder: 'Reminder: mark your attendance — {{eventName}}',
     program_announcement: '🎉 New volunteering opportunity — {{programName}}',
     certificate_issued: 'Your certificate of appreciation — {{programName}}',
+    feedback_request: 'How was {{eventName}}? Two minutes of feedback',
     compliance_expiring: 'Your {{trainingName}} certification expires soon',
   };
 
@@ -56,7 +57,17 @@ export class TemplateService implements OnModuleInit {
     this.layout = Handlebars.compile(readFileSync(layoutPath, 'utf8'));
 
     for (const file of readdirSync(dir)) {
-      if (!file.endsWith('.hbs') || file.startsWith('_')) continue;
+      if (!file.endsWith('.hbs')) continue;
+      // _name.hbs (other than the layout) registers as the {{> name}} partial.
+      if (file.startsWith('_')) {
+        if (file !== '_layout.hbs') {
+          Handlebars.registerPartial(
+            file.slice(1).replace(/.hbs$/, ''),
+            readFileSync(join(dir, file), 'utf8'),
+          );
+        }
+        continue;
+      }
       const key = file.replace(/\.hbs$/, '');
       this.templates.set(key, Handlebars.compile(readFileSync(join(dir, file), 'utf8')));
     }
@@ -78,10 +89,13 @@ export class TemplateService implements OnModuleInit {
       throw new Error(`Unknown email template: ${templateKey}`);
     }
 
+    const webUrl = this.config.get('PUBLIC_WEB_URL');
     const fullContext = {
+      walletUrl: `${webUrl}/app/certificates`,
+      feedbackUrl: `${webUrl}/app/feedback`,
       ...context,
       orgName: this.config.get('MAIL_FROM_NAME'),
-      webUrl: this.config.get('PUBLIC_WEB_URL'),
+      webUrl,
     };
 
     const body = template(fullContext);

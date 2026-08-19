@@ -24,6 +24,11 @@ import { TrainingsList } from '@/pages/admin/TrainingsList';
 import { TrainingForm } from '@/pages/admin/TrainingForm';
 import { AssessmentsPage } from '@/pages/admin/AssessmentsPage';
 import { FieldExecution } from '@/pages/admin/FieldExecution';
+import { RecognitionHub } from '@/pages/admin/RecognitionHub';
+import { CertificatesAdmin } from '@/pages/admin/CertificatesAdmin';
+import { FeedbackAdmin } from '@/pages/admin/FeedbackAdmin';
+import { MyCertificates } from '@/pages/volunteer/MyCertificates';
+import { FeedbackPage } from '@/pages/volunteer/FeedbackPage';
 import { AttendanceFormPage } from '@/pages/public/AttendanceForm';
 import { CoordinatorReportPage } from '@/pages/public/CoordinatorReport';
 import { Landing } from '@/pages/Landing';
@@ -87,8 +92,8 @@ export const router = createBrowserRouter([
       { path: 'consent', element: <Consent />, handle: { crumb: 'Consent' } },
       { path: 'trainings', element: <ConsentGate><MyTrainings /></ConsentGate>, handle: { crumb: 'Trainings' } },
       { path: 'trainings/:id', element: <ConsentGate><TrainingView /></ConsentGate>, handle: { crumb: 'Training' } },
-      { path: 'certificates', element: stub('Volunteer', 'My Certificates', 'Phase 6'), handle: { crumb: 'Certificates' } },
-      { path: 'feedback', element: stub('Volunteer', 'Share Your Experience', 'Phase 6'), handle: { crumb: 'Feedback' } },
+      { path: 'certificates', element: <MyCertificates />, handle: { crumb: 'Certificates' } },
+      { path: 'feedback', element: <FeedbackPage />, handle: { crumb: 'Feedback' } },
       { path: 'profile', element: <ProfilePage />, handle: { crumb: 'Profile' } },
     ],
   },
@@ -120,9 +125,9 @@ export const router = createBrowserRouter([
       { path: 'trainings/:id/edit', element: <TrainingForm />, handle: { crumb: 'Edit' } },
       { path: 'trainings/:id/assessments', element: <AssessmentsPage />, handle: { crumb: 'Assessments' } },
       { path: 'field-execution', element: <FieldExecution />, handle: { crumb: 'Field Execution' } },
-      { path: 'recognition', element: stub('Admin', 'Recognition & Retention', 'Phase 6'), handle: { crumb: 'Recognition' } },
-      { path: 'recognition/certificates', element: stub('Admin › Recognition', 'Issue Certificates', 'Phase 6'), handle: { crumb: 'Certificates' } },
-      { path: 'recognition/feedback', element: stub('Admin › Recognition', 'Volunteer Feedback', 'Phase 6'), handle: { crumb: 'Feedback' } },
+      { path: 'recognition', element: <RecognitionHub />, handle: { crumb: 'Recognition' } },
+      { path: 'recognition/certificates', element: <CertificatesAdmin />, handle: { crumb: 'Certificates' } },
+      { path: 'recognition/feedback', element: <FeedbackAdmin />, handle: { crumb: 'Feedback' } },
       { path: 'metrics', element: stub('Admin', 'Metrics Dashboard', 'Phase 7'), handle: { crumb: 'Metrics' } },
       { path: 'reports', element: stub('Admin', 'Reports', 'Phase 7'), handle: { crumb: 'Reports' } },
       { path: 'reports/scheduled', element: stub('Admin › Reports', 'Automated Reports', 'Phase 7'), handle: { crumb: 'Automated' } },
