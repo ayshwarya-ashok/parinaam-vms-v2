@@ -50,6 +50,8 @@ export const envSchema = z.object({
    * here. Container-network address, never exposed to browsers.
    */
   INTERNAL_API_URL: z.string().url().default('http://api:3000/api/v1'),
+  /** How BROWSERS reach this API — used for signed URLs embedded in public pages. */
+  PUBLIC_API_URL: z.string().url().default('http://localhost:3001/api/v1'),
 
   // ── Storage ────────────────────────────────────────────────────────────────
   UPLOAD_DIR: z.string().default('/app/uploads'),

@@ -307,4 +307,57 @@ export class VolunteersService {
 
     return this.adminGet(id);
   }
+  /**
+   * Data-lifecycle erasure: strip everything that identifies the person while
+   * keeping the aggregates the foundation reports on (hours, attendance,
+   * beneficiary numbers stay; the name on them goes). Irreversible by design.
+   */
+  async erase(principal: AuthPrincipal, id: string): Promise<{ erased: true }> {
+    const volunteer = await this.volunteers.findOne({ where: { id }, relations: { user: true } });
+    if (!volunteer) throw new NotFoundException('Volunteer not found');
+
+    const short = id.replace(/-/g, '').slice(-8);
+    await this.dataSource.transaction(async (manager) => {
+      await manager.update(Volunteer, { id }, {
+        firstName: 'Erased',
+        lastName: `Volunteer-${short}`,
+        phone: null,
+        dateOfBirth: null,
+        city: null,
+        state: null,
+        phase: 'Inactive',
+      });
+      await manager.update(User, { id: volunteer.userId }, {
+        email: `erased-${short}@erased.invalid`,
+        passwordHash: '',
+        isActive: false,
+      });
+      // Kill every live session and pending link for this person.
+      await manager.query('DELETE FROM refresh_tokens WHERE user_id = $1', [volunteer.userId]);
+      await manager.query('DELETE FROM access_tokens WHERE volunteer_id = $1', [id]);
+      // Free-text feedback may identify the author; ratings/tags are aggregates.
+      await manager.query(
+        `UPDATE feedback_submissions SET comments = NULL, went_well = NULL,
+          went_wrong_detail = NULL, improvement_detail = NULL,
+          is_published_testimonial = FALSE WHERE volunteer_id = $1`,
+        [id],
+      );
+      // Their inbox history: keep the row (dispatch audit), drop the address/body.
+      await manager.query(
+        `UPDATE email_logs SET recipient_email = 'erased@erased.invalid',
+          body_snapshot = NULL WHERE volunteer_id = $1`,
+        [id],
+      );
+    });
+
+    await this.audit.record(principal, {
+      action: 'volunteer.erased',
+      entity: 'volunteers',
+      entityId: id,
+      before: null,
+      after: { erased: true },
+    });
+
+    return { erased: true };
+  }
 }

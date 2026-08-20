@@ -1,3 +1,4 @@
+import { Suspense, lazy } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import { AppLayout } from './layouts/AppLayout';
 import { RequireAuth } from './guards';
@@ -27,7 +28,9 @@ import { FieldExecution } from '@/pages/admin/FieldExecution';
 import { RecognitionHub } from '@/pages/admin/RecognitionHub';
 import { CertificatesAdmin } from '@/pages/admin/CertificatesAdmin';
 import { FeedbackAdmin } from '@/pages/admin/FeedbackAdmin';
-import { MetricsDashboard } from '@/pages/admin/MetricsDashboard';
+const MetricsDashboard = lazy(() =>
+  import('@/pages/admin/MetricsDashboard').then((m) => ({ default: m.MetricsDashboard })),
+);
 import { ReportsPage } from '@/pages/admin/ReportsPage';
 import { ScheduledReportsPage } from '@/pages/admin/ScheduledReportsPage';
 import { MyCertificates } from '@/pages/volunteer/MyCertificates';
@@ -35,6 +38,8 @@ import { FeedbackPage } from '@/pages/volunteer/FeedbackPage';
 import { AttendanceFormPage } from '@/pages/public/AttendanceForm';
 import { CoordinatorReportPage } from '@/pages/public/CoordinatorReport';
 import { Landing } from '@/pages/Landing';
+import { ImpactPage } from '@/pages/public/ImpactPage';
+import { NotFound } from '@/pages/NotFound';
 import { Placeholder } from '@/pages/Placeholder';
 
 const volunteerNav = [
@@ -73,7 +78,7 @@ export const router = createBrowserRouter([
   { path: '/', element: <Landing /> },
   { path: '/register', element: <Register /> },
   { path: '/admin/login', element: <AdminLogin /> },
-  { path: '/impact', element: stub('Parinaam Foundation', 'Impact Report', 'Phase 8') },
+  { path: '/impact', element: <ImpactPage /> },
   // Link-token forms — no session, standalone pages.
   { path: '/attendance/:token', element: <AttendanceFormPage /> },
   { path: '/report/:token', element: <CoordinatorReportPage /> },
@@ -131,11 +136,11 @@ export const router = createBrowserRouter([
       { path: 'recognition', element: <RecognitionHub />, handle: { crumb: 'Recognition' } },
       { path: 'recognition/certificates', element: <CertificatesAdmin />, handle: { crumb: 'Certificates' } },
       { path: 'recognition/feedback', element: <FeedbackAdmin />, handle: { crumb: 'Feedback' } },
-      { path: 'metrics', element: <MetricsDashboard />, handle: { crumb: 'Metrics' } },
+      { path: 'metrics', element: <Suspense fallback={null}><MetricsDashboard /></Suspense>, handle: { crumb: 'Metrics' } },
       { path: 'reports', element: <ReportsPage />, handle: { crumb: 'Reports' } },
       { path: 'reports/scheduled', element: <ScheduledReportsPage />, handle: { crumb: 'Automated' } },
     ],
   },
 
-  { path: '*', element: stub('Not found', 'This page does not exist', 'any phase') },
+  { path: '*', element: <NotFound /> },
 ]);

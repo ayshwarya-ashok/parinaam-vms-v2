@@ -172,6 +172,8 @@ services:
       LINK_TOKEN_SECRET: ${LINK_TOKEN_SECRET:-dev_link_secret_change_me}
       UPLOAD_DIR: /app/uploads
       PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:5174}
+      INTERNAL_API_URL: ${INTERNAL_API_URL:-http://api:3000/api/v1}
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:3001/api/v1}
       CORS_ORIGINS: ${PUBLIC_WEB_URL:-http://localhost:5174}
     ports:
       - "${API_PORT:-3000}:3000"

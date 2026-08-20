@@ -75,6 +75,15 @@ export class AuthService {
       { failedLoginCount: 0, lockedUntil: null, lastLoginAt: new Date() },
     );
 
+    // Transparent algorithm upgrade: the only moment we hold the plaintext of
+    // a legacy (bcrypt) hash is a successful login, so rehash to argon2id here.
+    if (this.passwords.needsRehash(user.passwordHash)) {
+      await this.users.update(
+        { id: user.id },
+        { passwordHash: await this.passwords.hash(password) },
+      );
+    }
+
     return this.issueSession(user, meta);
   }
 

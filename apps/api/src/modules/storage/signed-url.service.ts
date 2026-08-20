@@ -36,6 +36,12 @@ export class SignedUrlService {
     return `${base}/files/signed?path=${encodeURIComponent(path)}&exp=${exp}&sig=${sig}${namePart}`;
   }
 
+  /** Browser-reachable variant of the same capability URL (public gallery). */
+  publicUrl(path: string, name?: string, ttlMinutes = DEFAULT_TTL_MINUTES): string {
+    const internal = this.internalUrl(path, name, ttlMinutes);
+    return internal.replace(this.config.get('INTERNAL_API_URL'), this.config.get('PUBLIC_API_URL'));
+  }
+
   verify(path: string, exp: number, sig: string): boolean {
     if (!path || !exp || !sig) return false;
     if (exp < Math.floor(Date.now() / 1000)) return false;

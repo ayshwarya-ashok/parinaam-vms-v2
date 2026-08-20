@@ -118,4 +118,16 @@ export class VolunteersController {
   ) {
     return this.service.adminUpdate(user, id, dto);
   }
+
+  @Post('volunteers/:id/erase')
+  @Roles('admin')
+  @ApiOperation({
+    summary: "Irreversibly erase a volunteer's personal data",
+    description:
+      'Anonymises name/contact, disables the account, revokes sessions and links, and strips ' +
+      'free-text feedback. Contribution aggregates (hours, attendance, beneficiaries) are kept.',
+  })
+  erase(@CurrentUser() user: AuthPrincipal, @Param('id', UuidPipe) id: string) {
+    return this.service.erase(user, id);
+  }
 }

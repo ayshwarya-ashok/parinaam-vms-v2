@@ -4,6 +4,8 @@ import { SnackbarProvider } from 'notistack';
 import type { ReactNode } from 'react';
 import { theme } from '@/theme';
 import { AuthProvider } from './auth';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { OfflineBanner } from '@/components/OfflineBanner';
 
 import '@fontsource/space-grotesk/400.css';
 import '@fontsource/space-grotesk/500.css';
@@ -34,7 +36,10 @@ export function Providers({ children }: { children: ReactNode }) {
           autoHideDuration={2800}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         >
-          <AuthProvider>{children}</AuthProvider>
+          <ErrorBoundary>
+            <OfflineBanner />
+            <AuthProvider>{children}</AuthProvider>
+          </ErrorBoundary>
         </SnackbarProvider>
       </ThemeProvider>
     </QueryClientProvider>
