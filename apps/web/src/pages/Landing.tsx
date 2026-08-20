@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { Link as RouterLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { api } from '@/api/client';
 import { authErrorMessage, useAuth, type SessionUser } from '@/app/auth';
 
 const stats = [
@@ -34,7 +35,7 @@ export function Landing() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const { status, user, login, signup } = useAuth();
+  const { status, user, login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -48,7 +49,19 @@ export function Landing() {
     setError(null);
     setBusy(true);
     try {
-      const sessionUser = await (tab === 'login' ? login(email, password) : signup(email, password));
+      if (tab === 'signup') {
+        // No account is created here. Registration is atomic — credentials
+        // travel (in memory only) to the profile form and are written with it.
+        const { data } = await api.post<{ available: boolean }>('/auth/check-email', { email });
+        if (!data.available) {
+          setError('An account with this email already exists. Try logging in.');
+          return;
+        }
+        navigate('/register', { state: { email, password } });
+        return;
+      }
+
+      const sessionUser = await login(email, password);
       const from = (location.state as { from?: string } | null)?.from;
       navigate(from && sessionUser.role === 'volunteer' ? from : landingFor(sessionUser), {
         replace: true,
@@ -159,8 +172,13 @@ export function Landing() {
                   helperText={tab === 'signup' ? 'At least 8 characters' : undefined}
                 />
                 <Button variant="pill" type="submit" size="large" disabled={busy}>
-                  {busy ? 'Please wait…' : tab === 'login' ? 'Login' : 'Create account →'}
+                  {busy ? 'Please wait…' : tab === 'login' ? 'Login' : 'Continue →'}
                 </Button>
+                {tab === 'signup' && (
+                  <Typography sx={{ fontSize: '0.82rem', color: 'text.secondary', textAlign: 'center' }}>
+                    Next: a few questions about you. Your account is created when you finish.
+                  </Typography>
+                )}
               </Box>
 
               <Box sx={{ mt: 2.5, textAlign: 'center' }}>

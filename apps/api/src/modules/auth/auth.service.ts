@@ -9,6 +9,8 @@ import { AppConfig } from '../../config';
 import { RefreshToken, User, Volunteer } from '../../database/entities';
 import { NotificationsService } from '../notifications';
 import { PasswordService } from './password.service';
+import { RegisterAccountDto } from '../volunteers/volunteers.dto';
+import { VolunteersService } from '../volunteers/volunteers.service';
 
 const MAX_FAILED_LOGINS = 5;
 const LOCKOUT_MINUTES = 15;
@@ -35,6 +37,7 @@ export class AuthService {
     @InjectRepository(Volunteer) private readonly volunteers: Repository<Volunteer>,
     @InjectRepository(RefreshToken) private readonly refreshTokens: Repository<RefreshToken>,
     private readonly passwords: PasswordService,
+    private readonly registrations: VolunteersService,
     private readonly jwt: JwtService,
     private readonly config: AppConfig,
     private readonly notifications: NotificationsService,
@@ -103,42 +106,42 @@ export class AuthService {
 
   // ── Signup ───────────────────────────────────────────────────────────────
 
-  async signup(email: string, password: string, meta: ClientMeta): Promise<SessionTokens> {
-    const existing = await this.users.findOne({ where: { email } });
-    if (existing) {
-      throw new BusinessException(
-        'EMAIL_TAKEN',
-        'An account with this email already exists. Try logging in.',
-        409,
-      );
-    }
-
-    const user = await this.users.save(
-      this.users.create({
-        email,
-        passwordHash: await this.passwords.hash(password),
-        role: 'volunteer',
-      }),
-    );
+  /**
+   * Register a volunteer: account and profile, or neither.
+   *
+   * The old two-step signup wrote a `users` row before the profile form was
+   * ever submitted, so every abandoned registration left a login that led
+   * nowhere. VolunteersService writes both in one transaction; this method
+   * hashes the password, then issues the session for the account that now
+   * definitely exists alongside a profile.
+   */
+  async registerVolunteer(dto: RegisterAccountDto, meta: ClientMeta): Promise<SessionTokens> {
+    const passwordHash = await this.passwords.hash(dto.password);
+    const { user } = await this.registrations.registerWithAccount(dto, passwordHash);
 
     // Fire-and-forget welcome mail through the outbox; a template hiccup must
     // never block account creation.
     void this.notifications
       .queueEmail({
         templateKey: 'welcome_verify',
-        to: email,
+        to: user.email,
         recipientType: 'volunteer',
         context: {
-          firstName: 'there',
-          verifyUrl: `${this.config.get('PUBLIC_WEB_URL')}/register`,
+          firstName: dto.firstName,
+          verifyUrl: `${this.config.get('PUBLIC_WEB_URL')}/app/dashboard`,
         },
       })
       .catch((err: Error) =>
-        this.logger.error(`welcome email failed for ${email}: ${err.message}`),
+        this.logger.error(`welcome email failed for ${user.email}: ${err.message}`),
       );
 
-    this.logger.log(`New volunteer account: ${email}`);
+    this.logger.log(`New volunteer registration: ${user.email} (pending review)`);
     return this.issueSession(user, meta);
+  }
+
+  /** Lets the form check an address before asking for the long part. */
+  async isEmailAvailable(email: string): Promise<boolean> {
+    return this.registrations.isEmailAvailable(email);
   }
 
   // ── Refresh rotation ─────────────────────────────────────────────────────
@@ -220,9 +223,15 @@ export class AuthService {
             firstName: volunteer.firstName,
             lastName: volunteer.lastName,
             phase: volunteer.phase,
+            registrationStatus: volunteer.registrationStatus,
+            rejectionReason: volunteer.rejectionReason,
           }
         : null,
-      /** Volunteers without a profile are routed to /register by the UI. */
+      /**
+       * Registration is atomic now, so a volunteer session always has a
+       * profile. The flag stays in the contract for admins and for any
+       * account created before that change.
+       */
       profileComplete: user.role === 'admin' || volunteer !== null,
     };
   }

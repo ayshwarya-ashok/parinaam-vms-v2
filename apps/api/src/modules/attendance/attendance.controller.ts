@@ -5,6 +5,7 @@ import {
   IsMilitaryTime,
   IsNumber,
   IsOptional,
+  Matches,
   IsString,
   MaxLength,
   Min,
@@ -30,7 +31,7 @@ import {
   Public,
   Roles,
 } from '../../common/decorators/auth.decorators';
-import { UuidPipe } from '../../common/pipes/uuid.pipe';
+import { UUID_PATTERN, UuidPipe } from '../../common/pipes/uuid.pipe';
 import { AttendanceService, UploadedImage } from './attendance.service';
 
 // Multipart fields arrive as strings; coerce explicitly.
@@ -74,6 +75,13 @@ class OverrideDto {
   absenceReason?: string;
 }
 
+/** Admin logging attendance for someone who never submitted: who, and were they there. */
+class AdminRecordDto extends OverrideDto {
+  @Matches(UUID_PATTERN, { message: 'must be a UUID' }) volunteerId!: string;
+  // Optional on the base DTO, required here — there is nothing to infer from.
+  @IsBoolean() declare attended: boolean;
+}
+
 const IMAGE_LIMITS = { fileSize: 8 * 1024 * 1024, files: 2 };
 
 @ApiTags('attendance')
@@ -112,6 +120,26 @@ export class AttendanceController {
     @Body() dto: DispatchDto,
   ) {
     return this.service.dispatch(user, eventId, dto.target);
+  }
+
+  @Get('events/:id/session-record')
+  @Roles('admin')
+  @ApiOperation({
+    summary: 'The whole session record: occurrence, roster with volunteer-logged attendance, coordinator report',
+  })
+  sessionRecord(@Param('id', UuidPipe) id: string) {
+    return this.service.sessionRecord(id);
+  }
+
+  @Post('events/:id/attendance')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Log attendance for a volunteer who never submitted (upsert)' })
+  recordFor(
+    @CurrentUser() user: AuthPrincipal,
+    @Param('id', UuidPipe) id: string,
+    @Body() dto: AdminRecordDto,
+  ) {
+    return this.service.adminRecord(user, id, dto);
   }
 
   @Get('events/:id/attendance')

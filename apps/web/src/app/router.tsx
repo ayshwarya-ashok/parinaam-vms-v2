@@ -25,6 +25,7 @@ import { TrainingsList } from '@/pages/admin/TrainingsList';
 import { TrainingForm } from '@/pages/admin/TrainingForm';
 import { AssessmentsPage } from '@/pages/admin/AssessmentsPage';
 import { FieldExecution } from '@/pages/admin/FieldExecution';
+import { SessionRecord } from '@/pages/admin/SessionRecord';
 import { RecognitionHub } from '@/pages/admin/RecognitionHub';
 import { CertificatesAdmin } from '@/pages/admin/CertificatesAdmin';
 import { FeedbackAdmin } from '@/pages/admin/FeedbackAdmin';
@@ -156,7 +157,14 @@ export const router = createBrowserRouter([
           { path: ':id/assessments', element: <AssessmentsPage />, handle: { crumb: 'Assessments' } },
         ],
       },
-      { path: 'field-execution', element: <FieldExecution />, handle: { crumb: 'Field Execution' } },
+      {
+        path: 'field-execution',
+        handle: { crumb: 'Field Execution' },
+        children: [
+          { index: true, element: <FieldExecution /> },
+        ],
+      },
+      { path: 'sessions/:id', element: <SessionRecord />, handle: { crumb: 'Session record' } },
       {
         path: 'recognition',
         handle: { crumb: 'Recognition' },

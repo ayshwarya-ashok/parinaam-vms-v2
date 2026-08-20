@@ -47,6 +47,7 @@ import {
   ReportRun,
   ScheduledReport,
 } from './ops.entity';
+import { ReferenceValue } from './reference.entity';
 
 export * from './identity.entity';
 export * from './people.entity';
@@ -56,12 +57,13 @@ export * from './enrollment.entity';
 export * from './field.entity';
 export * from './recognition.entity';
 export * from './ops.entity';
+export * from './reference.entity';
 
 /**
  * Every entity, in one array. Registered on the TypeORM data source and
  * asserted against the SQL schema by the CI drift check.
  *
- * 36 tables — see docs/03-data-model.md.
+ * 37 tables — see docs/03-data-model.md.
  */
 export const ALL_ENTITIES = [
   // identity
@@ -74,6 +76,7 @@ export const ALL_ENTITIES = [
   Volunteer,
   Coordinator,
   VolunteerConsent,
+  ReferenceValue,
   // hierarchy
   Program,
   Activity,

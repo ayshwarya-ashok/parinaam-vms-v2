@@ -14,11 +14,13 @@ import type { Request } from 'express';
 import {
   AuthPrincipal,
   CurrentUser,
+  Public,
   Roles,
 } from '../../common/decorators/auth.decorators';
 import {
   AdminUpdateVolunteerDto,
   RegisterVolunteerDto,
+  ReviewRegistrationDto,
   SignConsentDto,
   UpdateProfileDto,
 } from './volunteers.dto';
@@ -33,9 +35,14 @@ export class VolunteersController {
 
   @Post('volunteers')
   @Roles('volunteer')
-  @ApiOperation({ summary: 'Complete volunteer registration (the profile step)' })
-  register(@CurrentUser() user: AuthPrincipal, @Body() dto: RegisterVolunteerDto) {
-    return this.service.register(user, dto);
+  @ApiOperation({
+    summary: 'Complete the profile on an account that has none',
+    description:
+      'For accounts orphaned by the old two-step signup. New registrations go through ' +
+      'POST /auth/register, which writes the account and the profile together.',
+  })
+  completeProfile(@CurrentUser() user: AuthPrincipal, @Body() dto: RegisterVolunteerDto) {
+    return this.service.completeProfile(user, dto);
   }
 
   @Get('volunteers/me')
@@ -79,6 +86,7 @@ export class VolunteersController {
 
   // ── CSR organization picker ─────────────────────────────────────────────────
 
+  @Public()
   @Get('organizations')
   @ApiOperation({ summary: 'Active organizations — id and name for the CSR picker' })
   organizations() {
@@ -95,10 +103,11 @@ export class VolunteersController {
     @Query('phase') phase?: string,
     @Query('category') category?: string,
     @Query('city') city?: string,
+    @Query('registrationStatus') registrationStatus?: string,
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
   ) {
-    return this.service.directory({ q, phase, category, city, limit, offset });
+    return this.service.directory({ q, phase, category, city, registrationStatus, limit, offset });
   }
 
   @Get('volunteers/:id')
@@ -117,6 +126,31 @@ export class VolunteersController {
     @Body() dto: AdminUpdateVolunteerDto,
   ) {
     return this.service.adminUpdate(user, id, dto);
+  }
+
+  @Post('volunteers/:id/approve')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Approve a registration — the account stays active' })
+  approve(
+    @CurrentUser() user: AuthPrincipal,
+    @Param('id', UuidPipe) id: string,
+    @Body() dto: ReviewRegistrationDto,
+  ) {
+    return this.service.review(user, id, 'approved', dto);
+  }
+
+  @Post('volunteers/:id/reject')
+  @Roles('admin')
+  @ApiOperation({
+    summary: 'Reject a registration',
+    description: 'Requires a reason and deactivates the account — a rejected applicant keeps no login.',
+  })
+  reject(
+    @CurrentUser() user: AuthPrincipal,
+    @Param('id', UuidPipe) id: string,
+    @Body() dto: ReviewRegistrationDto,
+  ) {
+    return this.service.review(user, id, 'rejected', dto);
   }
 
   @Post('volunteers/:id/erase')

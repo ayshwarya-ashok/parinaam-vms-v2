@@ -50,6 +50,8 @@ export class Organization {
  * Demographic and lifecycle profile, 1:1 with users.
  * `phase` is derived — owned by fn_recompute_volunteer_phase(), never set by hand.
  */
+export type RegistrationStatus = 'pending' | 'approved' | 'rejected';
+
 @Entity('volunteers')
 export class Volunteer {
   @PrimaryGeneratedColumn('uuid')
@@ -98,6 +100,38 @@ export class Volunteer {
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   skills!: string | null;
+
+  @Column({ type: 'varchar', length: 150, nullable: true })
+  occupation!: string | null;
+
+  /** Comma-joined reference_values codes — see V011. */
+  @Column({ type: 'text', nullable: true })
+  languages!: string | null;
+
+  @Column({ name: 'areas_of_interest', type: 'text', nullable: true })
+  areasOfInterest!: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  availability!: string | null;
+
+  @Column({ name: 'availability_notes', type: 'text', nullable: true })
+  availabilityNotes!: string | null;
+
+  /**
+   * A completed profile is a REQUEST to volunteer. It stays 'pending' until an
+   * administrator decides; rejection also deactivates the account.
+   */
+  @Column({ name: 'registration_status', type: 'enum', enumName: 'registration_status', enum: ['pending', 'approved', 'rejected'], default: 'pending' })
+  registrationStatus!: RegistrationStatus;
+
+  @Column({ name: 'reviewed_by', type: 'uuid', nullable: true })
+  reviewedBy!: string | null;
+
+  @Column({ name: 'reviewed_at', type: 'timestamptz', nullable: true })
+  reviewedAt!: Date | null;
+
+  @Column({ name: 'rejection_reason', type: 'text', nullable: true })
+  rejectionReason!: string | null;
 
   @Column({ name: 'compliance_read', type: 'boolean', default: false })
   complianceRead!: boolean;

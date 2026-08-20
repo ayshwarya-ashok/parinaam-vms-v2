@@ -54,7 +54,8 @@ field; sorting is `?sort=field&order=asc|desc`; date ranges are `?from=&to=`.
 
 | Method | Path | Auth | Purpose |
 |---|---|---|---|
-| POST | `/auth/signup` | public | Create a volunteer account |
+| POST | `/auth/register` | public | Account **and** profile in one transaction — an abandoned form creates nothing. Lands as `pending` for admin review |
+| POST | `/auth/check-email` | public | `{available}` — lets the form fail fast before the long part |
 | POST | `/auth/login` | public | `{ email, password }` → access token + refresh cookie. **No `totp`** — 2FA is out of scope |
 | POST | `/auth/refresh` | refresh cookie | Rotate; reuse revokes the family |
 | POST | `/auth/logout` | bearer | Revoke the current family |
@@ -71,7 +72,13 @@ field; sorting is `?sort=field&order=asc|desc`; date ranges are `?from=&to=`.
 | GET | `/volunteers/me/compliance` | volunteer | From `v_volunteer_compliance` |
 | GET / POST | `/volunteers/me/consent` | volunteer | Read / sign. IP and user-agent captured server-side; recomputes phase |
 | GET | `/volunteers` | admin | Directory: `?q=&phase=&category=&city=&organizationId=` |
-| GET / PATCH | `/volunteers/:id` | admin | Full profile; admin edit including `phase = Inactive` |
+| GET / PATCH | `/volunteers/:id` | admin | Full profile (everything given at sign-up); `{isActive}` activates / inactivates the account |
+| POST | `/volunteers/:id/approve` | admin | Approve a registration; the account stays active |
+| POST | `/volunteers/:id/reject` | admin | Reject with a **required** reason; deactivates the account |
+| POST | `/volunteers` | volunteer | Complete a profile on an account orphaned by the old two-step signup |
+| GET | `/reference-values` | none | Option lists (LANGUAGE, AREA_OF_INTEREST, AVAILABILITY) the registration form renders from |
+| GET | `/events/:id/session-record` | admin | Occurrence + enrolment roster with volunteer-logged attendance + coordinator report |
+| POST | `/events/:id/attendance` | admin | Log attendance for a volunteer who never submitted (upsert) |
 
 `/organizations` and `/coordinators` are standard admin CRUD. Coordinator `DELETE` deactivates
 rather than deletes, because events reference coordinators with `ON DELETE RESTRICT`.

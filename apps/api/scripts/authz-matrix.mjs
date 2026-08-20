@@ -26,6 +26,10 @@ const MATRIX = [
   ['GET',    '/health/ready',                           'A', 'A', 'A'],
   ['GET',    '/metrics',                                'A', 'A', 'A'],
   ['GET',    '/public/impact',                          'A', 'A', 'A'],
+  ['GET',    '/reference-values',                       'A', 'A', 'A'],
+  ['GET',    '/organizations',                          'A', 'A', 'A'], // the registration form is public
+  ['POST',   '/auth/check-email',                       'A', 'A', 'A'],
+  ['POST',   '/auth/register',                          'A', 'A', 'A'],
   // /files/signed is @Public, but an invalid signature is 401 for EVERYONE —
   // identical treatment across roles is exactly what this row asserts.
   ['GET',    `/files/signed?path=x&exp=1&sig=x`,        'D', 'D', 'D'],
@@ -34,7 +38,6 @@ const MATRIX = [
   // ── volunteer self-service ──────────────────────────────────────────
   ['GET',    '/volunteers/me',                          'D', 'A', 'D'], // admins have no volunteer profile
   ['GET',    '/volunteers/me/compliance',               'D', 'A', 'D'],
-  ['GET',    '/organizations',                          'D', 'A', 'A'],
   ['GET',    '/events',                                 'D', 'A', 'A'],
   ['GET',    '/enrollments/me',                         'D', 'A', 'D'],
   ['GET',    '/trainings/me',                           'D', 'A', 'D'],
@@ -50,6 +53,10 @@ const MATRIX = [
   [`GET`,    `/volunteers/${UUID}`,                     'D', 'D', 'A'],
   ['PATCH',  `/volunteers/${UUID}`,                     'D', 'D', 'A'],
   ['POST',   `/volunteers/${UUID}/erase`,               'D', 'D', 'A'],
+  ['POST',   `/volunteers/${UUID}/approve`,             'D', 'D', 'A'],
+  ['POST',   `/volunteers/${UUID}/reject`,              'D', 'D', 'A'],
+  ['GET',    `/events/${UUID}/session-record`,          'D', 'D', 'A'],
+  ['POST',   `/events/${UUID}/attendance`,              'D', 'D', 'A'],
   ['GET',    '/coordinators',                           'D', 'D', 'A'],
   ['POST',   '/coordinators',                           'D', 'D', 'A'],
   ['GET',    '/certificates',                           'D', 'D', 'A'],

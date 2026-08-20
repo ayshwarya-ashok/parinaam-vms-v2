@@ -17,7 +17,7 @@ M6 Recognition & Insight
 
 | # | Prototype id | Screen (v2 name) | Route | Role | Module | Phase | Primary endpoints |
 |---|---|---|---|---|---|:--:|---|
-| 1 | `screen-landing` | Landing — login / signup | `/` | public | M1 | P1 | `POST /auth/login`, `POST /auth/signup` |
+| 1 | `screen-landing` | Landing — login / signup | `/` | public | M1 | P1 | `POST /auth/login`, `POST /auth/check-email` |
 | 2 | `screen-registration` | Volunteer registration | `/register` | volunteer | M1 | P1 | `POST /volunteers`, `GET /organizations` |
 | 3 | `screen-volunteer` | Volunteer dashboard | `/app/dashboard` | volunteer | M3 | P3 | `GET /events?scope=open`, `POST /enrollments/batch` |
 | 4 | `screen-admin-login` | Admin login *(no OTP field)* | `/admin/login` | public | M1 | P1 | `POST /auth/login` |

@@ -59,7 +59,10 @@ async function bootstrap(): Promise<void> {
   }
 
   const port = config.get('PORT');
-  await app.listen(port, '0.0.0.0');
+  // No host argument: Node binds dual-stack (:: plus IPv4). Binding '0.0.0.0'
+  // is IPv4-only, and any client resolving "localhost" to ::1 — browsers and
+  // curl both do on Windows — gets ECONNREFUSED against a healthy container.
+  await app.listen(port);
 
   const log = app.get(Logger);
   log.log(`API listening on http://localhost:${port}/api/v1`);

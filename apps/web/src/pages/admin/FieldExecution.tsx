@@ -17,6 +17,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import { api, asApiError } from '@/api/client';
 import { FilterBar, PageShell, StatusPill } from '@/components';
 import { tokens } from '@/theme';
@@ -117,7 +118,7 @@ export function FieldExecution() {
     <PageShell
       eyebrow="Admin › Field Execution"
       title="Field Execution & Attendance"
-      description="Send attendance links per session — one email lets volunteers self-report, the other lets the coordinator file the occurrence report. Each link is personal, needs no login, and expires after 7 days."
+      description="Send attendance links per session — one email lets volunteers self-report, the other lets the coordinator file the occurrence report. Open any session's record to see what was logged and correct it."
     >
       <FilterBar
         search={{ value: q, onChange: setQ, placeholder: 'Search session or program…' }}
@@ -150,9 +151,21 @@ export function FieldExecution() {
           </TableHead>
           <TableBody>
             {(data ?? []).map((row) => (
-              <TableRow key={row.id}>
+              <TableRow key={row.id} hover>
                 <TableCell>
-                  <Typography sx={{ fontWeight: 600, fontSize: '0.9rem' }}>{row.name}</Typography>
+                  <Typography
+                    component={RouterLink}
+                    to={`/admin/sessions/${row.id}`}
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: '0.9rem',
+                      color: 'inherit',
+                      textDecoration: 'none',
+                      '&:hover': { textDecoration: 'underline' },
+                    }}
+                  >
+                    {row.name}
+                  </Typography>
                   <Typography sx={{ fontSize: '0.78rem', color: 'text.secondary' }}>
                     {row.program.name} · {row.coordinator.name}
                   </Typography>
@@ -180,7 +193,16 @@ export function FieldExecution() {
                     <Typography sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>—</Typography>
                   )}
                 </TableCell>
-                <TableCell align="right">
+                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                  <Button
+                    size="small"
+                    variant="pillOutlined"
+                    sx={{ px: 1.5, py: 0.4, mr: 0.5 }}
+                    component={RouterLink}
+                    to={`/admin/sessions/${row.id}`}
+                  >
+                    Record ↗
+                  </Button>
                   <Button
                     size="small"
                     variant={row.volunteerEmail.sent && row.coordinatorEmail.sent ? 'pillOutlined' : 'pill'}

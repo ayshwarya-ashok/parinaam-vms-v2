@@ -28,7 +28,8 @@ interface AuthState {
   status: 'loading' | 'authenticated' | 'anonymous';
   user: SessionUser | null;
   login: (email: string, password: string) => Promise<SessionUser>;
-  signup: (email: string, password: string) => Promise<SessionUser>;
+  /** Account + profile in one call — an abandoned form creates nothing. */
+  register: (payload: Record<string, unknown>) => Promise<SessionUser>;
   logout: () => Promise<void>;
   /** Re-fetch /auth/me — call after mutations that change profile state. */
   refresh: () => Promise<SessionUser>;
@@ -81,9 +82,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [loadMe],
   );
 
-  const signup = useCallback(
-    async (email: string, password: string) => {
-      const { data } = await api.post<LoginResponse>('/auth/signup', { email, password });
+  const register = useCallback(
+    async (payload: Record<string, unknown>) => {
+      const { data } = await api.post<LoginResponse>('/auth/register', payload);
       setAccessToken(data.accessToken);
       return loadMe();
     },
@@ -101,8 +102,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [queryClient]);
 
   const value = useMemo(
-    () => ({ status, user, login, signup, logout, refresh: loadMe }),
-    [status, user, login, signup, logout, loadMe],
+    () => ({ status, user, login, register, logout, refresh: loadMe }),
+    [status, user, login, register, logout, loadMe],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

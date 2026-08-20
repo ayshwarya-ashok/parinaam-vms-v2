@@ -174,7 +174,9 @@ services:
       PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:5174}
       INTERNAL_API_URL: ${INTERNAL_API_URL:-http://api:3000/api/v1}
       PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:3001/api/v1}
-      CORS_ORIGINS: ${PUBLIC_WEB_URL:-http://localhost:5174}
+      # Both loopback spellings: Docker Desktop's IPv6 forwarding is not always
+      # available, so the browser may reach the app on either.
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5174,http://127.0.0.1:5174}
     ports:
       - "${API_PORT:-3000}:3000"
     volumes:

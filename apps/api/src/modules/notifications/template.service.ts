@@ -28,6 +28,8 @@ export class TemplateService implements OnModuleInit {
   private readonly subjects: Record<string, string> = {
     smoke_test: 'Parinaam VMS — pipeline smoke test',
     welcome_verify: 'Welcome to Parinaam — confirm your email',
+    registration_approved: 'Your volunteer registration is approved 🎉',
+    registration_rejected: 'About your volunteer registration',
     password_reset: 'Reset your Parinaam password',
     registration_confirmed: 'Registration confirmed — {{eventName}}',
     training_required: 'Required trainings before {{eventName}}',

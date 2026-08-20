@@ -139,3 +139,32 @@ SELECT seed_question('tc3', 3, 'Your NDA obligation continues:', 1,
   ARRAY['Only during your active volunteering period','For the duration specified in the agreement, even after volunteering ends','Until you delete your Parinaam account','Only if you signed the NDA physically in person']);
 SELECT seed_question('tc3', 4, 'Breaching the NDA can result in:', 1,
   ARRAY['A verbal warning only','Legal action and immediate termination of your volunteer role','A written apology to the organisation','No consequences if the breach was unintentional']);
+
+-- -----------------------------------------------------------------------------
+-- Registration form vocabulary (V011). Codes are permanent; labels may change.
+-- -----------------------------------------------------------------------------
+INSERT INTO reference_values (category, code, label, sort_order) VALUES
+  ('LANGUAGE',        'en',              'English',                     1),
+  ('LANGUAGE',        'hi',              'Hindi',                       2),
+  ('LANGUAGE',        'kn',              'Kannada',                     3),
+  ('LANGUAGE',        'ta',              'Tamil',                       4),
+  ('LANGUAGE',        'te',              'Telugu',                      5),
+  ('LANGUAGE',        'mr',              'Marathi',                     6),
+  ('LANGUAGE',        'ml',              'Malayalam',                   7),
+  ('LANGUAGE',        'bn',              'Bengali',                     8),
+  ('AREA_OF_INTEREST','education',       'Teaching & education',        1),
+  ('AREA_OF_INTEREST','health',          'Health & wellbeing',          2),
+  ('AREA_OF_INTEREST','child_welfare',   'Child welfare',               3),
+  ('AREA_OF_INTEREST','women_empower',   'Women empowerment',           4),
+  ('AREA_OF_INTEREST','environment',     'Environment & sustainability',5),
+  ('AREA_OF_INTEREST','livelihood',      'Livelihood & skills training',6),
+  ('AREA_OF_INTEREST','elderly_care',    'Elderly care',                7),
+  ('AREA_OF_INTEREST','disaster_relief', 'Disaster relief',             8),
+  ('AREA_OF_INTEREST','fundraising',     'Fundraising & events',        9),
+  ('AREA_OF_INTEREST','admin_support',   'Administrative support',     10),
+  ('AVAILABILITY',    'weekday_morning', 'Weekday mornings',            1),
+  ('AVAILABILITY',    'weekday_evening', 'Weekday evenings',            2),
+  ('AVAILABILITY',    'saturday',        'Saturdays',                   3),
+  ('AVAILABILITY',    'sunday',          'Sundays',                     4),
+  ('AVAILABILITY',    'flexible',        'Flexible / on request',       5)
+ON CONFLICT (category, code) DO NOTHING;

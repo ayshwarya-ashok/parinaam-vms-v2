@@ -10,7 +10,20 @@ import {
   VolunteerConsent,
 } from '../../database/entities';
 import { AuditService } from '../audit/audit.service';
-import { RegisterVolunteerDto, SignConsentDto, UpdateProfileDto } from './volunteers.dto';
+import { NotificationsService } from '../notifications';
+import {
+  RegisterAccountDto,
+  RegisterVolunteerDto,
+  ReviewRegistrationDto,
+  SignConsentDto,
+  UpdateProfileDto,
+} from './volunteers.dto';
+
+/** Multi-select answers travel as arrays and rest as comma-joined codes. */
+function joinCodes(codes: string[] | undefined): string | null {
+  if (!codes || codes.length === 0) return null;
+  return [...new Set(codes.map((c) => c.trim()).filter(Boolean))].join(',');
+}
 
 interface ComplianceRow {
   consent_complete: boolean;
@@ -29,11 +42,90 @@ export class VolunteersService {
     @InjectRepository(User) private readonly users: Repository<User>,
     private readonly dataSource: DataSource,
     private readonly audit: AuditService,
+    private readonly notifications: NotificationsService,
   ) {}
 
-  // ── Registration (profile completion after signup) ────────────────────────
+  // ── Registration (account + profile, atomically) ──────────────────────────
 
-  async register(principal: AuthPrincipal, dto: RegisterVolunteerDto): Promise<Volunteer> {
+  /**
+   * Create the account AND the profile, or neither.
+   *
+   * Registration used to be two steps — signup wrote a user, the profile form
+   * wrote a volunteer — so every abandoned form left an orphan account that
+   * could log in and see nothing. One transaction removes that state entirely:
+   * no profile, no account.
+   *
+   * The result is a REQUEST, not an admission. It lands as `pending` for an
+   * administrator to approve or reject.
+   */
+  async registerWithAccount(
+    dto: RegisterAccountDto,
+    passwordHash: string,
+  ): Promise<{ user: User; volunteer: Volunteer }> {
+    this.assertCategoryRules(dto);
+
+    if (dto.organizationId) {
+      const org = await this.organizations.findOne({
+        where: { id: dto.organizationId, isActive: true },
+      });
+      if (!org) throw new NotFoundException('Organization not found');
+    }
+
+    const existingUser = await this.users.findOne({ where: { email: dto.email } });
+    if (existingUser) {
+      throw new BusinessException(
+        'EMAIL_TAKEN',
+        'An account with this email already exists. Try logging in.',
+        409,
+      );
+    }
+
+    const created = await this.dataSource.transaction(async (manager) => {
+      const user = await manager.save(
+        manager.create(User, {
+          email: dto.email,
+          passwordHash,
+          role: 'volunteer' as const,
+        }),
+      );
+
+      const volunteer = await manager.save(
+        manager.create(Volunteer, {
+          userId: user.id,
+          ...this.profileFields(dto),
+          category: dto.category,
+          organizationId: dto.organizationId ?? null,
+          complianceRead: dto.complianceRead,
+          registrationStatus: 'pending' as const,
+        }),
+      );
+
+      return { user, volunteer };
+    });
+
+    await this.audit.record(
+      { sub: created.user.id, email: created.user.email, role: 'volunteer' },
+      {
+        action: 'volunteer.registered',
+        entity: 'volunteers',
+        entityId: created.volunteer.id,
+        after: { category: created.volunteer.category, city: created.volunteer.city },
+      },
+    );
+
+    return created;
+  }
+
+  /**
+   * Complete the profile on an account that already exists without one.
+   *
+   * Registration is atomic now, so this state cannot be created any more — but
+   * accounts orphaned by the previous two-step flow still exist, and their
+   * owners must be able to finish rather than be stranded at a form that has
+   * no password to submit. This CANNOT create an account, so the "no account
+   * without a profile" rule still holds.
+   */
+  async completeProfile(principal: AuthPrincipal, dto: RegisterVolunteerDto): Promise<Volunteer> {
     const existing = await this.volunteers.findOne({ where: { userId: principal.sub } });
     if (existing) {
       throw new BusinessException(
@@ -42,19 +134,7 @@ export class VolunteersService {
         409,
       );
     }
-
-    // BR-01 — enforced by the DB constraint too, but a named error beats a
-    // constraint violation at the form.
-    if (dto.category === 'CSR' && !dto.organizationId) {
-      throw new BusinessException(
-        'ORGANIZATION_REQUIRED',
-        'CSR volunteers must select their sponsoring organization.',
-        400,
-      );
-    }
-    if (dto.category === 'Individual') {
-      dto.organizationId = undefined;
-    }
+    this.assertCategoryRules(dto);
 
     if (dto.organizationId) {
       const org = await this.organizations.findOne({
@@ -66,17 +146,11 @@ export class VolunteersService {
     const saved = await this.volunteers.save(
       this.volunteers.create({
         userId: principal.sub,
-        firstName: dto.firstName,
-        lastName: dto.lastName,
-        gender: (dto.gender as Volunteer['gender']) ?? null,
-        dateOfBirth: dto.dateOfBirth ?? null,
-        city: dto.city ?? null,
-        state: dto.state ?? null,
-        phone: dto.phone ?? null,
+        ...this.profileFields(dto),
         category: dto.category,
         organizationId: dto.organizationId ?? null,
-        skills: dto.skills ?? null,
         complianceRead: dto.complianceRead,
+        registrationStatus: 'pending',
       }),
     );
 
@@ -84,10 +158,49 @@ export class VolunteersService {
       action: 'volunteer.registered',
       entity: 'volunteers',
       entityId: saved.id,
-      after: { category: saved.category, city: saved.city },
+      after: { category: saved.category, city: saved.city, via: 'legacy profile completion' },
     });
 
     return saved;
+  }
+
+  /** True when this address is free — lets the form fail fast, before the long part. */
+  async isEmailAvailable(email: string): Promise<boolean> {
+    const existing = await this.users.findOne({ where: { email } });
+    return existing === null;
+  }
+
+  /** BR-01: a CSR volunteer must name their sponsoring organization. */
+  private assertCategoryRules(dto: RegisterVolunteerDto): void {
+    if (dto.category === 'CSR' && !dto.organizationId) {
+      throw new BusinessException(
+        'ORGANIZATION_REQUIRED',
+        'CSR volunteers must select their sponsoring organization.',
+        400,
+      );
+    }
+    if (dto.category === 'Individual') {
+      dto.organizationId = undefined;
+    }
+  }
+
+  /** Shared shape between registration and profile edits. Codes are joined here. */
+  private profileFields(dto: RegisterVolunteerDto) {
+    return {
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      gender: (dto.gender as Volunteer['gender']) ?? null,
+      dateOfBirth: dto.dateOfBirth ?? null,
+      city: dto.city ?? null,
+      state: dto.state ?? null,
+      phone: dto.phone ?? null,
+      skills: dto.skills ?? null,
+      occupation: dto.occupation ?? null,
+      languages: joinCodes(dto.languages),
+      areasOfInterest: joinCodes(dto.areasOfInterest),
+      availability: joinCodes(dto.availability),
+      availabilityNotes: dto.availabilityNotes?.trim() || null,
+    };
   }
 
   // ── Own profile ────────────────────────────────────────────────────────────
@@ -118,6 +231,11 @@ export class VolunteersService {
       ...(dto.state !== undefined && { state: dto.state }),
       ...(dto.phone !== undefined && { phone: dto.phone }),
       ...(dto.skills !== undefined && { skills: dto.skills }),
+      ...(dto.occupation !== undefined && { occupation: dto.occupation }),
+      ...(dto.languages !== undefined && { languages: joinCodes(dto.languages) }),
+      ...(dto.areasOfInterest !== undefined && { areasOfInterest: joinCodes(dto.areasOfInterest) }),
+      ...(dto.availability !== undefined && { availability: joinCodes(dto.availability) }),
+      ...(dto.availabilityNotes !== undefined && { availabilityNotes: dto.availabilityNotes }),
       ...(dto.emailOptIn !== undefined && { emailOptIn: dto.emailOptIn }),
     });
     return this.volunteers.save(volunteer);
@@ -221,6 +339,7 @@ export class VolunteersService {
     phase?: string;
     category?: string;
     city?: string;
+    registrationStatus?: string;
     limit?: number;
     offset?: number;
   }) {
@@ -244,6 +363,9 @@ export class VolunteersService {
       );
     }
     if (query.phase) qb.andWhere('v.phase = :phase', { phase: query.phase });
+    if (query.registrationStatus) {
+      qb.andWhere('v.registrationStatus = :rs', { rs: query.registrationStatus });
+    }
     if (query.category) qb.andWhere('v.category = :category', { category: query.category });
     if (query.city) qb.andWhere('v.city ILIKE :city', { city: query.city });
 
@@ -260,9 +382,12 @@ export class VolunteersService {
         organization: v.organization?.name ?? null,
         phase: v.phase,
         isActive: v.user?.isActive ?? true,
+        registrationStatus: v.registrationStatus,
+        reviewedAt: v.reviewedAt,
+        rejectionReason: v.rejectionReason,
         createdAt: v.createdAt,
       })),
-      meta: { total, limit, offset },
+      meta: { total, limit, offset, pending: await this.pendingCount() },
     };
   }
 
@@ -272,8 +397,111 @@ export class VolunteersService {
       relations: { user: true, organization: true },
     });
     if (!volunteer) throw new NotFoundException('Volunteer not found');
+
     const consent = await this.consents.findOne({ where: { volunteerId: id } });
-    return { ...volunteer, email: volunteer.user?.email, consentSigned: consent !== null };
+    const [reviewer] = volunteer.reviewedBy
+      ? await this.dataSource.query('SELECT email FROM users WHERE id = $1', [volunteer.reviewedBy])
+      : [];
+
+    // Contribution summary, so "approve or reject" is judged against the whole
+    // person rather than the form alone.
+    const [participation] = await this.dataSource.query(
+      `SELECT COALESCE(SUM(pp.total_hours), 0) AS total_hours,
+              COALESCE(SUM(pp.events_attended), 0)::int AS events_attended,
+              COUNT(*)::int AS programs
+       FROM v_program_participation pp WHERE pp.volunteer_id = $1`,
+      [id],
+    );
+
+    return {
+      ...volunteer,
+      email: volunteer.user?.email,
+      isActive: volunteer.user?.isActive ?? true,
+      consentSigned: consent !== null,
+      consent,
+      reviewedByEmail: reviewer?.email ?? null,
+      participation,
+    };
+  }
+
+  async pendingCount(): Promise<number> {
+    return this.volunteers.count({ where: { registrationStatus: 'pending' } });
+  }
+
+  /**
+   * Approve or reject a registration.
+   *
+   * Approval leaves the account active. Rejection deactivates it — a rejected
+   * applicant must not keep a working login — and records why, because the
+   * person will ask and somebody has to answer.
+   */
+  async review(
+    principal: AuthPrincipal,
+    id: string,
+    decision: 'approved' | 'rejected',
+    dto: ReviewRegistrationDto,
+  ) {
+    const volunteer = await this.volunteers.findOne({
+      where: { id },
+      relations: { user: true },
+    });
+    if (!volunteer) throw new NotFoundException('Volunteer not found');
+
+    if (volunteer.registrationStatus === decision) {
+      throw new BusinessException(
+        'ALREADY_REVIEWED',
+        `This registration is already ${decision}.`,
+        409,
+      );
+    }
+    const reason = dto.reason?.trim();
+    if (decision === 'rejected' && !reason) {
+      throw new BusinessException(
+        'REASON_REQUIRED',
+        'Give a reason for the rejection — the volunteer will be told.',
+        400,
+      );
+    }
+
+    const before = {
+      registrationStatus: volunteer.registrationStatus,
+      isActive: volunteer.user?.isActive,
+    };
+
+    await this.dataSource.transaction(async (manager) => {
+      await manager.update(Volunteer, { id }, {
+        registrationStatus: decision,
+        reviewedBy: principal.sub,
+        reviewedAt: new Date(),
+        rejectionReason: decision === 'rejected' ? reason! : null,
+      });
+      await manager.update(User, { id: volunteer.userId }, {
+        isActive: decision === 'approved',
+      });
+    });
+
+    await this.notifications
+      .queueEmail({
+        templateKey: decision === 'approved' ? 'registration_approved' : 'registration_rejected',
+        to: volunteer.user.email,
+        recipientType: 'volunteer',
+        volunteerId: id,
+        context: {
+          firstName: volunteer.firstName,
+          reason: reason ?? null,
+        },
+      })
+      .catch(() => undefined);
+
+    await this.audit.record(principal, {
+      action: `volunteer.${decision === 'approved' ? 'approved' : 'rejected'}`,
+      entity: 'volunteers',
+      entityId: id,
+      before,
+      after: { registrationStatus: decision, reason: reason ?? null },
+    });
+
+    return this.adminGet(id);
   }
 
   async adminUpdate(

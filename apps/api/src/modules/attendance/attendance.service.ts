@@ -483,6 +483,132 @@ export class AttendanceService {
     return { report, photos };
   }
 
+  /**
+   * Everything the admin session-record screen shows, in one request: the
+   * occurrence, the enrolled ROSTER (not just those who submitted), whatever
+   * each volunteer or the coordinator logged, and the occurrence report.
+   *
+   * The roster is the left join that matters — a volunteer who never filed
+   * anything is exactly who the admin is looking for, and querying
+   * attendance_records alone would hide them.
+   */
+  async sessionRecord(eventId: string) {
+    const [event] = await this.dataSource.query(
+      `SELECT e.id, e.code, COALESCE(e.name, a.name) AS name, e.date, e.start_time,
+              e.duration_hours, e.location, e.city, e.status, e.max_slots,
+              e.cancel_reason,
+              a.id AS activity_id, a.name AS activity_name,
+              p.id AS program_id, p.name AS program_name,
+              c.id AS coordinator_id, c.name AS coordinator_name, c.email AS coordinator_email,
+              d.volunteer_email_sent, d.volunteer_email_sent_at,
+              d.coordinator_email_sent, d.coordinator_email_sent_at
+       FROM events e
+       JOIN activities a ON a.id = e.activity_id
+       JOIN programs p ON p.id = a.program_id
+       LEFT JOIN coordinators c ON c.id = e.coordinator_id
+       LEFT JOIN attendance_dispatches d ON d.event_id = e.id
+       WHERE e.id = $1`,
+      [eventId],
+    );
+    if (!event) throw new NotFoundException('Session not found');
+
+    const roster = await this.dataSource.query(
+      `SELECT v.id AS volunteer_id, v.first_name, v.last_name, u.email, v.phone,
+              en.status AS enrollment_status, en.enrolled_at,
+              ar.id AS record_id, ar.attended, ar.arrival_time, ar.departure_time,
+              ar.hours_contributed, ar.absence_reason, ar.absence_detail, ar.notes,
+              ar.source, ar.recorded_at,
+              (SELECT COUNT(*)::int FROM event_photos ph
+                WHERE ph.attendance_record_id = ar.id) AS photo_count
+       FROM event_enrollments en
+       JOIN volunteers v ON v.id = en.volunteer_id
+       JOIN users u ON u.id = v.user_id
+       LEFT JOIN attendance_records ar
+         ON ar.event_id = en.event_id AND ar.volunteer_id = v.id
+       WHERE en.event_id = $1 AND en.status = 'enrolled'
+       UNION
+       -- Anyone with a record but no live enrolment (withdrew after attending;
+       -- enrolment rows only ever read 'enrolled' or 'cancelled').
+       SELECT v.id, v.first_name, v.last_name, u.email, v.phone,
+              NULL, NULL,
+              ar.id, ar.attended, ar.arrival_time, ar.departure_time,
+              ar.hours_contributed, ar.absence_reason, ar.absence_detail, ar.notes,
+              ar.source, ar.recorded_at,
+              (SELECT COUNT(*)::int FROM event_photos ph
+                WHERE ph.attendance_record_id = ar.id)
+       FROM attendance_records ar
+       JOIN volunteers v ON v.id = ar.volunteer_id
+       JOIN users u ON u.id = v.user_id
+       WHERE ar.event_id = $1
+         AND NOT EXISTS (
+           SELECT 1 FROM event_enrollments en2
+           WHERE en2.event_id = $1 AND en2.volunteer_id = v.id
+             AND en2.status = 'enrolled')
+       ORDER BY 2, 3`,
+      [eventId],
+    );
+
+    const { report, photos } = await this.reportOf(eventId);
+
+    return {
+      event,
+      roster,
+      report,
+      photos,
+      summary: {
+        enrolled: roster.filter((r: { enrollment_status: string | null }) => r.enrollment_status !== null).length,
+        submitted: roster.filter((r: { record_id: string | null }) => r.record_id !== null).length,
+        attended: roster.filter((r: { attended: boolean | null }) => r.attended === true).length,
+        totalHours: roster.reduce(
+          (sum: number, r: { hours_contributed: string | null }) => sum + Number(r.hours_contributed ?? 0),
+          0,
+        ),
+      },
+    };
+  }
+
+  /**
+   * Log attendance for a volunteer who never submitted the form.
+   *
+   * Upsert rather than insert: an admin clicking twice, or correcting a row
+   * that arrived between page load and save, must not create a second record
+   * for the same (event, volunteer).
+   */
+  async adminRecord(
+    principal: AuthPrincipal,
+    eventId: string,
+    dto: { volunteerId: string; attended: boolean; hoursContributed?: number; notes?: string; absenceReason?: string },
+  ) {
+    const existing = await this.records.findOne({
+      where: { eventId, volunteerId: dto.volunteerId },
+    });
+    if (existing) {
+      return this.adminOverride(principal, existing.id, dto as never);
+    }
+
+    const saved = await this.records.save(
+      this.records.create({
+        eventId,
+        volunteerId: dto.volunteerId,
+        attended: dto.attended,
+        hoursContributed:
+          dto.hoursContributed !== undefined ? String(dto.hoursContributed) : null,
+        notes: dto.notes ?? null,
+        absenceReason: (dto.absenceReason as AttendanceRecord['absenceReason']) ?? null,
+        source: 'admin',
+        recordedBy: principal.sub,
+      }),
+    );
+
+    await this.audit.record(principal, {
+      action: 'attendance.admin_recorded',
+      entity: 'attendance_records',
+      entityId: saved.id,
+      after: { volunteerId: dto.volunteerId, attended: saved.attended, hours: saved.hoursContributed },
+    });
+    return saved;
+  }
+
   async adminOverride(
     principal: AuthPrincipal,
     recordId: string,

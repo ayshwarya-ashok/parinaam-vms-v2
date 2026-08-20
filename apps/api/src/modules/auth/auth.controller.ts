@@ -18,6 +18,7 @@ import {
   Public,
 } from '../../common/decorators/auth.decorators';
 import { AppConfig } from '../../config';
+import { RegisterAccountDto } from '../volunteers/volunteers.dto';
 import { AuthService, SessionTokens } from './auth.service';
 
 class CredentialsDto {
@@ -27,6 +28,11 @@ class CredentialsDto {
   @IsString()
   @MinLength(8, { message: 'Password must be at least 8 characters' })
   password!: string;
+}
+
+class EmailDto {
+  @IsEmail()
+  email!: string;
 }
 
 const REFRESH_COOKIE = 'pvms_rt';
@@ -55,15 +61,34 @@ export class AuthController {
 
   @Public()
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
-  @Post('signup')
-  @ApiOperation({ summary: 'Create a volunteer account and start a session' })
-  async signup(
-    @Body() dto: CredentialsDto,
+  @Post('register')
+  @ApiOperation({
+    summary: 'Register a volunteer — account and profile in one transaction',
+    description:
+      'Replaces the old two-step signup. An abandoned form leaves no account behind, ' +
+      'and the registration lands as pending for an administrator to approve or reject.',
+  })
+  async register(
+    @Body() dto: RegisterAccountDto,
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const session = await this.auth.signup(dto.email, dto.password, this.meta(req));
+    const session = await this.auth.registerVolunteer(dto, this.meta(req));
     return this.respond(session, res);
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('check-email')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Is this address free?',
+    description:
+      'Lets the form say "already registered" before asking for the rest. Discloses no ' +
+      'more than the registration error itself, and is throttled harder than login.',
+  })
+  async checkEmail(@Body() dto: EmailDto) {
+    return { available: await this.auth.isEmailAvailable(dto.email) };
   }
 
   @Public()
