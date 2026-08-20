@@ -26,6 +26,14 @@ import { tokens } from '@/theme';
 
 const FILE_ICONS: Record<string, string> = { pdf: '📄', ppt: '📊', doc: '📝', vid: '🎬' };
 
+function fmtDate(iso: string): string {
+  return new Date(String(iso)).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
 type QuizPhase =
   | { step: 'idle' }
   | { step: 'active'; quiz: QuizStart }
@@ -144,7 +152,53 @@ export function TrainingView() {
         </Box>
       )}
 
-      {tab === 'quiz' && phase.step === 'idle' && (
+      {tab === 'quiz' && phase.step === 'idle' && training.myStatus?.currentlyPassed && !training.myStatus.canRetake && (
+        /* Mandatory compliance: a valid pass is final for its window — no retake. */
+        <Paper variant="outlined" sx={{ p: 5, borderRadius: 4, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.7)' }}>
+          <Typography sx={{ fontSize: '2rem' }}>✅</Typography>
+          <Typography variant="h3" sx={{ fontSize: '1.4rem', mb: 1, color: tokens.success }}>
+            Training already taken
+          </Typography>
+          <Typography sx={{ color: 'text.secondary' }}>
+            You passed this compliance training
+            {training.myStatus.passedAt ? ` on ${fmtDate(training.myStatus.passedAt)}` : ''}
+            {training.myStatus.passedScore !== null ? ` with ${training.myStatus.passedScore}%` : ''}.
+          </Typography>
+          <Typography sx={{ fontWeight: 700, mt: 1, color: tokens.success }}>
+            {training.myStatus.expiryDate
+              ? `Your score is valid until ${fmtDate(training.myStatus.expiryDate)}.`
+              : 'Your pass does not expire.'}
+          </Typography>
+        </Paper>
+      )}
+
+      {tab === 'quiz' && phase.step === 'idle' && training.myStatus?.currentlyPassed && training.myStatus.canRetake && (
+        /* Activity training with a live pass: retaking is allowed — latest score rules. */
+        <Paper variant="outlined" sx={{ p: 5, borderRadius: 4, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.7)' }}>
+          <Typography sx={{ fontSize: '2rem' }}>🏅</Typography>
+          <Typography variant="h3" sx={{ fontSize: '1.4rem', mb: 1 }}>
+            Already passed the quiz
+            {training.myStatus.passedAt ? ` on ${fmtDate(training.myStatus.passedAt)}` : ''}
+            {training.myStatus.passedScore !== null ? ` with ${training.myStatus.passedScore}%` : ''}.
+          </Typography>
+          {training.myStatus.expiryDate && (
+            <Typography sx={{ color: 'text.secondary' }}>
+              Currently valid until {fmtDate(training.myStatus.expiryDate)}.
+            </Typography>
+          )}
+          <Typography sx={{ fontWeight: 700, mt: 2 }}>Do you want to retake the quiz?</Typography>
+          <Alert severity="warning" sx={{ mt: 1.5, mb: 2, borderRadius: 3, textAlign: 'left' }}>
+            Your <strong>latest score will be retained</strong> — it replaces your current
+            {training.myStatus.passedScore !== null ? ` ${training.myStatus.passedScore}%` : ''} pass,
+            even if the new score is lower or below the pass mark.
+          </Alert>
+          <Button variant="pill" onClick={() => start.mutate()} disabled={start.isPending} sx={{ minWidth: '10rem' }}>
+            {start.isPending ? 'Preparing…' : 'Retake quiz'}
+          </Button>
+        </Paper>
+      )}
+
+      {tab === 'quiz' && phase.step === 'idle' && !training.myStatus?.currentlyPassed && (
         <Paper variant="outlined" sx={{ p: 5, borderRadius: 4, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.7)' }}>
           <Typography sx={{ fontSize: '2rem' }}>✎</Typography>
           <Typography variant="h3" sx={{ fontSize: '1.4rem', mb: 1 }}>
@@ -294,11 +348,6 @@ export function TrainingView() {
         </Box>
       )}
 
-      <Box sx={{ mt: 3, textAlign: 'right' }}>
-        <Button variant="pillOutlined" onClick={() => navigate('/app/trainings')}>
-          ← Back to my trainings
-        </Button>
-      </Box>
     </PageShell>
   );
 }

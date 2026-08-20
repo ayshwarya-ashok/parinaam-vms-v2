@@ -125,7 +125,7 @@ export class TrainingsController {
   @Get(':id')
   @ApiOperation({ summary: 'Detail. Correct answers only for admins.' })
   detail(@CurrentUser() user: AuthPrincipal, @Param('id', UuidPipe) id: string) {
-    return this.service.detail(id, user.role === 'admin');
+    return this.service.detail(id, user.role === 'admin', user);
   }
 
   @Patch(':id')

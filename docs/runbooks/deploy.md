@@ -12,6 +12,12 @@ docker compose exec n8n n8n import:credentials --input=/workflows/vms-smtp.crede
 docker compose exec n8n n8n import:workflow --input=/workflows/vms-email-dispatch.json
 docker compose exec n8n n8n publish:workflow --id=vmsEmailDispatch1
 ```
+Then materialise the seeded training documents (renders a real PDF for every
+seed material so "Open" works):
+```sh
+docker compose cp scripts/generate-seed-materials.mjs api:/app/gen.mjs
+MSYS_NO_PATHCONV=1 docker compose exec -T api sh -c "node /app/gen.mjs && rm /app/gen.mjs"
+```
 
 ## Upgrading a running stack
 1. `git pull`

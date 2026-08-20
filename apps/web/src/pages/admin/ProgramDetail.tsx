@@ -14,14 +14,13 @@ import {
 import { useMutation } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
-import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
+import { Link as RouterLink, useParams } from 'react-router-dom';
 import { useProgram, useProgramAction } from '@/api/admin';
 import { api, asApiError } from '@/api/client';
 import { PageShell, StatusPill } from '@/components';
 
 export function ProgramDetail() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
 
   const { data: program, isLoading } = useProgram(id);
@@ -221,11 +220,6 @@ export function ProgramDetail() {
         )}
       </Box>
 
-      <Box sx={{ mt: 3, textAlign: 'right' }}>
-        <Button variant="pillOutlined" onClick={() => navigate('/admin/programs')}>
-          ← Back to Programs
-        </Button>
-      </Box>
 
       {/* Discontinue modal — explicit about what it does NOT do */}
       <Dialog open={discontinueOpen} onClose={() => setDiscontinueOpen(false)} PaperProps={{ sx: { borderRadius: 4, maxWidth: 480 } }}>

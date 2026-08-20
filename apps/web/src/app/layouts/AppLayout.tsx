@@ -4,11 +4,13 @@ import {
   Breadcrumbs,
   Button,
   Container,
+  Link,
   Toolbar,
   Typography,
 } from '@mui/material';
 import { Link as RouterLink, Outlet, useMatches, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth';
+import { BreadcrumbProvider, useBreadcrumbTrail, type Crumb } from '../breadcrumbs';
 
 interface RouteHandle {
   crumb?: string;
@@ -25,16 +27,38 @@ interface AppLayoutProps {
 }
 
 /**
- * Shared authenticated shell: ink app bar, nav pills, and a breadcrumb strip
- * driven by route handles — the replacement for the prototype's hand-patched
- * BREADCRUMBS map.
+ * Shared authenticated shell: ink app bar, nav pills, and a clickable
+ * breadcrumb strip. The strip replaces the per-page "← Back to X" buttons:
+ * every ancestor crumb is a link, driven by route nesting (useMatches) plus
+ * any dynamic segments a page injects via useDynamicCrumbs.
  */
-export function AppLayout({ variant, nav }: AppLayoutProps) {
+export function AppLayout(props: AppLayoutProps) {
+  return (
+    <BreadcrumbProvider>
+      <AppLayoutInner {...props} />
+    </BreadcrumbProvider>
+  );
+}
+
+function AppLayoutInner({ variant, nav }: AppLayoutProps) {
   const matches = useMatches();
   const navigate = useNavigate();
-  const crumbs = matches
-    .map((m) => (m.handle as RouteHandle | undefined)?.crumb)
-    .filter((c): c is string => Boolean(c));
+  const dynamicTrail = useBreadcrumbTrail();
+
+  const home = variant === 'admin' ? '/admin/dashboard' : '/app/dashboard';
+  const routeCrumbs: Crumb[] = matches
+    .filter((m) => (m.handle as RouteHandle | undefined)?.crumb)
+    .map((m, index) => ({
+      label: (m.handle as RouteHandle).crumb!,
+      // The root layout crumb ("Home"/"Admin") points at the dashboard.
+      to: index === 0 ? home : m.pathname,
+    }));
+
+  // Page-supplied dynamic parents slot in just before the current page.
+  const crumbs =
+    routeCrumbs.length > 0
+      ? [...routeCrumbs.slice(0, -1), ...dynamicTrail, routeCrumbs[routeCrumbs.length - 1]]
+      : dynamicTrail;
 
   const { logout } = useAuth();
 
@@ -88,12 +112,32 @@ export function AppLayout({ variant, nav }: AppLayoutProps) {
 
       {crumbs.length > 0 && (
         <Container maxWidth="xl" sx={{ pt: 2 }}>
-          <Breadcrumbs separator="›" sx={{ fontSize: '0.82rem', color: 'text.secondary' }}>
-            {crumbs.map((crumb) => (
-              <Typography key={crumb} sx={{ fontSize: 'inherit', color: 'inherit' }}>
-                {crumb}
-              </Typography>
-            ))}
+          <Breadcrumbs
+            aria-label="Breadcrumb"
+            separator="›"
+            sx={{ fontSize: '0.82rem', color: 'text.secondary' }}
+          >
+            {crumbs.map((crumb, index) =>
+              index < crumbs.length - 1 && crumb.to ? (
+                <Link
+                  key={`${crumb.label}-${index}`}
+                  component={RouterLink}
+                  to={crumb.to}
+                  underline="hover"
+                  sx={{ fontSize: 'inherit', color: 'inherit', fontWeight: 600 }}
+                >
+                  {crumb.label}
+                </Link>
+              ) : (
+                <Typography
+                  key={`${crumb.label}-${index}`}
+                  aria-current="page"
+                  sx={{ fontSize: 'inherit', color: 'text.primary' }}
+                >
+                  {crumb.label}
+                </Typography>
+              ),
+            )}
           </Breadcrumbs>
         </Container>
       )}

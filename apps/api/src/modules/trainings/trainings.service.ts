@@ -214,7 +214,7 @@ export class TrainingsService {
 
   // ── Detail (role-aware: answers stripped for volunteers) ──────────────────
 
-  async detail(id: string, includeAnswers: boolean) {
+  async detail(id: string, includeAnswers: boolean, principal?: AuthPrincipal) {
     const training = await this.trainings.findOne({
       where: { id },
       relations: { materials: true, questions: { options: true } },
@@ -222,8 +222,38 @@ export class TrainingsService {
     });
     if (!training) throw new NotFoundException('Training not found');
 
+    let myStatus: Record<string, unknown> | null = null;
+    if (principal?.role === 'volunteer') {
+      const volunteer = await this.volunteerOf(principal);
+      const [row] = await this.dataSource.query(
+        `SELECT vtp.expiry_date,
+                a.attempted_at AS passed_at,
+                a.score_percent AS passed_score,
+                (SELECT COUNT(*)::int FROM training_attempts x
+                  WHERE x.volunteer_id = $1 AND x.training_id = $2
+                    AND x.is_superseded = FALSE) AS attempts_used
+         FROM v_valid_training_passes vtp
+         JOIN training_attempts a ON a.id = vtp.attempt_id
+         WHERE vtp.volunteer_id = $1 AND vtp.training_id = $2`,
+        [volunteer.id, id],
+      );
+      const attemptsUsed =
+        row?.attempts_used ?? (await this.usedAttempts(volunteer.id, id));
+      myStatus = {
+        currentlyPassed: Boolean(row),
+        passedAt: row?.passed_at ?? null,
+        passedScore: row ? Number(row.passed_score) : null,
+        expiryDate: row?.expiry_date ?? null,
+        attemptsUsed: Number(attemptsUsed),
+        // Mandatory compliance passes are final for their validity window;
+        // activity trainings may be retaken (latest score retained).
+        canRetake: Boolean(row) && !training.isMandatory,
+      };
+    }
+
     return {
       ...training,
+      myStatus,
       questions: (training.questions ?? []).map((q) => ({
         id: q.id,
         questionText: q.questionText,
@@ -373,6 +403,22 @@ export class TrainingsService {
       );
       const attemptNumber = Number(next);
 
+      // Voluntary retake (activity trainings only — assertMayAttempt blocks
+      // mandatory ones): the volunteer was warned the LATEST score is the one
+      // retained, so the previous attempts step aside before the new one lands.
+      // A failing retake therefore really does revoke the old pass.
+      const [priorPass] = await mgr.query(
+        'SELECT 1 FROM v_valid_training_passes WHERE volunteer_id = $1 AND training_id = $2',
+        [volunteer.id, trainingId],
+      );
+      if (priorPass) {
+        await mgr.query(
+          `UPDATE training_attempts SET is_superseded = TRUE
+           WHERE volunteer_id = $1 AND training_id = $2 AND is_superseded = FALSE`,
+          [volunteer.id, trainingId],
+        );
+      }
+
       const expiryDate =
         passed && training.expiryMonths
           ? new Date(new Date().setMonth(new Date().getMonth() + training.expiryMonths))
@@ -440,13 +486,22 @@ export class TrainingsService {
     );
     if (!compliance?.consent_complete) throw BusinessErrors.consentRequired();
 
-    // A currently valid pass needs no retake.
+    // A valid pass on a MANDATORY compliance training needs no retake — the
+    // pass certifies the volunteer until it expires, full stop. Activity
+    // trainings may be retaken; the latest attempt becomes authoritative.
     const [valid] = await this.dataSource.query(
-      'SELECT 1 FROM v_valid_training_passes WHERE volunteer_id = $1 AND training_id = $2',
+      'SELECT expiry_date FROM v_valid_training_passes WHERE volunteer_id = $1 AND training_id = $2',
       [volunteer.id, training.id],
     );
-    if (valid) {
-      throw new BusinessException('ALREADY_PASSED', 'You already hold a valid pass for this training.', 409);
+    if (valid && training.isMandatory) {
+      throw new BusinessException(
+        'ALREADY_PASSED',
+        valid.expiry_date
+          ? `This compliance training is already passed and valid until ${valid.expiry_date}.`
+          : 'This compliance training is already passed and does not expire.',
+        409,
+        { expiryDate: valid.expiry_date ?? null },
+      );
     }
 
     // BR-03

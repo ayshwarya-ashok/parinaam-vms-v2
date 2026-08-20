@@ -15,8 +15,9 @@ import {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
-import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
+import { Link as RouterLink, useParams } from 'react-router-dom';
 import { useActivity } from '@/api/admin';
+import { useDynamicCrumbs } from '@/app/breadcrumbs';
 import { api, asApiError } from '@/api/client';
 import { ConfirmDialog, PageShell, StatusPill } from '@/components';
 
@@ -30,10 +31,20 @@ function fmtDate(iso: string): string {
 
 export function ActivityDetail() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
   const { data: activity, isLoading } = useActivity(id);
+
+  // The URL carries no programme segment, so the breadcrumb to the parent
+  // programme is injected from the fetched activity.
+  useDynamicCrumbs(
+    activity
+      ? [
+          { label: 'Programs', to: '/admin/programs' },
+          { label: activity.programName, to: `/admin/programs/${activity.programId}` },
+        ]
+      : null,
+  );
 
   const [cancelTarget, setCancelTarget] = useState<{ id: string; label: string } | null>(null);
   const [discontinueOpen, setDiscontinueOpen] = useState(false);
@@ -219,11 +230,6 @@ export function ActivityDetail() {
         </Table>
       </TableContainer>
 
-      <Box sx={{ mt: 3, textAlign: 'right' }}>
-        <Button variant="pillOutlined" onClick={() => navigate(`/admin/programs/${activity.programId}`)}>
-          ← Back to Program
-        </Button>
-      </Box>
 
       <ConfirmDialog
         open={cancelTarget !== null}

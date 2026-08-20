@@ -56,6 +56,15 @@ export interface TrainingDetail extends TrainingSummary {
     options: Array<{ index: number; text: string }>;
     correctOptionIndex?: number;
   }>;
+  /** The calling volunteer's standing on this training (null for admins). */
+  myStatus: {
+    currentlyPassed: boolean;
+    passedAt: string | null;
+    passedScore: number | null;
+    expiryDate: string | null;
+    attemptsUsed: number;
+    canRetake: boolean;
+  } | null;
 }
 
 export interface QuizStart {

@@ -14,7 +14,7 @@ import { alpha } from '@mui/material/styles';
 import { useMutation } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { api } from '@/api/client';
 import { useAssessments, useTraining, useTrainingInvalidation } from '@/api/trainings';
 import { ConfirmDialog, FilterBar, PageShell } from '@/components';
@@ -49,7 +49,6 @@ function Pips({ used, max, passed }: { used: number; max: number | null; passed:
 
 export function AssessmentsPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const invalidate = useTrainingInvalidation();
 
@@ -163,11 +162,6 @@ export function AssessmentsPage() {
         </Table>
       </TableContainer>
 
-      <Box sx={{ mt: 3, textAlign: 'right' }}>
-        <Button variant="pillOutlined" onClick={() => navigate('/admin/trainings')}>
-          ← Back to Trainings
-        </Button>
-      </Box>
 
       <ConfirmDialog
         open={resetTarget !== null}
