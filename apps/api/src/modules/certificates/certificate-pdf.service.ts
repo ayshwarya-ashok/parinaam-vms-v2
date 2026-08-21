@@ -1,4 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { PDFDocument, PDFFont, StandardFonts, rgb } from 'pdf-lib';
 
 export interface CertificateData {
@@ -44,6 +46,29 @@ function fmtDate(iso: string | null): string {
  */
 @Injectable()
 export class CertificatePdfService {
+  private readonly logger = new Logger(CertificatePdfService.name);
+
+  /** The logo PNG, read once. null when the asset is missing — see render(). */
+  private logoBytes: Buffer | null | undefined;
+
+  /** Works from ts-node (src) and from a compiled build (dist), like templates. */
+  private loadLogo(): Buffer | null {
+    if (this.logoBytes !== undefined) return this.logoBytes;
+    const candidates = [
+      join(__dirname, '../../assets/parinaam-logo.png'),
+      join(process.cwd(), 'src/assets/parinaam-logo.png'),
+      join(process.cwd(), 'dist/assets/parinaam-logo.png'),
+    ];
+    const found = candidates.find((c) => existsSync(c));
+    if (!found) {
+      this.logger.warn('parinaam-logo.png not found — certificates fall back to the text header');
+      this.logoBytes = null;
+      return null;
+    }
+    this.logoBytes = readFileSync(found);
+    return this.logoBytes;
+  }
+
   async render(data: CertificateData): Promise<Buffer> {
     const doc = await PDFDocument.create();
     const page = doc.addPage([W, H]);
@@ -67,16 +92,25 @@ export class CertificatePdfService {
       borderColor: ACCENT, borderWidth: 1,
     });
 
-    // ── Header ────────────────────────────────────────────────────────────────
-    const org = 'PARINAAM FOUNDATION';
-    page.drawText(org, {
-      x: center(sansBold, org, 13), y: H - 88, size: 13, font: sansBold, color: ACCENT_STRONG,
-    });
+    // ── Header: the logo where the asset exists, the wordmark where not ──────
+    const logoBytes = this.loadLogo();
+    if (logoBytes) {
+      const logo = await doc.embedPng(logoBytes);
+      // The mark is 301.2 × 165.3 — keep its aspect at a 52pt height.
+      const logoH = 52;
+      const logoW = (logo.width / logo.height) * logoH;
+      page.drawImage(logo, { x: (W - logoW) / 2, y: H - 58 - logoH, width: logoW, height: logoH });
+    } else {
+      const org = 'PARINAAM FOUNDATION';
+      page.drawText(org, {
+        x: center(sansBold, org, 13), y: H - 88, size: 13, font: sansBold, color: ACCENT_STRONG,
+      });
+    }
 
     const title =
       data.certType === 'corporate' ? 'Thank You for Volunteering' : 'Certificate of Appreciation';
     page.drawText(title, {
-      x: center(serifBold, title, 40), y: H - 140, size: 40, font: serifBold, color: INK,
+      x: center(serifBold, title, 40), y: H - 158, size: 40, font: serifBold, color: INK,
     });
 
     const sub =
@@ -84,18 +118,18 @@ export class CertificatePdfService {
         ? 'This certificate of appreciation is presented to'
         : 'This is to certify that';
     page.drawText(sub, {
-      x: center(sans, sub, 13), y: H - 180, size: 13, font: sans, color: MUTED,
+      x: center(sans, sub, 13), y: H - 192, size: 13, font: sans, color: MUTED,
     });
 
     // ── Name ──────────────────────────────────────────────────────────────────
     page.drawText(data.volunteerName, {
       x: center(serifBold, data.volunteerName, 34),
-      y: H - 232, size: 34, font: serifBold, color: ACCENT_STRONG,
+      y: H - 240, size: 34, font: serifBold, color: ACCENT_STRONG,
     });
     const underlineWidth = serifBold.widthOfTextAtSize(data.volunteerName, 34) + 40;
     page.drawLine({
-      start: { x: (W - underlineWidth) / 2, y: H - 244 },
-      end: { x: (W + underlineWidth) / 2, y: H - 244 },
+      start: { x: (W - underlineWidth) / 2, y: H - 252 },
+      end: { x: (W + underlineWidth) / 2, y: H - 252 },
       thickness: 0.8, color: ACCENT,
     });
 
@@ -120,7 +154,7 @@ export class CertificatePdfService {
             `and contributing ${data.hours} hours of impactful service to the community.`,
           ];
 
-    let y = H - 290;
+    let y = H - 296;
     for (const line of lines) {
       page.drawText(line, { x: center(sans, line, 13), y, size: 13, font: sans, color: INK });
       y -= 22;
