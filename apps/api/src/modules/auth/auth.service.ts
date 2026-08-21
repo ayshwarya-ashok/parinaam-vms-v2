@@ -53,10 +53,40 @@ export class AuthService {
       .where('u.email = :email', { email })
       .getOne();
 
-    // One generic failure for "no such account" and "wrong password":
-    // distinguishing them confirms which emails exist.
-    if (!user || !user.isActive) {
-      throw new UnauthorizedException('Invalid email or password');
+    /*
+     * Say what actually happened.
+     *
+     * The old single message covered "no such account" and "wrong password"
+     * alike, to avoid confirming which emails exist. That protection is
+     * already gone by design: registration must tell a visitor when an
+     * address is taken, so /auth/check-email discloses exactly the same fact.
+     * Keeping the vague message here bought no privacy and actively misled
+     * the people it hit hardest — someone who abandoned the registration
+     * form has NO account, and telling them their password is wrong sends
+     * them hunting for a credential that never existed.
+     */
+    if (!user) {
+      throw new BusinessException(
+        'ACCOUNT_NOT_FOUND',
+        "No account exists for this email. Please sign up to create one — your account is created once you complete registration.",
+        401,
+      );
+    }
+
+    if (!user.isActive) {
+      const volunteer = await this.volunteers.findOne({ where: { userId: user.id } });
+      if (volunteer?.registrationStatus === 'rejected') {
+        throw new BusinessException(
+          'REGISTRATION_REJECTED',
+          `Your registration was not approved${volunteer.rejectionReason ? `: ${volunteer.rejectionReason}` : '.'} Contact ${this.config.get('MAIL_FROM_EMAIL')} if you think this is a mistake.`,
+          403,
+        );
+      }
+      throw new BusinessException(
+        'ACCOUNT_DEACTIVATED',
+        `This account has been deactivated. Contact ${this.config.get('MAIL_FROM_EMAIL')} to have it reactivated.`,
+        403,
+      );
     }
 
     if (user.lockedUntil && user.lockedUntil > new Date()) {
@@ -70,7 +100,11 @@ export class AuthService {
     const valid = await this.passwords.verify(password, user.passwordHash);
     if (!valid) {
       await this.recordFailure(user);
-      throw new UnauthorizedException('Invalid email or password');
+      throw new BusinessException(
+        'INVALID_PASSWORD',
+        'Incorrect password. Please try again.',
+        401,
+      );
     }
 
     await this.users.update(

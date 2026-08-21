@@ -10,6 +10,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -169,7 +170,21 @@ export function ActivityDetail() {
           <TableBody>
             {activity.events.map((e) => (
               <TableRow key={e.id} sx={{ opacity: e.status === 'cancelled' ? 0.55 : 1 }}>
-                <TableCell>{e.code}</TableCell>
+                <TableCell>
+                  <Typography
+                    component={RouterLink}
+                    to={`/admin/sessions/${e.id}`}
+                    sx={{
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      color: 'inherit',
+                      textDecoration: 'none',
+                      '&:hover': { textDecoration: 'underline' },
+                    }}
+                  >
+                    {e.code}
+                  </Typography>
+                </TableCell>
                 <TableCell>
                   {fmtDate(e.date)} · {e.start_time.slice(0, 5)} ({e.duration_hours}h)
                 </TableCell>
@@ -181,13 +196,33 @@ export function ActivityDetail() {
                 </TableCell>
                 <TableCell>
                   <StatusPill status={e.status} />
+                  <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary', mt: 0.25 }}>
+                    {e.status === 'draft'
+                      ? 'staff only'
+                      : e.status === 'upcoming'
+                        ? 'open to volunteers'
+                        : e.status === 'completed'
+                          ? 'hours logged'
+                          : ''}
+                  </Typography>
                 </TableCell>
                 <TableCell align="right">
                   <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                    <Button
+                      size="small"
+                      variant="pillOutlined"
+                      sx={{ px: 1.5, py: 0.25 }}
+                      component={RouterLink}
+                      to={`/admin/sessions/${e.id}`}
+                    >
+                      {e.status === 'completed' ? 'Attendance' : 'Roster'}
+                    </Button>
                     {e.status === 'draft' && (
-                      <Button size="small" variant="pill" sx={{ px: 1.5, py: 0.25 }} onClick={() => publish.mutate(e.id)}>
-                        Publish
-                      </Button>
+                      <Tooltip title="Makes the session visible to volunteers and open for enrolment. Until then it is a draft only staff can see.">
+                        <Button size="small" variant="pill" sx={{ px: 1.5, py: 0.25 }} onClick={() => publish.mutate(e.id)}>
+                          Publish
+                        </Button>
+                      </Tooltip>
                     )}
                     {(e.status === 'draft' || e.status === 'upcoming') && (
                       <>

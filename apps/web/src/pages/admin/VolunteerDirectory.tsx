@@ -442,7 +442,11 @@ function VolunteerDetailDrawer({
       anchor="right"
       open={id !== null}
       onClose={onClose}
-      PaperProps={{ sx: { width: { xs: '100%', sm: 460 }, p: 3 } }}
+      // Half the viewport on desktop: a registration is read to make a
+      // decision, and a 460px column turned every field into two lines.
+      PaperProps={{
+        sx: { width: { xs: '100%', sm: '80vw', md: '50vw' }, minWidth: { md: 620 }, p: { xs: 2.5, md: 4 } },
+      }}
     >
       {v && (
         <Box>
@@ -505,18 +509,20 @@ function VolunteerDetailDrawer({
             </Paper>
           )}
 
-          <Section title="Contact">
-            <Field label="Email" value={v.email} />
-            <Field label="Phone" value={v.phone} />
-            <Field label="City" value={[v.city, v.state].filter(Boolean).join(', ') || null} />
-          </Section>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: { xs: 0, md: 3 } }}>
+            <Section title="Contact">
+              <Field label="Email" value={v.email} />
+              <Field label="Phone" value={v.phone} />
+              <Field label="City" value={[v.city, v.state].filter(Boolean).join(', ') || null} />
+            </Section>
 
-          <Section title="About">
-            <Field label="Date of birth" value={v.dateOfBirth ? fmtDate(v.dateOfBirth) : null} />
-            <Field label="Gender" value={v.gender} />
-            <Field label="Occupation" value={v.occupation} />
-            {v.organization && <Field label="Organization" value={v.organization.name} />}
-          </Section>
+            <Section title="About">
+              <Field label="Date of birth" value={v.dateOfBirth ? fmtDate(v.dateOfBirth) : null} />
+              <Field label="Gender" value={v.gender} />
+              <Field label="Occupation" value={v.occupation} />
+              {v.organization && <Field label="Organization" value={v.organization.name} />}
+            </Section>
+          </Box>
 
           <Section title="How they would like to help">
             <ChipRow labels={labelsFor('AREA_OF_INTEREST', v.areasOfInterest)} empty="No areas selected" />

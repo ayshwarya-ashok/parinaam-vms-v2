@@ -43,6 +43,9 @@ interface RosterRow {
   email: string;
   phone: string | null;
   enrollment_status: string | null;
+  enrolled_at: string | null;
+  enrollment_skills: string | null;
+  promoted_from_waitlist: boolean | null;
   record_id: string | null;
   attended: boolean | null;
   arrival_time: string | null;
@@ -79,6 +82,13 @@ interface SessionRecordPayload {
     coordinator_email_sent: boolean | null;
   };
   roster: RosterRow[];
+  waitlist: Array<{
+    position: number;
+    volunteer_id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+  }>;
   report: {
     id: string;
     status: string;
@@ -179,8 +189,11 @@ export function SessionRecord() {
     );
   }
 
-  const { event, roster, report, summary } = data;
+  const { event, roster, waitlist, report, summary } = data;
   const notSubmitted = roster.filter((r) => r.record_id === null).length;
+  // Before the day, the question is "who is coming?"; after it, "who came and
+  // for how long?". Same roster, different columns.
+  const isUpcoming = event.status === 'draft' || event.status === 'upcoming';
 
   return (
     <PageShell
@@ -237,27 +250,59 @@ export function SessionRecord() {
           mb: 2,
         }}
       >
-        <StatTile label="Enrolled" value={summary.enrolled} />
-        <StatTile label="Responded" value={summary.submitted} sub={notSubmitted > 0 ? `${notSubmitted} silent` : undefined} />
-        <StatTile label="Attended" value={summary.attended} />
-        <StatTile label="Hours logged" value={summary.totalHours} />
+        <StatTile
+          label="Enrolled"
+          value={summary.enrolled}
+          sub={event.max_slots !== null ? `of ${event.max_slots} slots` : undefined}
+        />
+        {isUpcoming ? (
+          <>
+            <StatTile label="Waitlisted" value={waitlist.length} />
+            <StatTile
+              label="Slots left"
+              value={event.max_slots !== null ? Math.max(0, event.max_slots - summary.enrolled) : '—'}
+            />
+            <StatTile label="Status" value={event.status === 'draft' ? 'Draft' : 'Open'} sub={event.status === 'draft' ? 'not visible to volunteers' : 'accepting enrolments'} />
+          </>
+        ) : (
+          <>
+            <StatTile label="Responded" value={summary.submitted} sub={notSubmitted > 0 ? `${notSubmitted} silent` : undefined} />
+            <StatTile label="Attended" value={summary.attended} />
+            <StatTile label="Hours logged" value={summary.totalHours} />
+          </>
+        )}
       </Box>
 
       {/* ── Attendance marked by volunteers ─────────────────────────────────── */}
-      <Typography variant="h6" sx={{ mb: 1 }}>
-        Volunteer attendance
+      <Typography variant="h6" sx={{ mb: 0.5 }}>
+        {isUpcoming ? `Enrolled volunteers (${summary.enrolled})` : 'Volunteer attendance'}
+      </Typography>
+      <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary', mb: 1 }}>
+        {isUpcoming
+          ? 'Who has signed up so far. Hours are logged after the session runs.'
+          : 'What each volunteer logged, and who logged it. Any row can be corrected.'}
       </Typography>
       <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3, mb: 3 }}>
         <Table size="small">
           <TableHead>
             <TableRow>
               <TableCell>Volunteer</TableCell>
-              <TableCell align="center">Attended</TableCell>
-              <TableCell align="center">Times</TableCell>
-              <TableCell align="right">Hours</TableCell>
-              <TableCell>Logged by</TableCell>
-              <TableCell>Notes</TableCell>
-              <TableCell align="right">Action</TableCell>
+              {isUpcoming ? (
+                <>
+                  <TableCell>Enrolled on</TableCell>
+                  <TableCell>Skills offered</TableCell>
+                  <TableCell align="center">Route</TableCell>
+                </>
+              ) : (
+                <>
+                  <TableCell align="center">Attended</TableCell>
+                  <TableCell align="center">Times</TableCell>
+                  <TableCell align="right">Hours</TableCell>
+                  <TableCell>Logged by</TableCell>
+                  <TableCell>Notes</TableCell>
+                  <TableCell align="right">Action</TableCell>
+                </>
+              )}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -272,6 +317,24 @@ export function SessionRecord() {
                     {r.enrollment_status === null ? ' · withdrew' : ''}
                   </Typography>
                 </TableCell>
+                {isUpcoming ? (
+                  <>
+                    <TableCell sx={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                      {r.enrolled_at ? fmtDate(r.enrolled_at) : '—'}
+                    </TableCell>
+                    <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary', maxWidth: 240 }}>
+                      {r.enrollment_skills ?? '—'}
+                    </TableCell>
+                    <TableCell align="center">
+                      {r.promoted_from_waitlist ? (
+                        <Chip size="small" label="from waitlist" sx={{ height: 20, fontSize: '0.7rem' }} />
+                      ) : (
+                        <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>direct</Typography>
+                      )}
+                    </TableCell>
+                  </>
+                ) : (
+                  <>
                 <TableCell align="center">
                   {r.record_id === null ? (
                     <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>
@@ -339,6 +402,8 @@ export function SessionRecord() {
                     {r.record_id ? '✎ Correct' : '+ Log'}
                   </Button>
                 </TableCell>
+                  </>
+                )}
               </TableRow>
             ))}
             {roster.length === 0 && (
@@ -351,6 +416,40 @@ export function SessionRecord() {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* ── Waitlist (only meaningful while the session is still ahead) ─────── */}
+      {isUpcoming && waitlist.length > 0 && (
+        <>
+          <Typography variant="h6" sx={{ mb: 0.5 }}>
+            Waitlist ({waitlist.length})
+          </Typography>
+          <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary', mb: 1 }}>
+            Promoted automatically, in this order, the moment a slot frees up.
+          </Typography>
+          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3, mb: 3 }}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell align="center">#</TableCell>
+                  <TableCell>Volunteer</TableCell>
+                  <TableCell>Email</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {waitlist.map((w) => (
+                  <TableRow key={w.volunteer_id}>
+                    <TableCell align="center" sx={{ fontWeight: 700 }}>{w.position}</TableCell>
+                    <TableCell sx={{ fontWeight: 600, fontSize: '0.88rem' }}>
+                      {w.first_name} {w.last_name}
+                    </TableCell>
+                    <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary' }}>{w.email}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </>
+      )}
 
       {/* ── The coordinator's occurrence report ─────────────────────────────── */}
       <Typography variant="h6" sx={{ mb: 1 }}>
@@ -385,9 +484,11 @@ export function SessionRecord() {
       ) : (
         <EmptyState
           message={
-            event.coordinator_email_sent
-              ? 'The coordinator has been sent the link but has not filed a report yet.'
-              : 'No report yet — the coordinator link has not been sent for this session.'
+            isUpcoming
+              ? 'The coordinator files this after the session runs — beneficiary numbers come from that report.'
+              : event.coordinator_email_sent
+                ? 'The coordinator has been sent the link but has not filed a report yet.'
+                : 'No report yet — the coordinator link has not been sent for this session.'
           }
         />
       )}

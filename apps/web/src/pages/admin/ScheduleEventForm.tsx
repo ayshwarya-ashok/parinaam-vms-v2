@@ -135,7 +135,9 @@ export function ScheduleEventForm() {
             borderRadius: 999,
             minHeight: 0,
             p: 0.5,
-            maxWidth: 420,
+            // Hug the two tabs. A fixed max-width left bare pill background
+            // beside them, which looked exactly like an empty third tab.
+            width: 'fit-content',
             '& .MuiTabs-indicator': { display: 'none' },
             '& .MuiTab-root': { borderRadius: 999, minHeight: 40, fontWeight: 600 },
             '& .Mui-selected': { bgcolor: 'primary.main', color: '#fff !important' },

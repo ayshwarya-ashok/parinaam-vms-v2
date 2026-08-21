@@ -515,6 +515,7 @@ export class AttendanceService {
     const roster = await this.dataSource.query(
       `SELECT v.id AS volunteer_id, v.first_name, v.last_name, u.email, v.phone,
               en.status AS enrollment_status, en.enrolled_at,
+              en.skills AS enrollment_skills, en.promoted_from_waitlist,
               ar.id AS record_id, ar.attended, ar.arrival_time, ar.departure_time,
               ar.hours_contributed, ar.absence_reason, ar.absence_detail, ar.notes,
               ar.source, ar.recorded_at,
@@ -530,7 +531,7 @@ export class AttendanceService {
        -- Anyone with a record but no live enrolment (withdrew after attending;
        -- enrolment rows only ever read 'enrolled' or 'cancelled').
        SELECT v.id, v.first_name, v.last_name, u.email, v.phone,
-              NULL, NULL,
+              NULL, NULL, NULL, NULL,
               ar.id, ar.attended, ar.arrival_time, ar.departure_time,
               ar.hours_contributed, ar.absence_reason, ar.absence_detail, ar.notes,
               ar.source, ar.recorded_at,
@@ -548,11 +549,22 @@ export class AttendanceService {
       [eventId],
     );
 
+    const waitlist = await this.dataSource.query(
+      `SELECT w.position, w.added_at, v.id AS volunteer_id, v.first_name, v.last_name, u.email
+       FROM waitlist_entries w
+       JOIN volunteers v ON v.id = w.volunteer_id
+       JOIN users u ON u.id = v.user_id
+       WHERE w.event_id = $1
+       ORDER BY w.position`,
+      [eventId],
+    );
+
     const { report, photos } = await this.reportOf(eventId);
 
     return {
       event,
       roster,
+      waitlist,
       report,
       photos,
       summary: {

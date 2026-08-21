@@ -14,6 +14,7 @@ import { ProgramForm } from '@/pages/admin/ProgramForm';
 import { ActivityForm } from '@/pages/admin/ActivityForm';
 import { ActivityDetail } from '@/pages/admin/ActivityDetail';
 import { ScheduleEventForm } from '@/pages/admin/ScheduleEventForm';
+import { EditEventForm } from '@/pages/admin/EditEventForm';
 import { VolunteerDirectory } from '@/pages/admin/VolunteerDirectory';
 import { VolunteerDashboard } from '@/pages/volunteer/VolunteerDashboard';
 import { BrowseSessions } from '@/pages/volunteer/BrowseSessions';
@@ -41,7 +42,6 @@ import { CoordinatorReportPage } from '@/pages/public/CoordinatorReport';
 import { Landing } from '@/pages/Landing';
 import { ImpactPage } from '@/pages/public/ImpactPage';
 import { NotFound } from '@/pages/NotFound';
-import { Placeholder } from '@/pages/Placeholder';
 
 const volunteerNav = [
   { label: 'Dashboard', to: '/app/dashboard' },
@@ -64,10 +64,6 @@ const adminNav = [
   { label: 'Metrics', to: '/admin/metrics' },
   { label: 'Reports', to: '/admin/reports' },
 ];
-
-const stub = (eyebrow: string, title: string, phase: string) => (
-  <Placeholder eyebrow={eyebrow} title={title} phase={phase} />
-);
 
 /**
  * The full route table from docs/05-screen-inventory.md, live from Phase 0.
@@ -145,7 +141,7 @@ export const router = createBrowserRouter([
       { path: 'activities/:id', element: <ActivityDetail />, handle: { crumb: 'Activity' } },
       { path: 'activities/:id/edit', element: <ActivityForm />, handle: { crumb: 'Edit Activity' } },
       { path: 'activities/:activityId/events/new', element: <ScheduleEventForm />, handle: { crumb: 'Schedule' } },
-      { path: 'events/:id/edit', element: stub('Admin › Schedule', 'Edit Occurrence', 'Phase 2'), handle: { crumb: 'Edit Occurrence' } },
+      { path: 'events/:id/edit', element: <EditEventForm />, handle: { crumb: 'Edit Occurrence' } },
       { path: 'calendar', element: <CalendarPage />, handle: { crumb: 'Calendar' } },
       {
         path: 'trainings',

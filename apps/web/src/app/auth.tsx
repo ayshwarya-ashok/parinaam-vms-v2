@@ -122,11 +122,21 @@ export function authErrorMessage(err: unknown): string {
   switch (apiErr.code) {
     case 'EMAIL_TAKEN':
       return 'An account with this email already exists. Try logging in.';
+    // The API is specific about these — a vague retelling would undo the point.
     case 'ACCOUNT_LOCKED':
+    case 'ACCOUNT_NOT_FOUND':
+    case 'REGISTRATION_REJECTED':
+    case 'ACCOUNT_DEACTIVATED':
+    case 'INVALID_PASSWORD':
       return apiErr.message;
     case 'UNAUTHORIZED':
       return 'Invalid email or password.';
     default:
       return apiErr.message || 'Something went wrong.';
   }
+}
+
+/** True when the failure means "you have no account here" — offer sign-up. */
+export function isMissingAccount(err: unknown): boolean {
+  return asApiError(err)?.code === 'ACCOUNT_NOT_FOUND';
 }

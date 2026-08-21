@@ -13,7 +13,7 @@ import {
 import { useState } from 'react';
 import { Link as RouterLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { api } from '@/api/client';
-import { authErrorMessage, useAuth, type SessionUser } from '@/app/auth';
+import { authErrorMessage, isMissingAccount, useAuth, type SessionUser } from '@/app/auth';
 
 const stats = [
   { value: '120+', label: 'Active volunteers' },
@@ -33,6 +33,7 @@ export function Landing() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [offerSignup, setOfferSignup] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const { status, user, login } = useAuth();
@@ -47,6 +48,7 @@ export function Landing() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setOfferSignup(false);
     setBusy(true);
     try {
       if (tab === 'signup') {
@@ -68,6 +70,7 @@ export function Landing() {
       });
     } catch (err) {
       setError(authErrorMessage(err));
+      setOfferSignup(isMissingAccount(err));
     } finally {
       setBusy(false);
     }
@@ -121,6 +124,7 @@ export function Landing() {
               onChange={(_, v: 'login' | 'signup') => {
                 setTab(v);
                 setError(null);
+                setOfferSignup(false);
               }}
               variant="fullWidth"
               sx={{
@@ -146,7 +150,24 @@ export function Landing() {
               </Typography>
 
               {error && (
-                <Alert severity="error" sx={{ mb: 2, borderRadius: 3 }}>
+                <Alert
+                  severity={offerSignup ? 'info' : 'error'}
+                  sx={{ mb: 2, borderRadius: 3 }}
+                  action={
+                    offerSignup ? (
+                      <Button
+                        size="small"
+                        onClick={() => {
+                          setTab('signup');
+                          setError(null);
+                          setOfferSignup(false);
+                        }}
+                      >
+                        Sign up
+                      </Button>
+                    ) : undefined
+                  }
+                >
                   {error}
                 </Alert>
               )}
