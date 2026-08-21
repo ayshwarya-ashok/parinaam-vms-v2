@@ -173,6 +173,12 @@ export function ImpactPage() {
         }}
       >
         <Box sx={{ position: 'relative', zIndex: 1 }}>
+          <Box
+            component="img"
+            src="/parinaam-logo-dark.svg"
+            alt="Parinaam Foundation"
+            sx={{ height: 56, display: 'block', mb: 2 }}
+          />
           <Typography
             sx={{
               fontSize: '0.75rem',
@@ -183,7 +189,7 @@ export function ImpactPage() {
               mb: 2,
             }}
           >
-            Parinaam Foundation &nbsp;·&nbsp; {new Date().getFullYear()} Impact Report
+            {new Date().getFullYear()} Impact Report
           </Typography>
           <Typography
             component="h1"

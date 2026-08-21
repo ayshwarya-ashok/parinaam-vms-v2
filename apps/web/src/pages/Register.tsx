@@ -190,7 +190,7 @@ export function Register() {
     <Container maxWidth="xl" sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center' }}>
       <Grid container spacing={6} sx={{ py: 6, alignItems: 'center', width: '100%' }}>
         <Grid size={{ xs: 12, md: 5 }}>
-          <Typography variant="overline">Parinaam Volunteer Management</Typography>
+          <Box component="img" src="/parinaam-logo.svg" alt="Parinaam Volunteer Management" sx={{ height: 56, display: 'block', mb: 1 }} />
           <Typography variant="h1" sx={{ fontSize: 'clamp(2.6rem, 5vw, 4rem)', mt: 1 }}>
             Tell us about yourself.
           </Typography>

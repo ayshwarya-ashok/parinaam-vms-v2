@@ -94,7 +94,7 @@ export function Landing() {
     <Container maxWidth="xl" sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center' }}>
       <Grid container spacing={6} sx={{ py: 6, alignItems: 'center', width: '100%' }}>
         <Grid size={{ xs: 12, md: 7 }}>
-          <Typography variant="overline">Parinaam Volunteer Management</Typography>
+          <Box component="img" src="/parinaam-logo.svg" alt="Parinaam Volunteer Management" sx={{ height: 60, display: 'block', mb: 1 }} />
           <Typography
             variant="h1"
             sx={{ fontSize: 'clamp(3rem, 6vw, 5.5rem)', maxWidth: '12ch', mt: 1 }}

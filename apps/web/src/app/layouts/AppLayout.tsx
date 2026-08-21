@@ -120,20 +120,21 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
           <Button
             component={RouterLink}
             to={home}
+            aria-label="Parinaam — go to dashboard"
             sx={{
-              color: 'secondary.main',
-              fontWeight: 800,
-              letterSpacing: '0.14em',
-              fontSize: '0.85rem',
-              px: 1.25,
+              px: 1,
               mr: 1,
-              borderRadius: 999,
-              whiteSpace: 'nowrap',
+              borderRadius: 2,
               flexShrink: 0,
               '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
             }}
           >
-            PARINAAM
+            <Box
+              component="img"
+              src="/parinaam-logo-dark.svg"
+              alt="Parinaam"
+              sx={{ height: 34, display: 'block' }}
+            />
           </Button>
 
           <Box
@@ -211,19 +212,9 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
         onClose={() => setMenuOpen(false)}
         PaperProps={{ sx: { width: 260, bgcolor: '#0f2b2d', color: '#fff' } }}
       >
-        <Typography
-          sx={{
-            color: 'secondary.main',
-            fontWeight: 800,
-            letterSpacing: '0.14em',
-            fontSize: '0.85rem',
-            px: 2.5,
-            pt: 2.5,
-            pb: 1,
-          }}
-        >
-          PARINAAM
-        </Typography>
+        <Box sx={{ px: 2.5, pt: 2.5, pb: 1 }}>
+          <Box component="img" src="/parinaam-logo-dark.svg" alt="Parinaam" sx={{ height: 40, display: 'block' }} />
+        </Box>
         <List sx={{ px: 1 }}>
           {nav.map((item) => {
             const active = isActive(item.to);
