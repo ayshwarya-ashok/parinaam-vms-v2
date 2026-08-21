@@ -7,6 +7,10 @@
 | **Inputs** | `VMS_prototype_v2.html`, `VMS_database_model.md` v1.0 |
 | **Changes in this revision** | D-00 (the Program → Activity → Event remodel), G-19 (n8n delivery), plus the client decisions of 2026-08-18 |
 
+> **Status (2026-08-21):** implementation is complete — all findings below were resolved
+> during the eight phases or the post-MVP rounds (`07-post-mvp-refinements.md`). This
+> document is retained as the design-time record.
+
 This document reconciles the two source artefacts. It records three kinds of finding:
 
 - **G — Gap**: the prototype demonstrates behaviour the v1 data model cannot store.
