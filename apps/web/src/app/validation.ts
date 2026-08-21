@@ -9,9 +9,18 @@
  * Indian mobile numbers are ten digits. Spaces, dashes and a +91 country code
  * are how people actually type them, so those are stripped before counting
  * rather than rejected — the rule is about the number, not the punctuation.
+ *
+ * A prefix is only a prefix when the length says so: "91" at the start of a
+ * TWELVE-digit string is a country code, but at the start of a ten-digit one
+ * it is the first two digits of a real number (the 91xxxxxxxx series exists),
+ * and stripping it blindly rejected valid numbers as "8 digits".
  */
 export function normalizePhone(input: string): string {
-  return input.replace(/[\s\-()]/g, '').replace(/^(\+91|91|0)/, '');
+  let digits = input.replace(/[\s\-()]/g, '');
+  if (digits.startsWith('+91')) digits = digits.slice(3);
+  else if (digits.startsWith('91') && digits.length === 12) digits = digits.slice(2);
+  else if (digits.startsWith('0') && digits.length === 11) digits = digits.slice(1);
+  return digits;
 }
 
 export function phoneError(input: string | null | undefined, required = false): string | null {

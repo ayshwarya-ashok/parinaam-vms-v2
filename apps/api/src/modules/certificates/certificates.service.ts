@@ -96,6 +96,9 @@ export class CertificatesService {
        LEFT JOIN certificates c
          ON c.volunteer_id = pp.volunteer_id AND c.program_id = pp.program_id
        WHERE pp.events_attended > 0
+         -- An erased volunteer's row is an anonymised husk; certifying it
+         -- would print "Erased Volunteer-1a2b3c4d" on a formal document.
+         AND u.email NOT LIKE '%@erased.invalid'
          AND ($1::uuid IS NULL OR pp.program_id = $1)
          AND ($2::text IS NULL OR
               v.first_name || ' ' || v.last_name ILIKE '%' || $2 || '%'
@@ -230,10 +233,19 @@ export class CertificatesService {
 
     // <volunteerId>-<certificateNumber>: traceable to a person and unique per
     // certificate, so a downloaded file is identifiable without opening it.
+    const previousPath = cert.filePath;
     const filePath = `certificates/${certificateFileName(cert.certificateNumber!)}`;
     await this.storage.put(filePath, pdfBytes);
     await this.certs.update({ id: cert.id }, { filePath });
     cert.filePath = filePath;
+
+    // A reissue that lands on a new path (older certificates were named
+    // differently) leaves the superseded PDF behind — delete it, or storage
+    // slowly fills with files nothing references. delete() only warns on
+    // failure, so a missing file cannot break the reissue.
+    if (previousPath && previousPath !== filePath) {
+      await this.storage.delete(previousPath);
+    }
 
     await this.sendCertificateEmail(cert, volunteer, programName);
     this.logger.log(`Issued ${cert.certificateNumber} to ${volunteer.fullName} (${programName})`);

@@ -9,6 +9,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Link as RouterLink, Outlet, useLocation, useMatches, useNavigate } from 'react-router-dom';
+import { Alert } from '@mui/material';
 import { useAuth } from '../auth';
 import { BreadcrumbProvider, useBreadcrumbTrail, type Crumb } from '../breadcrumbs';
 
@@ -61,7 +62,8 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
       ? [...routeCrumbs.slice(0, -1), ...dynamicTrail, routeCrumbs[routeCrumbs.length - 1]]
       : dynamicTrail;
 
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  const pendingReview = variant === 'volunteer' && user?.volunteer?.registrationStatus === 'pending';
 
   const handleLogout = async () => {
     await logout();
@@ -193,6 +195,15 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
         </Box>
       )}
 
+      {pendingReview && (
+        <Container maxWidth="xl" sx={{ pt: 2 }}>
+          <Alert severity="info" sx={{ borderRadius: 3 }}>
+            Your registration is being reviewed by our team. You can explore sessions and complete
+            your trainings meanwhile — enrolling opens up once you are approved, and we will email
+            you either way.
+          </Alert>
+        </Container>
+      )}
       <Outlet />
     </Box>
   );

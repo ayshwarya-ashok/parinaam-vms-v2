@@ -210,6 +210,13 @@ export class ProgramsController {
     return this.eventsAdmin.update(id, dto);
   }
 
+  @Post('events/:id/complete')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Mark a past upcoming session as completed — what dashboards count as conducted' })
+  completeEvent(@Param('id', UuidPipe) id: string) {
+    return this.eventsAdmin.complete(id);
+  }
+
   @Post('events/:id/publish')
   @Roles('admin')
   publishEvent(@Param('id', UuidPipe) id: string) {
