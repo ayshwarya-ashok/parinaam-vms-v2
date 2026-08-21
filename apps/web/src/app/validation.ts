@@ -29,3 +29,61 @@ export function phoneForApi(input: string | null | undefined): string | undefine
   const raw = (input ?? '').trim();
   return raw === '' ? undefined : normalizePhone(raw);
 }
+
+/**
+ * The identity fields every volunteer record must carry.
+ *
+ * These are the ones a coordinator needs to run a session safely: who is
+ * coming, how to reach them on the day, and where they are. They are required
+ * in all three places a volunteer record is written — public registration, the
+ * volunteer's own profile, and an admin correcting a pending registration — so
+ * the rule lives here rather than being restated (and drifting) in each.
+ */
+export interface RequiredProfileFields {
+  firstName?: string | null;
+  lastName?: string | null;
+  gender?: string | null;
+  dateOfBirth?: string | null;
+  city?: string | null;
+  state?: string | null;
+  phone?: string | null;
+}
+
+export type ProfileErrors = Partial<Record<keyof RequiredProfileFields, string>>;
+
+const LABELS: Record<keyof RequiredProfileFields, string> = {
+  firstName: 'First name',
+  lastName: 'Last name',
+  gender: 'Gender',
+  dateOfBirth: 'Date of birth',
+  city: 'City',
+  state: 'State',
+  phone: 'Phone number',
+};
+
+export function validateProfile(form: RequiredProfileFields): ProfileErrors {
+  const problems: ProfileErrors = {};
+
+  for (const key of Object.keys(LABELS) as Array<keyof RequiredProfileFields>) {
+    if (String(form[key] ?? '').trim() === '') {
+      problems[key] = `${LABELS[key]} is required.`;
+    }
+  }
+
+  // A future date of birth is a typo, not a person.
+  const dob = String(form.dateOfBirth ?? '').trim();
+  if (dob !== '' && dob > new Date().toISOString().slice(0, 10)) {
+    problems.dateOfBirth = 'A date of birth cannot be in the future.';
+  }
+
+  const badPhone = phoneError(form.phone, true);
+  if (badPhone) problems.phone = badPhone;
+
+  return problems;
+}
+
+/** The first message, for the toast that accompanies the inline errors. */
+export function firstProblem(problems: ProfileErrors): string {
+  const messages = Object.values(problems).filter(Boolean) as string[];
+  return messages.length === 1 ? messages[0] : `Check the ${messages.length} highlighted fields.`;
+}

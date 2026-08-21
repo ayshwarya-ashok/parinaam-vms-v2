@@ -12,14 +12,14 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { Link as RouterLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { api } from '@/api/client';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
+import { API_BASE_URL, api } from '@/api/client';
 import { authErrorMessage, isMissingAccount, useAuth, type SessionUser } from '@/app/auth';
 
-const stats = [
-  { value: '120+', label: 'Active volunteers' },
-  { value: '18', label: 'Programs tracked' },
-  { value: '96%', label: 'Shift attendance' },
-];
+interface PublicStats {
+  stats: { volunteers: number; active_programs: number; attendance_pct: string; hours: string };
+}
 
 function landingFor(user: SessionUser): string {
   if (user.role === 'admin') return '/admin/dashboard';
@@ -37,6 +37,20 @@ export function Landing() {
   const [busy, setBusy] = useState(false);
 
   const { status, user, login } = useAuth();
+
+  // The same public aggregates the impact page renders — no auth needed, and
+  // no invented figures on the first screen anyone sees.
+  const { data: publicStats } = useQuery({
+    queryKey: ['public-impact'],
+    queryFn: async () => (await axios.get<PublicStats>(`${API_BASE_URL}/public/impact`)).data,
+    staleTime: 5 * 60_000,
+  });
+
+  const stats = [
+    { value: publicStats ? String(publicStats.stats.volunteers) : '—', label: 'Active volunteers' },
+    { value: publicStats ? String(publicStats.stats.active_programs) : '—', label: 'Programs tracked' },
+    { value: publicStats ? `${Number(publicStats.stats.attendance_pct)}%` : '—', label: 'Shift attendance' },
+  ];
   const navigate = useNavigate();
   const location = useLocation();
 
