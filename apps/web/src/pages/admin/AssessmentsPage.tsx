@@ -17,7 +17,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '@/api/client';
 import { useAssessments, useTraining, useTrainingInvalidation } from '@/api/trainings';
-import { ConfirmDialog, FilterBar, PageShell } from '@/components';
+import { ConfirmDialog, FilterBar, PageShell, SortableCell, useTableSort } from '@/components';
 import { tokens } from '@/theme';
 
 function Pips({ used, max, passed }: { used: number; max: number | null; passed: boolean }) {
@@ -57,6 +57,13 @@ export function AssessmentsPage() {
 
   const { data: training } = useTraining(id);
   const { data: rows = [] } = useAssessments(id!, status);
+  const { sorted, sort, toggle } = useTableSort(rows, {
+    volunteer: (r) => r.name,
+    attempts: (r) => r.attemptsUsed,
+    best: (r) => (r.scores.length ? Math.max(...r.scores) : null),
+    status: (r) => (r.passed ? 2 : r.exhausted ? 0 : 1),
+    validUntil: (r) => r.expiryDate,
+  });
 
   const reset = useMutation({
     mutationFn: async (volunteerId: string) =>
@@ -106,16 +113,16 @@ export function AssessmentsPage() {
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell>Volunteer</TableCell>
-              <TableCell>Attempts used</TableCell>
-              <TableCell>Scores</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Valid until</TableCell>
+              <SortableCell sortKey="volunteer" sort={sort} onSort={toggle}>Volunteer</SortableCell>
+              <SortableCell sortKey="attempts" sort={sort} onSort={toggle}>Attempts used</SortableCell>
+              <SortableCell sortKey="best" sort={sort} onSort={toggle}>Scores</SortableCell>
+              <SortableCell sortKey="status" sort={sort} onSort={toggle}>Status</SortableCell>
+              <SortableCell sortKey="validUntil" sort={sort} onSort={toggle}>Valid until</SortableCell>
               <TableCell align="right">Admin actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {rows.map((r) => (
+            {sorted.map((r) => (
               <TableRow key={r.volunteerId}>
                 <TableCell>
                   <Typography sx={{ fontWeight: 600, fontSize: '0.9rem' }}>{r.name}</Typography>

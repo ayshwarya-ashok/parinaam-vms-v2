@@ -8,12 +8,12 @@ import {
   Typography,
 } from '@mui/material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useSnackbar } from 'notistack';
 import { useEffect, useState } from 'react';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 import { useCoordinators } from '@/api/admin';
 import { api, asApiError } from '@/api/client';
 import { useDynamicCrumbs } from '@/app/breadcrumbs';
+import { isUnchanged, useToast } from '@/app/toast';
 import { PageShell, StatusPill } from '@/components';
 import { tokens } from '@/theme';
 
@@ -49,7 +49,7 @@ export function EditEventForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { enqueueSnackbar } = useSnackbar();
+  const toast = useToast();
   const { data: coordinators = [] } = useCoordinators();
 
   const { data: event } = useQuery({
@@ -78,12 +78,14 @@ export function EditEventForm() {
     maxSlots: '',
     coordinatorId: '',
   });
+  const [original, setOriginal] = useState<typeof form | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof typeof form, string>>>({});
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!event) return;
-    setForm({
+    const loaded = {
       name: event.name ?? '',
       date: String(event.date).slice(0, 10),
       startTime: event.start_time?.slice(0, 5) ?? '',
@@ -92,12 +94,30 @@ export function EditEventForm() {
       city: event.city ?? '',
       maxSlots: event.max_slots === null ? '' : String(event.max_slots),
       coordinatorId: event.coordinator_id ?? '',
-    });
+    };
+    setForm(loaded);
+    setOriginal(loaded);
   }, [event]);
 
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => {
     setForm((f) => ({ ...f, [key]: value }));
+    setFieldErrors((f) => (key in f ? { ...f, [key]: undefined } : f));
     setError(null);
+  };
+
+  /** Client-side only for the message; the API validates all of this again. */
+  const validate = (): Partial<Record<keyof typeof form, string>> => {
+    const problems: Partial<Record<keyof typeof form, string>> = {};
+    if (!form.date) problems.date = 'A session needs a date.';
+    if (!form.startTime) problems.startTime = 'A session needs a start time.';
+    if (form.durationHours !== '' && Number(form.durationHours) <= 0) {
+      problems.durationHours = 'Duration must be more than zero.';
+    }
+    if (form.maxSlots !== '' && Number(form.maxSlots) < 1) {
+      problems.maxSlots = 'There must be at least one slot.';
+    }
+    if (!form.coordinatorId) problems.coordinatorId = 'Every session needs a coordinator.';
+    return problems;
   };
 
   if (!event) {
@@ -127,6 +147,19 @@ export function EditEventForm() {
       return;
     }
 
+    const problems = validate();
+    if (Object.keys(problems).length > 0) {
+      setFieldErrors(problems);
+      toast.failure('Check the highlighted fields.');
+      return;
+    }
+
+    // Saying "saved" when nothing moved teaches people the message means nothing.
+    if (original && isUnchanged(form, original)) {
+      toast.noChanges();
+      return;
+    }
+
     setBusy(true);
     try {
       await api.patch(`/events/${id}`, {
@@ -143,10 +176,11 @@ export function EditEventForm() {
       void queryClient.invalidateQueries({ queryKey: ['event-admin', id] });
       void queryClient.invalidateQueries({ queryKey: ['session-record', id] });
       void queryClient.invalidateQueries({ queryKey: ['dispatches'] });
-      enqueueSnackbar('Session updated', { variant: 'success' });
+      toast.success('Session updated');
       navigate(`/admin/activities/${event.activity_id}`);
     } catch (err) {
       setError(asApiError(err)?.message ?? 'Could not save the changes.');
+      toast.failure(err, 'Could not save the changes.');
     } finally {
       setBusy(false);
     }
@@ -206,6 +240,8 @@ export function EditEventForm() {
             InputLabelProps={{ shrink: true }}
             value={form.date}
             onChange={(e) => set('date', e.target.value)}
+            error={Boolean(fieldErrors.date)}
+            helperText={fieldErrors.date}
           />
           <TextField
             label="Start time"
@@ -214,6 +250,8 @@ export function EditEventForm() {
             InputLabelProps={{ shrink: true }}
             value={form.startTime}
             onChange={(e) => set('startTime', e.target.value)}
+            error={Boolean(fieldErrors.startTime)}
+            helperText={fieldErrors.startTime}
           />
           <TextField
             label="Duration (hours)"
@@ -221,6 +259,8 @@ export function EditEventForm() {
             inputProps={{ min: 0.5, step: 0.5 }}
             value={form.durationHours}
             onChange={(e) => set('durationHours', e.target.value)}
+            error={Boolean(fieldErrors.durationHours)}
+            helperText={fieldErrors.durationHours}
           />
         </Box>
 
@@ -240,11 +280,12 @@ export function EditEventForm() {
             inputProps={{ min: 1 }}
             value={form.maxSlots}
             onChange={(e) => set('maxSlots', e.target.value)}
-            error={shrinkingBelowEnrolled}
+            error={shrinkingBelowEnrolled || Boolean(fieldErrors.maxSlots)}
             helperText={
-              shrinkingBelowEnrolled
+              fieldErrors.maxSlots ??
+              (shrinkingBelowEnrolled
                 ? `${event.enrolled_count} already enrolled`
-                : 'Raising this promotes people off the waitlist automatically'
+                : 'Raising this promotes people off the waitlist automatically')
             }
           />
           <TextField
@@ -252,6 +293,8 @@ export function EditEventForm() {
             label="Coordinator"
             value={form.coordinatorId}
             onChange={(e) => set('coordinatorId', e.target.value)}
+            error={Boolean(fieldErrors.coordinatorId)}
+            helperText={fieldErrors.coordinatorId}
           >
             {coordinators.map((c) => (
               <MenuItem key={c.id} value={c.id}>

@@ -8,7 +8,7 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material';
-import { Link as RouterLink, Outlet, useMatches, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, Outlet, useLocation, useMatches, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth';
 import { BreadcrumbProvider, useBreadcrumbTrail, type Crumb } from '../breadcrumbs';
 
@@ -43,6 +43,7 @@ export function AppLayout(props: AppLayoutProps) {
 function AppLayoutInner({ variant, nav }: AppLayoutProps) {
   const matches = useMatches();
   const navigate = useNavigate();
+  const location = useLocation();
   const dynamicTrail = useBreadcrumbTrail();
 
   const home = variant === 'admin' ? '/admin/dashboard' : '/app/dashboard';
@@ -64,36 +65,73 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/', { replace: true });
+    navigate('/', { replace: true }); // the public impact page
   };
 
   return (
     <Box sx={{ minHeight: '100vh' }}>
       <AppBar position="sticky">
         <Toolbar sx={{ gap: 2, flexWrap: 'wrap' }}>
-          <Typography
-            variant="overline"
-            sx={{ color: 'secondary.main', fontSize: '0.8rem', mr: 2, whiteSpace: 'nowrap' }}
+          {/*
+            The wordmark is the first nav item and behaves like one: it goes
+            home, for whichever home this session has.
+          */}
+          <Button
+            component={RouterLink}
+            to={home}
+            sx={{
+              color: 'secondary.main',
+              fontWeight: 800,
+              letterSpacing: '0.14em',
+              fontSize: '0.85rem',
+              px: 1.25,
+              mr: 1,
+              borderRadius: 999,
+              whiteSpace: 'nowrap',
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
+            }}
           >
-            Parinaam {variant === 'admin' ? 'Admin' : 'VMS'}
-          </Typography>
+            PARINAAM
+          </Button>
           <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', flex: 1 }}>
-            {nav.map((item) => (
-              <Button
-                key={item.to}
-                component={RouterLink}
-                to={item.to}
-                size="small"
-                sx={{
-                  color: 'rgba(255,255,255,0.75)',
-                  borderRadius: 999,
-                  px: 1.5,
-                  '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.08)' },
-                }}
-              >
-                {item.label}
-              </Button>
-            ))}
+            {nav.map((item) => {
+              // Prefix match so a detail page keeps its section highlighted,
+              // but never let the dashboard's short path swallow its siblings.
+              const active =
+                location.pathname === item.to || location.pathname.startsWith(`${item.to}/`);
+              return (
+                <Button
+                  key={item.to}
+                  component={RouterLink}
+                  to={item.to}
+                  size="small"
+                  aria-current={active ? 'page' : undefined}
+                  sx={{
+                    color: active ? '#fff' : 'rgba(255,255,255,0.72)',
+                    fontWeight: active ? 700 : 500,
+                    bgcolor: active ? 'rgba(255,255,255,0.16)' : 'transparent',
+                    borderRadius: 999,
+                    px: 1.5,
+                    position: 'relative',
+                    '&::after': active
+                      ? {
+                          content: '""',
+                          position: 'absolute',
+                          left: '28%',
+                          right: '28%',
+                          bottom: 2,
+                          height: 2,
+                          borderRadius: 2,
+                          bgcolor: 'secondary.main',
+                        }
+                      : undefined,
+                    '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.12)' },
+                  }}
+                >
+                  {item.label}
+                </Button>
+              );
+            })}
           </Box>
           <Button
             size="small"
@@ -111,7 +149,19 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
       </AppBar>
 
       {crumbs.length > 0 && (
-        <Container maxWidth="xl" sx={{ pt: 2 }}>
+        <Box
+          sx={{
+            // Sticks directly under the app bar, which is itself sticky —
+            // on a long roster the way back should never scroll away.
+            position: 'sticky',
+            top: { xs: 56, sm: 64 },
+            zIndex: (t) => t.zIndex.appBar - 1,
+            bgcolor: 'rgba(251,246,236,0.92)',
+            backdropFilter: 'blur(8px)',
+            borderBottom: '1px solid rgba(19,35,37,0.08)',
+          }}
+        >
+        <Container maxWidth="xl" sx={{ py: 1.25 }}>
           <Breadcrumbs
             aria-label="Breadcrumb"
             separator="›"
@@ -140,6 +190,7 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
             )}
           </Breadcrumbs>
         </Container>
+        </Box>
       )}
 
       <Outlet />

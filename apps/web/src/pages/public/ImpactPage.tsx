@@ -47,9 +47,27 @@ export function ImpactPage() {
       {/* Hero */}
       <Box sx={{ bgcolor: tokens.ink, color: '#fdf9f0', py: { xs: 6, md: 9 } }}>
         <Container maxWidth="lg">
-          <Typography variant="overline" sx={{ color: tokens.mint, letterSpacing: '0.14em' }}>
-            PARINAAM FOUNDATION
-          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="overline" sx={{ color: tokens.mint, letterSpacing: '0.14em' }}>
+              PARINAAM FOUNDATION
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                component={RouterLink}
+                to="/login"
+                sx={{ color: '#fdf9f0', borderRadius: 999, px: 2, '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' } }}
+              >
+                Volunteer login
+              </Button>
+              <Button
+                component={RouterLink}
+                to="/admin/login"
+                sx={{ color: 'rgba(253,249,240,0.7)', borderRadius: 999, px: 2, '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' } }}
+              >
+                Admin
+              </Button>
+            </Box>
+          </Box>
           <Typography
             variant="h1"
             sx={{ fontSize: 'clamp(2.2rem, 5vw, 3.6rem)', maxWidth: '16em', lineHeight: 1.15, my: 2 }}
@@ -161,7 +179,7 @@ export function ImpactPage() {
               ? `Volunteers rate their sessions ${data.stats.avg_rating} out of 5 — come see why.`
               : 'Join a session near you — training, scheduling and certificates all included.'}
           </Typography>
-          <Button variant="pill" size="large" component={RouterLink} to="/">
+          <Button variant="pill" size="large" component={RouterLink} to="/login">
             Volunteer with us
           </Button>
         </Paper>

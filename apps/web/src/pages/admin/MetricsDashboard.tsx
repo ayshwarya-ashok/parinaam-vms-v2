@@ -1,4 +1,4 @@
-import { Box, Paper, Typography } from '@mui/material';
+import { Box, Paper, TextField, Typography } from '@mui/material';
 import {
   ArcElement,
   BarElement,
@@ -48,8 +48,12 @@ export function MetricsDashboard() {
   const [period, setPeriod] = useState('all');
   const [programId, setProgramId] = useState('');
   const [city, setCity] = useState('');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
 
-  const { data } = useDashboard({ period, programId, city });
+  const { data } = useDashboard({ period, programId, city, from, to });
+  const rangeIncomplete = period === 'custom' && !(from && to);
+  const rangeBackwards = period === 'custom' && Boolean(from && to) && from > to;
   const { data: programs } = usePrograms('', 'all');
 
   const c = data?.charts;
@@ -80,6 +84,7 @@ export function MetricsDashboard() {
               { value: 'month', label: 'Last month' },
               { value: 'quarter', label: 'Last quarter' },
               { value: 'year', label: 'Last year' },
+              { value: 'custom', label: 'Custom range' },
             ],
           },
           {
@@ -102,6 +107,39 @@ export function MetricsDashboard() {
           },
         ]}
       />
+
+      {period === 'custom' && (
+        <Paper
+          variant="outlined"
+          sx={{ p: 2, borderRadius: 3, mb: 2, display: 'flex', gap: 2, alignItems: 'flex-start', flexWrap: 'wrap' }}
+        >
+          <TextField
+            label="From"
+            type="date"
+            size="small"
+            InputLabelProps={{ shrink: true }}
+            inputProps={{ max: to || undefined }}
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+          />
+          <TextField
+            label="To"
+            type="date"
+            size="small"
+            InputLabelProps={{ shrink: true }}
+            inputProps={{ min: from || undefined }}
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+            error={rangeBackwards}
+            helperText={rangeBackwards ? 'The end date is before the start date.' : undefined}
+          />
+          {rangeIncomplete && (
+            <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary', alignSelf: 'center' }}>
+              Pick both dates to see the numbers for that window.
+            </Typography>
+          )}
+        </Paper>
+      )}
 
       {/* KPI tiles */}
       <Box

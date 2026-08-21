@@ -31,10 +31,15 @@ export function Providers({ children }: { children: ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
+        {/*
+          Top-right: the actions that raise these toasts (save, approve, send)
+          live in the top-right of every screen, so the confirmation appears
+          where the eye already is instead of the opposite corner.
+        */}
         <SnackbarProvider
           maxSnack={3}
-          autoHideDuration={2800}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          autoHideDuration={3200}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
         >
           <ErrorBoundary>
             <OfflineBanner />

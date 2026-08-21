@@ -100,7 +100,7 @@ export function Register() {
   // Arriving without credentials and without a session means a refresh or a
   // deep link. Nothing was created, so send them back to the start.
   if (status !== 'authenticated' && !credentials) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   // Signed in but no profile: an account orphaned by the old two-step signup.

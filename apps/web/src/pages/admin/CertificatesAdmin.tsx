@@ -21,7 +21,7 @@ import {
   openCertificate,
   useCertificateCandidates,
 } from '@/api/recognition';
-import { ConfirmDialog, FilterBar, PageShell } from '@/components';
+import { ConfirmDialog, FilterBar, PageShell, SortableCell, useTableSort } from '@/components';
 import { tokens } from '@/theme';
 
 function fmtDate(iso: string | null): string {
@@ -89,6 +89,13 @@ export function CertificatesAdmin() {
     onError: (err) => enqueueSnackbar(asApiError(err)?.message ?? 'Bulk issue failed', { variant: 'error' }),
   });
 
+  const { sorted, sort, toggle } = useTableSort(data, {
+    volunteer: (r) => r.volunteerName,
+    programme: (r) => r.programName,
+    hours: (r) => Number(r.hours),
+    certificate: (r) => r.certificate?.certificateNumber ?? null,
+  });
+
   const pendingInProgram = (data ?? []).filter((c) => !c.certificate?.issued).length;
   const programName = programs?.find((p) => p.id === programId)?.name;
 
@@ -134,15 +141,15 @@ export function CertificatesAdmin() {
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell>Volunteer</TableCell>
-              <TableCell>Programme</TableCell>
-              <TableCell align="center">Participation</TableCell>
-              <TableCell>Certificate</TableCell>
+              <SortableCell sortKey="volunteer" sort={sort} onSort={toggle}>Volunteer</SortableCell>
+              <SortableCell sortKey="programme" sort={sort} onSort={toggle}>Programme</SortableCell>
+              <SortableCell sortKey="hours" sort={sort} onSort={toggle} align="center">Participation</SortableCell>
+              <SortableCell sortKey="certificate" sort={sort} onSort={toggle}>Certificate</SortableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {(data ?? []).map((c) => (
+            {sorted.map((c) => (
               <TableRow key={`${c.volunteerId}-${c.programId}`}>
                 <TableCell>
                   <Typography sx={{ fontWeight: 600, fontSize: '0.9rem' }}>

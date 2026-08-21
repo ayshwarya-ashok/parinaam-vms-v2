@@ -19,22 +19,22 @@ const tiles = [
   },
   {
     title: 'Trainings',
-    caption: 'Compliance & activity modules (Phase 4)',
+    caption: 'Compliance & activity modules',
     actions: [{ label: 'Manage', to: '/admin/trainings', primary: false }],
   },
   {
     title: 'Field Execution & Attendance',
-    caption: 'Attendance links · submissions (Phase 5)',
+    caption: 'Attendance links · submissions',
     actions: [{ label: 'Manage', to: '/admin/field-execution', primary: false }],
   },
   {
     title: 'Recognition & Retention',
-    caption: 'Certificates · volunteer feedback (Phase 6)',
+    caption: 'Certificates · volunteer feedback',
     actions: [{ label: 'Manage', to: '/admin/recognition', primary: false }],
   },
   {
     title: 'Dashboard & Reports',
-    caption: 'Metrics, charts & automated reports (Phase 7)',
+    caption: 'Metrics, charts & automated reports',
     actions: [
       { label: 'Dashboard', to: '/admin/metrics', primary: false },
       { label: 'Reports', to: '/admin/reports', primary: false },

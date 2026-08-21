@@ -3,6 +3,7 @@ export * from './EmptyState';
 export * from './FilterBar';
 export * from './PageShell';
 export * from './StatTile';
+export * from './SortableTable';
 export * from './StatusPill';
 export * from './ErrorBoundary';
 export * from './OfflineBanner';

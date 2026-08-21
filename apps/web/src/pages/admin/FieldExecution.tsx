@@ -19,7 +19,7 @@ import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { api, asApiError } from '@/api/client';
-import { FilterBar, PageShell, StatusPill } from '@/components';
+import { FilterBar, PageShell, SortableCell, StatusPill, useTableSort } from '@/components';
 import { tokens } from '@/theme';
 
 interface DispatchRow {
@@ -114,6 +114,15 @@ export function FieldExecution() {
     onError: (err) => enqueueSnackbar(asApiError(err)?.message ?? 'Send failed', { variant: 'error' }),
   });
 
+  const { sorted, sort, toggle } = useTableSort(data, {
+    session: (r) => r.name,
+    date: (r) => `${String(r.date).slice(0, 10)} ${r.startTime}`,
+    volunteerEmail: (r) => r.volunteerEmail.sent,
+    coordinatorEmail: (r) => r.coordinatorEmail.sent,
+    attendance: (r) => (r.enrolled === 0 ? -1 : r.attended / r.enrolled),
+    report: (r) => r.reportSubmitted,
+  });
+
   return (
     <PageShell
       eyebrow="Admin › Field Execution"
@@ -140,17 +149,17 @@ export function FieldExecution() {
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell>Session</TableCell>
-              <TableCell>Date & time</TableCell>
-              <TableCell>Volunteer email</TableCell>
-              <TableCell>Coordinator email</TableCell>
-              <TableCell align="center">Attendance</TableCell>
-              <TableCell align="center">Report</TableCell>
+              <SortableCell sortKey="session" sort={sort} onSort={toggle}>Session</SortableCell>
+              <SortableCell sortKey="date" sort={sort} onSort={toggle}>Date & time</SortableCell>
+              <SortableCell sortKey="volunteerEmail" sort={sort} onSort={toggle}>Volunteer email</SortableCell>
+              <SortableCell sortKey="coordinatorEmail" sort={sort} onSort={toggle}>Coordinator email</SortableCell>
+              <SortableCell sortKey="attendance" sort={sort} onSort={toggle} align="center">Attendance</SortableCell>
+              <SortableCell sortKey="report" sort={sort} onSort={toggle} align="center">Report</SortableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {(data ?? []).map((row) => (
+            {sorted.map((row) => (
               <TableRow key={row.id} hover>
                 <TableCell>
                   <Typography

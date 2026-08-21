@@ -4,7 +4,8 @@ import { Roles } from '../../common/decorators/auth.decorators';
 import { UUID_PATTERN } from '../../common/pipes/uuid.pipe';
 import { AnalyticsService, DashboardPeriod } from './analytics.service';
 
-const PERIODS: DashboardPeriod[] = ['all', 'month', 'quarter', 'year'];
+const PERIODS: DashboardPeriod[] = ['all', 'month', 'quarter', 'year', 'custom'];
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 @ApiTags('analytics')
 @Controller('analytics')
@@ -18,11 +19,15 @@ export class AnalyticsController {
     @Query('period') period?: string,
     @Query('programId') programId?: string,
     @Query('city') city?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
   ) {
     return this.analytics.dashboard({
       period: PERIODS.includes(period as DashboardPeriod) ? (period as DashboardPeriod) : 'all',
       programId: programId && UUID_PATTERN.test(programId) ? programId : undefined,
       city: city || undefined,
+      from: from && ISO_DATE.test(from) ? from : undefined,
+      to: to && ISO_DATE.test(to) ? to : undefined,
     });
   }
 }

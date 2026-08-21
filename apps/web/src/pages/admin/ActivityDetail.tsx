@@ -20,7 +20,7 @@ import { Link as RouterLink, useParams } from 'react-router-dom';
 import { useActivity } from '@/api/admin';
 import { useDynamicCrumbs } from '@/app/breadcrumbs';
 import { api, asApiError } from '@/api/client';
-import { ConfirmDialog, PageShell, StatusPill } from '@/components';
+import { ConfirmDialog, PageShell, SortableCell, StatusPill, useTableSort } from '@/components';
 
 function fmtDate(iso: string): string {
   return new Date(`${iso.slice(0, 10)}T00:00:00`).toLocaleDateString('en-IN', {
@@ -35,6 +35,14 @@ export function ActivityDetail() {
   const queryClient = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
   const { data: activity, isLoading } = useActivity(id);
+  const { sorted, sort, toggle } = useTableSort(activity?.events, {
+    code: (e) => e.code,
+    date: (e) => `${String(e.date).slice(0, 10)} ${e.start_time}`,
+    location: (e) => e.location,
+    coordinator: (e) => e.coordinator_name,
+    seats: (e) => e.enrolled_count,
+    status: (e) => e.status,
+  });
 
   // The URL carries no programme segment, so the breadcrumb to the parent
   // programme is injected from the fetched activity.
@@ -158,17 +166,17 @@ export function ActivityDetail() {
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell>Code</TableCell>
-              <TableCell>Date & time</TableCell>
-              <TableCell>Location</TableCell>
-              <TableCell>Coordinator</TableCell>
-              <TableCell align="center">Seats</TableCell>
-              <TableCell>Status</TableCell>
+              <SortableCell sortKey="code" sort={sort} onSort={toggle}>Code</SortableCell>
+              <SortableCell sortKey="date" sort={sort} onSort={toggle}>Date & time</SortableCell>
+              <SortableCell sortKey="location" sort={sort} onSort={toggle}>Location</SortableCell>
+              <SortableCell sortKey="coordinator" sort={sort} onSort={toggle}>Coordinator</SortableCell>
+              <SortableCell sortKey="seats" sort={sort} onSort={toggle} align="center">Seats</SortableCell>
+              <SortableCell sortKey="status" sort={sort} onSort={toggle}>Status</SortableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {activity.events.map((e) => (
+            {sorted.map((e) => (
               <TableRow key={e.id} sx={{ opacity: e.status === 'cancelled' ? 0.55 : 1 }}>
                 <TableCell>
                   <Typography

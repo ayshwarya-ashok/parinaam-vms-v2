@@ -1,12 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
-export type DashboardPeriod = 'all' | 'month' | 'quarter' | 'year';
+export type DashboardPeriod = 'all' | 'month' | 'quarter' | 'year' | 'custom';
 
 export interface DashboardFilters {
   period: DashboardPeriod;
   programId?: string;
   city?: string;
+  /** Only meaningful when period = 'custom'. Inclusive, ISO dates. */
+  from?: string;
+  to?: string;
 }
 
 /**
@@ -29,11 +32,11 @@ export class AnalyticsService {
 
   // Always-true predicate typing all three shared params, so every query in
   // the batch binds the same parameter array (pg rejects unreferenced params).
-  private readonly ANCHOR = `($1::date IS NULL OR TRUE) AND ($2::uuid IS NULL OR TRUE) AND ($3::text IS NULL OR TRUE)`;
+  private readonly ANCHOR = `($1::date IS NULL OR TRUE) AND ($2::uuid IS NULL OR TRUE) AND ($3::text IS NULL OR TRUE) AND ($4::date IS NULL OR TRUE)`;
 
   async dashboard(filters: DashboardFilters): Promise<Record<string, unknown>> {
-    const since = this.sinceOf(filters.period);
-    const params = [since, filters.programId ?? null, filters.city ?? null];
+    const { since, until } = this.windowOf(filters);
+    const params = [since, filters.programId ?? null, filters.city ?? null, until];
 
     // Volunteer population under the current filters, reused by every
     // volunteer-shaped metric so they all describe the same set of people.
@@ -54,6 +57,7 @@ export class AnalyticsService {
       JOIN activities a ON a.id = e.activity_id
       JOIN volunteers v ON v.id = ar.volunteer_id
       WHERE ($1::date IS NULL OR e.date >= $1)
+           AND ($4::date IS NULL OR e.date <= $4)
         AND ($2::uuid IS NULL OR a.program_id = $2)
         AND ($3::text IS NULL OR v.city = $3)`;
 
@@ -97,6 +101,7 @@ export class AnalyticsService {
         `SELECT e.status AS label, COUNT(*)::int AS count
          FROM events e JOIN activities a ON a.id = e.activity_id
          WHERE ${this.ANCHOR} AND ($1::date IS NULL OR e.date >= $1)
+           AND ($4::date IS NULL OR e.date <= $4)
            AND ($2::uuid IS NULL OR a.program_id = $2)
          GROUP BY e.status ORDER BY count DESC`,
         params,
@@ -106,6 +111,7 @@ export class AnalyticsService {
                 COUNT(*)::int AS count
          FROM (${VOL}) v
          WHERE ($1::date IS NULL OR v.created_at >= $1)
+           AND ($4::date IS NULL OR v.created_at < ($4::date + 1))
          GROUP BY 1 ORDER BY 1`,
         params,
       ),
@@ -122,6 +128,7 @@ export class AnalyticsService {
          JOIN events e ON e.id = r.event_id
          JOIN activities a ON a.id = e.activity_id
          WHERE ${this.ANCHOR} AND ($1::date IS NULL OR e.date >= $1)
+           AND ($4::date IS NULL OR e.date <= $4)
            AND ($2::uuid IS NULL OR a.program_id = $2)
          GROUP BY 1 ORDER BY 1`,
         params,
@@ -134,6 +141,7 @@ export class AnalyticsService {
          JOIN events e ON e.id = va.event_id
          JOIN programs p ON p.id = va.program_id
          WHERE ${this.ANCHOR} AND ($1::date IS NULL OR e.date >= $1)
+           AND ($4::date IS NULL OR e.date <= $4)
            AND ($2::uuid IS NULL OR va.program_id = $2)
          GROUP BY p.name HAVING COALESCE(SUM(va.enrolled_count), 0) > 0
          ORDER BY enrolled DESC`,
@@ -146,6 +154,7 @@ export class AnalyticsService {
          JOIN activities a ON a.id = e.activity_id
          JOIN volunteers v ON v.id = f.volunteer_id
          WHERE ($1::date IS NULL OR f.submitted_at >= $1)
+             AND ($4::date IS NULL OR f.submitted_at < ($4::date + 1))
            AND ($2::uuid IS NULL OR a.program_id = $2)
            AND ($3::text IS NULL OR v.city = $3)
          GROUP BY f.overall_rating ORDER BY f.overall_rating`,
@@ -205,6 +214,7 @@ export class AnalyticsService {
            JOIN activities a ON a.id = e.activity_id
            WHERE e.status = 'completed'
              AND ($1::date IS NULL OR e.date >= $1)
+           AND ($4::date IS NULL OR e.date <= $4)
              AND ($2::uuid IS NULL OR a.program_id = $2))                        AS events_conducted,
         (SELECT COUNT(*)::int FROM events e
            JOIN activities a ON a.id = e.activity_id
@@ -214,12 +224,14 @@ export class AnalyticsService {
            JOIN events e ON e.id = r.event_id
            JOIN activities a ON a.id = e.activity_id
            WHERE ($1::date IS NULL OR e.date >= $1)
+           AND ($4::date IS NULL OR e.date <= $4)
              AND ($2::uuid IS NULL OR a.program_id = $2))                        AS total_beneficiaries,
         (SELECT COALESCE(ROUND(AVG(f.overall_rating), 1), 0) FROM feedback_submissions f
            JOIN events e ON e.id = f.event_id
            JOIN activities a ON a.id = e.activity_id
            JOIN volunteers v ON v.id = f.volunteer_id
            WHERE ($1::date IS NULL OR f.submitted_at >= $1)
+             AND ($4::date IS NULL OR f.submitted_at < ($4::date + 1))
              AND ($2::uuid IS NULL OR a.program_id = $2)
              AND ($3::text IS NULL OR v.city = $3))                              AS avg_rating,
         (SELECT COUNT(*)::int FROM certificates c
@@ -233,14 +245,23 @@ export class AnalyticsService {
     return row;
   }
 
-  /** Period → inclusive lower bound; null means no bound. */
-  private sinceOf(period: DashboardPeriod): string | null {
-    if (period === 'all') return null;
+/**
+   * Period → an inclusive [since, until] window; null on either end means
+   * unbounded. The named periods are all "last N from today"; 'custom' is the
+   * only one with an upper bound, which is why every date predicate carries
+   * one rather than the named periods pretending today is the end of time.
+   */
+  private windowOf(filters: DashboardFilters): { since: string | null; until: string | null } {
+    if (filters.period === 'custom') {
+      return { since: filters.from ?? null, until: filters.to ?? null };
+    }
+    if (filters.period === 'all') return { since: null, until: null };
+
     const now = new Date();
     const d = new Date(now);
-    if (period === 'month') d.setMonth(now.getMonth() - 1);
-    if (period === 'quarter') d.setMonth(now.getMonth() - 3);
-    if (period === 'year') d.setFullYear(now.getFullYear() - 1);
-    return d.toISOString().slice(0, 10);
+    if (filters.period === 'month') d.setMonth(now.getMonth() - 1);
+    if (filters.period === 'quarter') d.setMonth(now.getMonth() - 3);
+    if (filters.period === 'year') d.setFullYear(now.getFullYear() - 1);
+    return { since: d.toISOString().slice(0, 10), until: null };
   }
 }

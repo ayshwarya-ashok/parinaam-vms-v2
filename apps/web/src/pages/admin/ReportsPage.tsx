@@ -19,7 +19,7 @@ import {
   useVolunteerReport,
 } from '@/api/analytics';
 import { asApiError } from '@/api/client';
-import { FilterBar, PageShell } from '@/components';
+import { FilterBar, PageShell, SortableCell, useTableSort } from '@/components';
 import { tokens } from '@/theme';
 
 function fmtDateTime(iso: string): string {
@@ -42,6 +42,24 @@ export function ReportsPage() {
   const filters = { q, category, phase };
   const { data: rows } = useVolunteerReport(filters);
   const { data: runs, refetch: refetchRuns } = useReportRuns();
+
+  const volunteers = useTableSort(rows, {
+    volunteer: (r) => r.volunteer_name,
+    category: (r) => `${r.category} ${r.phase}`,
+    programmes: (r) => r.programs_joined,
+    hours: (r) => Number(r.total_hours),
+    attendance: (r) => Number(r.attendance_pct),
+    trainings: (r) => r.trainings_passed,
+    certificates: (r) => r.certificates_issued,
+  });
+  const runsSort = useTableSort(runs, {
+    when: (r) => r.createdAt,
+    report: (r) => r.reportType,
+    format: (r) => r.format,
+    rowCount: (r) => r.rowCount,
+    status: (r) => r.status,
+    source: (r) => Boolean(r.scheduledReportId),
+  });
 
   const doExport = async (format: 'CSV' | 'Excel' | 'PDF') => {
     setExporting(format);
@@ -115,17 +133,17 @@ export function ReportsPage() {
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell>Volunteer</TableCell>
-              <TableCell>Category / phase</TableCell>
-              <TableCell align="right">Programmes</TableCell>
-              <TableCell align="right">Hours</TableCell>
-              <TableCell sx={{ minWidth: 140 }}>Attendance</TableCell>
-              <TableCell align="right">Trainings</TableCell>
-              <TableCell align="right">Certificates</TableCell>
+              <SortableCell sortKey="volunteer" sort={volunteers.sort} onSort={volunteers.toggle}>Volunteer</SortableCell>
+              <SortableCell sortKey="category" sort={volunteers.sort} onSort={volunteers.toggle}>Category / phase</SortableCell>
+              <SortableCell sortKey="programmes" sort={volunteers.sort} onSort={volunteers.toggle} align="right">Programmes</SortableCell>
+              <SortableCell sortKey="hours" sort={volunteers.sort} onSort={volunteers.toggle} align="right">Hours</SortableCell>
+              <SortableCell sortKey="attendance" sort={volunteers.sort} onSort={volunteers.toggle} sx={{ minWidth: 140 }}>Attendance</SortableCell>
+              <SortableCell sortKey="trainings" sort={volunteers.sort} onSort={volunteers.toggle} align="right">Trainings</SortableCell>
+              <SortableCell sortKey="certificates" sort={volunteers.sort} onSort={volunteers.toggle} align="right">Certificates</SortableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {(rows ?? []).map((row) => (
+            {volunteers.sorted.map((row) => (
               <TableRow key={row.email}>
                 <TableCell>
                   <Typography sx={{ fontWeight: 600, fontSize: '0.9rem' }}>{row.volunteer_name}</Typography>
@@ -173,16 +191,16 @@ export function ReportsPage() {
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell>When</TableCell>
-              <TableCell>Report</TableCell>
-              <TableCell>Format</TableCell>
-              <TableCell align="right">Rows</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Source</TableCell>
+              <SortableCell sortKey="when" sort={runsSort.sort} onSort={runsSort.toggle}>When</SortableCell>
+              <SortableCell sortKey="report" sort={runsSort.sort} onSort={runsSort.toggle}>Report</SortableCell>
+              <SortableCell sortKey="format" sort={runsSort.sort} onSort={runsSort.toggle}>Format</SortableCell>
+              <SortableCell sortKey="rowCount" sort={runsSort.sort} onSort={runsSort.toggle} align="right">Rows</SortableCell>
+              <SortableCell sortKey="status" sort={runsSort.sort} onSort={runsSort.toggle}>Status</SortableCell>
+              <SortableCell sortKey="source" sort={runsSort.sort} onSort={runsSort.toggle}>Source</SortableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {(runs ?? []).slice(0, 12).map((run) => (
+            {runsSort.sorted.slice(0, 12).map((run) => (
               <TableRow key={run.id}>
                 <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.82rem' }}>{fmtDateTime(run.createdAt)}</TableCell>
                 <TableCell sx={{ fontSize: '0.85rem' }}>{run.reportType}</TableCell>

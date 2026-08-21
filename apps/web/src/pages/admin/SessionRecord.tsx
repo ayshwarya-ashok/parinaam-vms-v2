@@ -24,7 +24,14 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api, asApiError } from '@/api/client';
 import { useDynamicCrumbs } from '@/app/breadcrumbs';
-import { EmptyState, PageShell, StatTile, StatusPill } from '@/components';
+import {
+  EmptyState,
+  PageShell,
+  SortableCell,
+  StatTile,
+  StatusPill,
+  useTableSort,
+} from '@/components';
 import { tokens } from '@/theme';
 
 const ABSENCE_REASONS = [
@@ -158,6 +165,15 @@ export function SessionRecord() {
       : null,
   );
 
+  const roster = useTableSort(data?.roster, {
+    volunteer: (r) => `${r.first_name} ${r.last_name}`,
+    enrolledAt: (r) => r.enrolled_at,
+    skills: (r) => r.enrollment_skills,
+    attended: (r) => (r.record_id === null ? null : r.attended),
+    hours: (r) => (r.hours_contributed === null ? null : Number(r.hours_contributed)),
+    source: (r) => r.source,
+  });
+
   const save = useMutation({
     mutationFn: async (state: EditState) => {
       const body = {
@@ -189,8 +205,8 @@ export function SessionRecord() {
     );
   }
 
-  const { event, roster, waitlist, report, summary } = data;
-  const notSubmitted = roster.filter((r) => r.record_id === null).length;
+  const { event, waitlist, report, summary } = data;
+  const notSubmitted = data.roster.filter((r) => r.record_id === null).length;
   // Before the day, the question is "who is coming?"; after it, "who came and
   // for how long?". Same roster, different columns.
   const isUpcoming = event.status === 'draft' || event.status === 'upcoming';
@@ -286,19 +302,19 @@ export function SessionRecord() {
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell>Volunteer</TableCell>
+              <SortableCell sortKey="volunteer" sort={roster.sort} onSort={roster.toggle}>Volunteer</SortableCell>
               {isUpcoming ? (
                 <>
-                  <TableCell>Enrolled on</TableCell>
-                  <TableCell>Skills offered</TableCell>
+                  <SortableCell sortKey="enrolledAt" sort={roster.sort} onSort={roster.toggle}>Enrolled on</SortableCell>
+                  <SortableCell sortKey="skills" sort={roster.sort} onSort={roster.toggle}>Skills offered</SortableCell>
                   <TableCell align="center">Route</TableCell>
                 </>
               ) : (
                 <>
-                  <TableCell align="center">Attended</TableCell>
+                  <SortableCell sortKey="attended" sort={roster.sort} onSort={roster.toggle} align="center">Attended</SortableCell>
                   <TableCell align="center">Times</TableCell>
-                  <TableCell align="right">Hours</TableCell>
-                  <TableCell>Logged by</TableCell>
+                  <SortableCell sortKey="hours" sort={roster.sort} onSort={roster.toggle} align="right">Hours</SortableCell>
+                  <SortableCell sortKey="source" sort={roster.sort} onSort={roster.toggle}>Logged by</SortableCell>
                   <TableCell>Notes</TableCell>
                   <TableCell align="right">Action</TableCell>
                 </>
@@ -306,7 +322,7 @@ export function SessionRecord() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {roster.map((r) => (
+            {roster.sorted.map((r) => (
               <TableRow key={r.volunteer_id}>
                 <TableCell>
                   <Typography sx={{ fontWeight: 600, fontSize: '0.88rem' }}>
@@ -406,7 +422,7 @@ export function SessionRecord() {
                 )}
               </TableRow>
             ))}
-            {roster.length === 0 && (
+            {data.roster.length === 0 && (
               <TableRow>
                 <TableCell colSpan={7} sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
                   Nobody is enrolled in this session yet.

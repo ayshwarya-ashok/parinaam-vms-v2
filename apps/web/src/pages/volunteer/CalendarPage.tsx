@@ -1,4 +1,4 @@
-import { Box, Button, Chip, Paper, Typography } from '@mui/material';
+import { Box, Button, Chip, Paper, TextField, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -57,6 +57,15 @@ export function CalendarPage() {
   };
 
   const todayIso = today.toISOString().slice(0, 10);
+
+  /** Jump straight to a date: move the grid to its month and open that day. */
+  const jumpTo = (iso: string) => {
+    if (!/^d{4}-d{2}-d{2}$/.test(iso)) return;
+    const [y, mo] = iso.split('-').map(Number);
+    setYear(y);
+    setMonth(mo - 1);
+    setSelected(iso);
+  };
   const byDate = data?.byDate ?? {};
   const conflictDays = new Set(data?.conflictDays ?? []);
   const selectedSessions: SessionRow[] = selected ? (byDate[selected] ?? []) : [];
@@ -67,7 +76,16 @@ export function CalendarPage() {
       title={`${MONTHS[month]} ${year}`}
       actions={
         <>
-          <Button variant="pillOutlined" size="small" onClick={() => { setYear(today.getFullYear()); setMonth(today.getMonth()); }}>
+          <TextField
+            type="date"
+            size="small"
+            label="Jump to date"
+            InputLabelProps={{ shrink: true }}
+            value={selected ?? ''}
+            onChange={(e) => jumpTo(e.target.value)}
+            sx={{ minWidth: 170, '& .MuiInputBase-root': { borderRadius: 999 } }}
+          />
+          <Button variant="pillOutlined" size="small" onClick={() => { setYear(today.getFullYear()); setMonth(today.getMonth()); setSelected(todayIso); }}>
             Today
           </Button>
           <Button variant="pillOutlined" size="small" onClick={() => step(-1)}>‹</Button>
@@ -75,6 +93,12 @@ export function CalendarPage() {
         </>
       }
     >
+      <Typography sx={{ color: 'text.secondary', fontSize: '0.9rem', mb: 1.5 }}>
+        🗓 Click any day to see its sessions. A{' '}
+        <Box component="span" sx={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', bgcolor: tokens.accentStrong }} />{' '}
+        dot marks a day where two of your enrollments overlap.
+      </Typography>
+
       <Paper variant="outlined" sx={{ borderRadius: 4, overflow: 'hidden', bgcolor: 'rgba(255,255,255,0.7)' }}>
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid', borderColor: 'divider' }}>
           {DOW.map((d) => (
@@ -144,12 +168,8 @@ export function CalendarPage() {
         </Box>
       </Paper>
 
+      {selected && (
       <Paper variant="outlined" sx={{ mt: 2, p: 2, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.75)' }}>
-        {!selected && (
-          <Typography sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>
-            🗓 Click any day to see its sessions. A <Box component="span" sx={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', bgcolor: tokens.accentStrong }} /> dot marks a day where two of your enrollments overlap.
-          </Typography>
-        )}
         {selected && (
           <>
             <Typography sx={{ fontWeight: 700, mb: 1 }}>
@@ -195,6 +215,7 @@ export function CalendarPage() {
           </>
         )}
       </Paper>
+      )}
     </PageShell>
   );
 }

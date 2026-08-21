@@ -33,7 +33,13 @@ export interface DashboardPayload {
   meta: { cities: string[] };
 }
 
-export const useDashboard = (filters: { period: string; programId?: string; city?: string }) =>
+export const useDashboard = (filters: {
+  period: string;
+  programId?: string;
+  city?: string;
+  from?: string;
+  to?: string;
+}) =>
   useQuery({
     queryKey: ['dashboard', filters],
     queryFn: async () =>
@@ -43,9 +49,13 @@ export const useDashboard = (filters: { period: string; programId?: string; city
             period: filters.period,
             programId: filters.programId || undefined,
             city: filters.city || undefined,
+            from: filters.period === 'custom' ? filters.from || undefined : undefined,
+            to: filters.period === 'custom' ? filters.to || undefined : undefined,
           },
         })
       ).data,
+    // A half-entered custom range would query the wrong window; wait for both.
+    enabled: filters.period !== 'custom' || Boolean(filters.from && filters.to),
   });
 
 // ── Reports ──────────────────────────────────────────────────────────────────

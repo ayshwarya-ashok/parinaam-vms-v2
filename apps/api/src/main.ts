@@ -28,7 +28,9 @@ async function bootstrap(): Promise<void> {
   app.enableCors({
     origin: config.corsOrigins,
     credentials: true,
-    exposedHeaders: ['X-Trace-Id'],
+    // Content-Disposition carries the download's real file name; without it
+    // exposed, the browser saves blobs under a generated GUID instead.
+    exposedHeaders: ['X-Trace-Id', 'Content-Disposition'],
   });
 
   app.useGlobalPipes(

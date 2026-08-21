@@ -64,10 +64,24 @@ export const useMyCertificates = () =>
     queryFn: async () => (await api.get<{ data: MyCertificate[] }>('/certificates/me')).data.data,
   });
 
-/** Downloads go through the authenticated client — a plain <a href> carries no token. */
+/**
+ * Downloads go through the authenticated client — a plain <a href> carries no
+ * token. The server sends the file name in Content-Disposition
+ * (<volunteerId>-<certificateNumber>.pdf); we save under that rather than
+ * window.open()ing the blob, which would name the file after a browser GUID.
+ */
 export async function openCertificate(id: string): Promise<void> {
   const res = await api.get(`/certificates/${id}/download`, { responseType: 'blob' });
-  window.open(URL.createObjectURL(res.data as Blob), '_blank');
+
+  const disposition = String(res.headers['content-disposition'] ?? '');
+  const filename = /filename="?([^";]+)"?/.exec(disposition)?.[1] ?? `certificate-${id}.pdf`;
+
+  const url = URL.createObjectURL(res.data as Blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 // ── Feedback ─────────────────────────────────────────────────────────────────

@@ -24,7 +24,14 @@ import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 import axios from 'axios';
 import { API_BASE_URL, api, asApiError } from '@/api/client';
-import { ConfirmDialog, FilterBar, PageShell, StatusPill } from '@/components';
+import {
+  ConfirmDialog,
+  FilterBar,
+  PageShell,
+  SortableCell,
+  StatusPill,
+  useTableSort,
+} from '@/components';
 import { tokens } from '@/theme';
 
 type RegistrationStatus = 'pending' | 'approved' | 'rejected';
@@ -162,6 +169,16 @@ export function VolunteerDirectory() {
     onError: fail,
   });
 
+  // Sorting is over the page on screen — the directory is paginated server-side.
+  const { sorted, sort, toggle } = useTableSort(data?.data, {
+    name: (r) => `${r.firstName} ${r.lastName}`,
+    email: (r) => r.email,
+    category: (r) => r.category,
+    registration: (r) => r.registrationStatus,
+    account: (r) => r.isActive,
+    registered: (r) => r.createdAt,
+  });
+
   const pending = data?.meta.pending ?? 0;
 
   return (
@@ -218,16 +235,16 @@ export function VolunteerDirectory() {
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell>Volunteer</TableCell>
-              <TableCell>Contact</TableCell>
-              <TableCell>Category</TableCell>
-              <TableCell>Registration</TableCell>
-              <TableCell>Account</TableCell>
+              <SortableCell sortKey="name" sort={sort} onSort={toggle}>Volunteer</SortableCell>
+              <SortableCell sortKey="email" sort={sort} onSort={toggle}>Contact</SortableCell>
+              <SortableCell sortKey="category" sort={sort} onSort={toggle}>Category</SortableCell>
+              <SortableCell sortKey="registration" sort={sort} onSort={toggle}>Registration</SortableCell>
+              <SortableCell sortKey="account" sort={sort} onSort={toggle}>Account</SortableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {(data?.data ?? []).map((v) => (
+            {sorted.map((v) => (
               <TableRow
                 key={v.id}
                 hover

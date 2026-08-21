@@ -21,7 +21,7 @@ import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 import { ScheduledReportRow, useScheduledReports } from '@/api/analytics';
 import { api, asApiError } from '@/api/client';
-import { ConfirmDialog, EmptyState, PageShell } from '@/components';
+import { ConfirmDialog, EmptyState, PageShell, SortableCell, useTableSort } from '@/components';
 import { tokens } from '@/theme';
 
 interface FormState {
@@ -61,6 +61,13 @@ export function ScheduledReportsPage() {
   const queryClient = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
   const { data } = useScheduledReports();
+  const { sorted, sort, toggle: sortBy } = useTableSort(data, {
+    name: (r) => r.name,
+    cadence: (r) => `${r.frequency} ${r.sendTime}`,
+    recipients: (r) => r.recipients,
+    nextRun: (r) => r.nextRunAt,
+    status: (r) => r.isActive,
+  });
 
   const refresh = () => void queryClient.invalidateQueries({ queryKey: ['scheduled-reports'] });
   const fail = (err: unknown) =>
@@ -144,16 +151,16 @@ export function ScheduledReportsPage() {
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>Schedule</TableCell>
-                <TableCell>Cadence</TableCell>
-                <TableCell>Recipients</TableCell>
-                <TableCell>Next run</TableCell>
-                <TableCell>Status</TableCell>
+                <SortableCell sortKey="name" sort={sort} onSort={sortBy}>Schedule</SortableCell>
+                <SortableCell sortKey="cadence" sort={sort} onSort={sortBy}>Cadence</SortableCell>
+                <SortableCell sortKey="recipients" sort={sort} onSort={sortBy}>Recipients</SortableCell>
+                <SortableCell sortKey="nextRun" sort={sort} onSort={sortBy}>Next run</SortableCell>
+                <SortableCell sortKey="status" sort={sort} onSort={sortBy}>Status</SortableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {(data ?? []).map((row) => (
+              {sorted.map((row) => (
                 <TableRow key={row.id}>
                   <TableCell>
                     <Typography sx={{ fontWeight: 600, fontSize: '0.9rem' }}>{row.name}</Typography>

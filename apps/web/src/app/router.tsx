@@ -66,13 +66,15 @@ const adminNav = [
 ];
 
 /**
- * The full route table from docs/05-screen-inventory.md, live from Phase 0.
- * Each phase replaces its Placeholder elements with real screens; the routes,
+ * The full route table from docs/05-screen-inventory.md. Routes,
  * layouts and breadcrumbs never move again.
  */
 export const router = createBrowserRouter([
   // ── Public ──────────────────────────────────────────────────────────────────
-  { path: '/', element: <Landing /> },
+  // The front door is the public impact page; the sign-in card lives one
+  // click away at /login. /impact stays valid so shared links keep working.
+  { path: '/', element: <ImpactPage /> },
+  { path: '/login', element: <Landing /> },
   { path: '/register', element: <Register /> },
   { path: '/admin/login', element: <AdminLogin /> },
   { path: '/impact', element: <ImpactPage /> },

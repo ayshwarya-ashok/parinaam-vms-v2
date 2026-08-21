@@ -9,7 +9,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useSnackbar } from 'notistack';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -19,6 +18,7 @@ import {
   useTrainingsCatalog,
 } from '@/api/admin';
 import { api, asApiError } from '@/api/client';
+import { isUnchanged, useToast } from '@/app/toast';
 import { PageShell } from '@/components';
 
 /** Create and edit share this form; the id param decides. */
@@ -26,7 +26,7 @@ export function ProgramForm() {
   const { id } = useParams<{ id: string }>();
   const isEdit = !!id;
   const navigate = useNavigate();
-  const { enqueueSnackbar } = useSnackbar();
+  const toast = useToast();
   const invalidate = useInvalidateProgram();
 
   const { data: existing } = useProgram(id);
@@ -38,6 +38,8 @@ export function ProgramForm() {
   const [coordinatorId, setCoordinatorId] = useState('');
   const [trainingIds, setTrainingIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [original, setOriginal] = useState<Record<string, unknown> | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -46,6 +48,12 @@ export function ProgramForm() {
       setDescription(existing.description ?? '');
       setCoordinatorId(existing.defaultCoordinator?.id ?? '');
       setTrainingIds(existing.trainings.map((t) => t.id));
+      setOriginal({
+        name: existing.name,
+        description: existing.description ?? '',
+        coordinatorId: existing.defaultCoordinator?.id ?? '',
+        trainingIds: existing.trainings.map((t) => t.id),
+      });
     }
   }, [existing, isEdit]);
 
@@ -55,6 +63,19 @@ export function ProgramForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (name.trim() === '') {
+      setNameError('A programme needs a name.');
+      toast.failure('Check the highlighted fields.');
+      return;
+    }
+    setNameError(null);
+
+    if (isEdit && original && isUnchanged({ name, description, coordinatorId, trainingIds }, original)) {
+      toast.noChanges();
+      return;
+    }
+
     setBusy(true);
     try {
       if (isEdit) {
@@ -65,7 +86,7 @@ export function ProgramForm() {
         });
         await api.put(`/programs/${id}/trainings`, { trainingIds });
         invalidate(id);
-        enqueueSnackbar('Program updated', { variant: 'success' });
+        toast.success('Program updated');
         navigate(`/admin/programs/${id}`);
       } else {
         const { data } = await api.post<{ id: string }>('/programs', {
@@ -75,13 +96,12 @@ export function ProgramForm() {
           trainingIds,
         });
         invalidate();
-        enqueueSnackbar('Program created as a draft — publish it when ready', {
-          variant: 'success',
-        });
+        toast.success('Program created as a draft — publish it when ready');
         navigate(`/admin/programs/${data.id}`);
       }
     } catch (err) {
       setError(asApiError(err)?.message ?? 'Could not save the program.');
+      toast.failure(err, 'Could not save the program.');
     } finally {
       setBusy(false);
     }
@@ -108,6 +128,8 @@ export function ProgramForm() {
         <TextField
           label="Program name"
           required
+          error={Boolean(nameError)}
+          helperText={nameError ?? undefined}
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="e.g. Community Health Camp"
