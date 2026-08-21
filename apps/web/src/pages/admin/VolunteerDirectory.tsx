@@ -211,7 +211,7 @@ export function VolunteerDirectory() {
         search={{
           value: q,
           onChange: (v) => { setQ(v); setPage(0); },
-          placeholder: 'Search name or email…',
+          placeholder: 'Search name, email or phone…',
         }}
         groups={[
           {

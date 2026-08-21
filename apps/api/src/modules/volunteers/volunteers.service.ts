@@ -357,9 +357,24 @@ export class VolunteersService {
       .skip(offset);
 
     if (query.q) {
+      /*
+       * One box, three ways to find someone: name, email or phone number.
+       *
+       * Numbers are stored as they were typed — "+91 98200 11011" and
+       * "9820011011" are the same person — so both the stored value and the
+       * search term are reduced to digits before comparing. Without that,
+       * searching the number a volunteer reads off their own phone would miss
+       * the record that holds it.
+       */
+      // Reduce to the ten significant digits: a search typed as
+      // "+91 98200 11005" yields 919820011005, which would never LIKE-match a
+      // stored "9820011005". Taking the last ten drops the country code the
+      // same way the web client does before saving.
+      const digits = query.q.replace(/[^0-9]/g, '').slice(-10);
       qb.andWhere(
-        '(v.firstName ILIKE :q OR v.lastName ILIKE :q OR u.email::text ILIKE :q)',
-        { q: `%${query.q}%` },
+        `(v.firstName ILIKE :q OR v.lastName ILIKE :q OR u.email::text ILIKE :q
+          OR (:digits <> '' AND regexp_replace(COALESCE(v.phone, ''), '[^0-9]', '', 'g') LIKE :phoneLike))`,
+        { q: `%${query.q}%`, digits, phoneLike: `%${digits}%` },
       );
     }
     if (query.phase) qb.andWhere('v.phase = :phase', { phase: query.phase });

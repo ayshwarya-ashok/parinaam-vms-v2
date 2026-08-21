@@ -101,22 +101,21 @@ export function ImpactPage() {
     { num: s ? String(s.partner_organizations) : '—', lbl: 'Partner organisations' },
   ];
 
-  // Six tiles: real public photos first, then programme cards in the
-  // prototype's gradients so the grid never renders half-empty.
-  const tiles = [
-    ...(data?.gallery ?? []).map((photo, i) => ({
-      key: `photo-${i}`,
-      url: photo.url as string | null,
-      title: photo.caption ?? 'From the field',
-      sub: 'Parinaam Foundation',
-    })),
-    ...(data?.programs ?? []).map((p, i) => ({
-      key: `prog-${i}`,
-      url: null as string | null,
-      title: p.name,
-      sub: `${p.volunteers} volunteers · ${p.beneficiaries.toLocaleString('en-IN')} reached`,
-    })),
-  ].slice(0, 6);
+  /*
+   * Two kinds of tile, and they are never confused for one another.
+   *
+   * A photo tile is an actual photograph a coordinator uploaded and an admin
+   * marked public. A programme tile is a data card — the programme's own
+   * hours, turnout and beneficiaries — shown where no photograph exists.
+   * Earlier these looked identical, so five gradient rectangles read as five
+   * stock photos the system did not have.
+   */
+  const photoTiles = (data?.gallery ?? []).map((photo, i) => ({
+    key: `photo-${i}`,
+    url: photo.url,
+    caption: photo.caption,
+  }));
+  const programmeTiles = (data?.programs ?? []).slice(0, Math.max(0, 6 - photoTiles.length));
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#fbf6ec' }}>
@@ -286,6 +285,9 @@ export function ImpactPage() {
         <SectionTitle>Moments that mattered</SectionTitle>
         <SectionSub>
           A glimpse into the activities, smiles and hard work our volunteers brought to every event.
+          {photoTiles.length === 0
+            ? ' Photographs appear here as coordinators upload them and an administrator clears them for publication.'
+            : ''}
         </SectionSub>
         <Box
           sx={{
@@ -294,7 +296,7 @@ export function ImpactPage() {
             gap: 2,
           }}
         >
-          {tiles.map((tile, i) => (
+          {photoTiles.map((tile) => (
             <Box
               key={tile.key}
               sx={{
@@ -306,17 +308,13 @@ export function ImpactPage() {
                 '&:hover': { transform: 'scale(1.02)', boxShadow: tokens.shadow },
               }}
             >
-              {tile.url ? (
-                <Box
-                  component="img"
-                  src={tile.url}
-                  alt={tile.title}
-                  loading="lazy"
-                  sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              ) : (
-                <Box sx={{ position: 'absolute', inset: 0, background: GRADIENTS[i % GRADIENTS.length] }} />
-              )}
+              <Box
+                component="img"
+                src={tile.url}
+                alt={tile.caption ?? 'Volunteers in the field'}
+                loading="lazy"
+                sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+              />
               <Box
                 sx={{
                   position: 'absolute',
@@ -326,11 +324,60 @@ export function ImpactPage() {
               />
               <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, p: 2, color: '#fff' }}>
                 <Box component="strong" sx={{ display: 'block', fontSize: '0.92rem', fontWeight: 700 }}>
-                  {tile.title}
+                  {tile.caption ?? 'From the field'}
                 </Box>
                 <Box component="span" sx={{ fontSize: '0.78rem', opacity: 0.75 }}>
-                  {tile.sub}
+                  Photographed by the field coordinator
                 </Box>
+              </Box>
+            </Box>
+          ))}
+
+          {programmeTiles.map((p, i) => (
+            <Box
+              key={p.name}
+              sx={{
+                borderRadius: '1.1rem',
+                position: 'relative',
+                overflow: 'hidden',
+                aspectRatio: '4 / 3',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'flex-end',
+                p: 2.5,
+                color: '#fff',
+                background: GRADIENTS[(photoTiles.length + i) % GRADIENTS.length],
+                transition: 'transform 200ms ease, box-shadow 200ms ease',
+                '&:hover': { transform: 'scale(1.02)', boxShadow: tokens.shadow },
+              }}
+            >
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 12,
+                  right: 12,
+                  fontSize: '0.62rem',
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  bgcolor: 'rgba(255,255,255,0.18)',
+                  borderRadius: 999,
+                  px: 1,
+                  py: 0.25,
+                }}
+              >
+                Programme
+              </Box>
+              <Typography sx={{ fontFamily: SERIF, fontSize: '2rem', lineHeight: 1 }}>
+                {p.beneficiaries.toLocaleString('en-IN')}
+              </Typography>
+              <Typography sx={{ fontSize: '0.75rem', opacity: 0.8, mb: 1 }}>
+                beneficiaries reached
+              </Typography>
+              <Box component="strong" sx={{ display: 'block', fontSize: '0.92rem', fontWeight: 700 }}>
+                {p.name}
+              </Box>
+              <Box component="span" sx={{ fontSize: '0.78rem', opacity: 0.75 }}>
+                {p.volunteers} volunteer turnouts · {Number(p.hours)} hours
               </Box>
             </Box>
           ))}
