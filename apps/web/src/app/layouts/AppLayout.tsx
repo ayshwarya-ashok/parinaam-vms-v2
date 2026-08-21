@@ -73,7 +73,13 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
   return (
     <Box sx={{ minHeight: '100vh' }}>
       <AppBar position="sticky">
-        <Toolbar sx={{ gap: 2, flexWrap: 'wrap' }}>
+        {/*
+          nowrap is what keeps the sticky breadcrumbs honest: their top offset
+          assumes a single-row app bar, and a wrapped second line of nav pills
+          used to make the bar taller than the offset, sliding the crumbs
+          underneath it. On narrow screens the nav scrolls sideways instead.
+        */}
+        <Toolbar sx={{ gap: 2, flexWrap: 'nowrap' }}>
           {/*
             The wordmark is the first nav item and behaves like one: it goes
             home, for whichever home this session has.
@@ -95,7 +101,19 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
           >
             PARINAAM
           </Button>
-          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', flex: 1 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 0.5,
+              flexWrap: 'nowrap',
+              flex: 1,
+              minWidth: 0,
+              overflowX: 'auto',
+              // The row scrolls; a scrollbar under the nav pills is just noise.
+              scrollbarWidth: 'none',
+              '&::-webkit-scrollbar': { display: 'none' },
+            }}
+          >
             {nav.map((item) => {
               // Prefix match so a detail page keeps its section highlighted,
               // but never let the dashboard's short path swallow its siblings.
@@ -109,6 +127,8 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
                   size="small"
                   aria-current={active ? 'page' : undefined}
                   sx={{
+                    flexShrink: 0,
+                    whiteSpace: 'nowrap',
                     color: active ? '#fff' : 'rgba(255,255,255,0.72)',
                     fontWeight: active ? 700 : 500,
                     bgcolor: active ? 'rgba(255,255,255,0.16)' : 'transparent',
