@@ -176,3 +176,16 @@ export const theme = createTheme({
     },
   },
 });
+
+/**
+ * notistack's info variant carries "No changes to save" — the absence of an
+ * outcome. Neutral ink keeps it from reading as a second kind of success, or
+ * as the blue that normally means "here is something you should know".
+ */
+export const neutralToastStyles = {
+  '.notistack-MuiContent-info': {
+    backgroundColor: tokens.ink,
+    color: 'rgba(255,255,255,0.92)',
+    fontWeight: 500,
+  },
+};

@@ -47,7 +47,6 @@ export function FeedbackAdmin() {
 
   return (
     <PageShell
-      eyebrow="Admin › Recognition"
       title="Volunteer Feedback"
       description="Every rating points at one specific session. Publishing a testimonial is an explicit act — nothing surfaces publicly without it."
     >

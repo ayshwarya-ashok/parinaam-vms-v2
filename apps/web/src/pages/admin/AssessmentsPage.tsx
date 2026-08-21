@@ -85,7 +85,6 @@ export function AssessmentsPage() {
 
   return (
     <PageShell
-      eyebrow="Admin › Trainings › Assessments"
       title={`${training?.name ?? ''} — Assessment Status`}
       description={
         training

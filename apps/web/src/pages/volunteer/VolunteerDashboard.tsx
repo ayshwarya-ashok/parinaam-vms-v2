@@ -26,7 +26,6 @@ export function VolunteerDashboard() {
 
   return (
     <PageShell
-      eyebrow="Volunteer dashboard"
       title={`Welcome${user?.volunteer ? `, ${user.volunteer.firstName}` : ' to Parinaam'}`}
       description="Choose sessions that fit your schedule. Enrolling sends you a confirmation email with anything left to complete."
       actions={

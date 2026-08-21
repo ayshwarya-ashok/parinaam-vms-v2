@@ -1,8 +1,8 @@
-import { CssBaseline, ThemeProvider } from '@mui/material';
+import { CssBaseline, GlobalStyles, ThemeProvider } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SnackbarProvider } from 'notistack';
 import type { ReactNode } from 'react';
-import { theme } from '@/theme';
+import { neutralToastStyles, theme } from '@/theme';
 import { AuthProvider } from './auth';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { OfflineBanner } from '@/components/OfflineBanner';
@@ -31,6 +31,7 @@ export function Providers({ children }: { children: ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
+        <GlobalStyles styles={neutralToastStyles} />
         {/*
           Top-right: the actions that raise these toasts (save, approve, send)
           live in the top-right of every screen, so the confirmation appears
@@ -40,6 +41,10 @@ export function Providers({ children }: { children: ReactNode }) {
           maxSnack={3}
           autoHideDuration={3200}
           anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+          // "No changes to save" is not information, a warning or a success —
+          // it is the absence of an outcome, so it gets the ink palette rather
+          // than a blue that competes with the two toasts that mean something.
+          iconVariant={{ info: '' }}
         >
           <ErrorBoundary>
             <OfflineBanner />

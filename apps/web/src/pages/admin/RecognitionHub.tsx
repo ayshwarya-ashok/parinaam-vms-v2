@@ -15,7 +15,6 @@ export function RecognitionHub() {
 
   return (
     <PageShell
-      eyebrow="Admin › Recognition"
       title="Recognition & Retention"
       description="Certificates say thank you; feedback tells you what to fix. Both live here."
     >

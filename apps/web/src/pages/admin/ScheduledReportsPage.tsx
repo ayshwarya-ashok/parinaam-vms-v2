@@ -130,7 +130,6 @@ export function ScheduledReportsPage() {
 
   return (
     <PageShell
-      eyebrow="Admin › Reports"
       title="Automated Reports"
       description="Each schedule generates its report and emails it as an attachment — daily, weekly or monthly at the chosen time (IST). Pausing freezes the clock; resuming recomputes the next run."
       actions={

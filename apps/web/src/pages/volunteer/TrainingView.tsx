@@ -63,7 +63,7 @@ export function TrainingView() {
 
   if (!training) {
     return (
-      <PageShell eyebrow="My Trainings" title="Loading…">
+      <PageShell title="Loading…">
         <span />
       </PageShell>
     );
@@ -86,7 +86,6 @@ export function TrainingView() {
 
   return (
     <PageShell
-      eyebrow="My Trainings"
       title={training.name}
       description={training.description ?? undefined}
       actions={

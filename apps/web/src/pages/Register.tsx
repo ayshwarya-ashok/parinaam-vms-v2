@@ -22,6 +22,7 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_BASE_URL, api, asApiError } from '@/api/client';
 import { useAuth } from '@/app/auth';
+import { phoneError, phoneForApi } from '@/app/validation';
 import { tokens } from '@/theme';
 
 interface OrganizationOption {
@@ -54,7 +55,7 @@ const TODAY = new Date().toISOString().slice(0, 10);
  * stays optional — staff fill in the rest on the profile after approval.
  */
 export function Register() {
-  const { status, user, register, refresh } = useAuth();
+  const { status, user, register, refresh, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const credentials = (location.state as RegistrationCredentials | null) ?? null;
@@ -78,6 +79,7 @@ export function Register() {
     complianceRead: false,
   });
   const [error, setError] = useState<string | null>(null);
+  const [phoneProblem, setPhoneProblem] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   // Both lists are public: the form must render before an account exists, so
@@ -130,6 +132,13 @@ export function Register() {
       setError('Please select the organization sponsoring your volunteering.');
       return;
     }
+    const badPhone = phoneError(form.phone);
+    if (badPhone) {
+      setPhoneProblem(badPhone);
+      setError(badPhone);
+      return;
+    }
+    setPhoneProblem(null);
 
     setBusy(true);
     const profile = {
@@ -139,7 +148,7 @@ export function Register() {
     dateOfBirth: form.dateOfBirth || undefined,
     city: form.city || undefined,
     state: form.state || undefined,
-    phone: form.phone || undefined,
+    phone: phoneForApi(form.phone),
     category: form.category,
     organizationId: form.category === 'CSR' ? form.organizationId : undefined,
     occupation: form.occupation || undefined,
@@ -287,9 +296,10 @@ export function Register() {
                 type="tel"
                 autoComplete="tel"
                 placeholder="+91 00000 00000"
-                helperText="So a coordinator can reach you on the day"
+                helperText={phoneProblem ?? 'A 10-digit mobile number, so a coordinator can reach you on the day'}
+                error={Boolean(phoneProblem)}
                 value={form.phone}
-                onChange={(e) => set('phone', e.target.value)}
+                onChange={(e) => { set('phone', e.target.value); setPhoneProblem(null); }}
               />
 
               {/* ── How you would like to help ────────────────────────────── */}
@@ -406,9 +416,26 @@ export function Register() {
                 />
               </Paper>
 
-              <Button variant="pill" type="submit" size="large" disabled={busy}>
-                {busy ? 'Creating your account…' : 'Submit registration'}
-              </Button>
+              <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+                <Button variant="pill" type="submit" size="large" disabled={busy} sx={{ flex: 1 }}>
+                  {busy ? 'Creating your account…' : 'Submit registration'}
+                </Button>
+                {/*
+                  A way out. Nothing has been created yet, so leaving costs
+                  the visitor nothing — and a form with no exit is a trap.
+                */}
+                <Button
+                  variant="pillOutlined"
+                  size="large"
+                  disabled={busy}
+                  onClick={async () => {
+                    if (finishingOrphan) await logout();
+                    navigate('/', { replace: true });
+                  }}
+                >
+                  Cancel
+                </Button>
+              </Box>
             </Box>
           </Paper>
         </Grid>

@@ -105,7 +105,7 @@ export function ActivityDetail() {
 
   if (isLoading || !activity) {
     return (
-      <PageShell eyebrow="Admin › Activities" title="Loading…">
+      <PageShell title="Loading…">
         <span />
       </PageShell>
     );
@@ -113,7 +113,6 @@ export function ActivityDetail() {
 
   return (
     <PageShell
-      eyebrow={`Admin › ${activity.programName}`}
       title={activity.name}
       description={activity.description ?? undefined}
       actions={

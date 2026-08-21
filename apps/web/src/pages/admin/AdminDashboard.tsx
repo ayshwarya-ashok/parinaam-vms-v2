@@ -46,7 +46,7 @@ export function AdminDashboard() {
   const { data: s } = useSummary();
 
   return (
-    <PageShell eyebrow="Parinaam Admin" title="Admin Dashboard">
+    <PageShell title="Admin Dashboard">
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid size={{ xs: 6, sm: 4, md: 2 }}>
           <StatTile

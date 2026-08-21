@@ -133,7 +133,6 @@ export function ActivityForm() {
 
   return (
     <PageShell
-      eyebrow={`Admin › Programs › ${isEdit ? 'Edit Activity' : 'Add Activity'}`}
       title={isEdit ? 'Edit Activity' : 'Add Activity'}
       description="An activity is the repeatable definition — what the work is and what it requires. Dates, capacity and coordinator belong to each scheduled session."
       maxWidth="md"

@@ -23,7 +23,6 @@ export function BrowseSessions() {
 
   return (
     <PageShell
-      eyebrow="Volunteer › Sessions"
       title="Browse Sessions"
       description="Enroll in upcoming volunteer sessions. Sessions marked 🔒 need trainings completed first — the union of program-level and activity-level requirements."
     >

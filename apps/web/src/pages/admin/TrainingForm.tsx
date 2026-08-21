@@ -170,7 +170,6 @@ export function TrainingForm() {
 
   return (
     <PageShell
-      eyebrow={`Admin › Trainings › ${isEdit ? 'Edit' : 'New'}`}
       title={isEdit ? 'Edit Training' : 'Add Training'}
       maxWidth="md"
     >

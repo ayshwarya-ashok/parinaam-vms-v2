@@ -21,7 +21,6 @@ export function ProgramsList() {
 
   return (
     <PageShell
-      eyebrow="Admin › Programs"
       title="Programs"
       actions={
         <Button component={RouterLink} to="/admin/programs/new" variant="pill">

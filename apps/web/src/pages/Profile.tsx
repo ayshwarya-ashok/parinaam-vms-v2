@@ -10,9 +10,10 @@ import {
   Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useSnackbar } from 'notistack';
 import { useEffect, useState } from 'react';
 import { api, asApiError } from '@/api/client';
+import { isUnchanged, useToast } from '@/app/toast';
+import { phoneError, phoneForApi } from '@/app/validation';
 import { PageShell, StatusPill } from '@/components';
 
 interface Profile {
@@ -34,8 +35,10 @@ interface Profile {
 
 export function ProfilePage() {
   const queryClient = useQueryClient();
-  const { enqueueSnackbar } = useSnackbar();
+  const toast = useToast();
   const [form, setForm] = useState<Partial<Profile>>({});
+  const [original, setOriginal] = useState<Partial<Profile> | null>(null);
+  const [phoneProblem, setPhoneProblem] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const { data: profile, isLoading } = useQuery({
@@ -44,7 +47,10 @@ export function ProfilePage() {
   });
 
   useEffect(() => {
-    if (profile) setForm(profile);
+    if (profile) {
+      setForm(profile);
+      setOriginal(profile);
+    }
   }, [profile]);
 
   const save = useMutation({
@@ -57,25 +63,54 @@ export function ProfilePage() {
           dateOfBirth: form.dateOfBirth || undefined,
           city: form.city ?? undefined,
           state: form.state ?? undefined,
-          phone: form.phone ?? undefined,
+          phone: phoneForApi(form.phone),
           skills: form.skills ?? undefined,
           emailOptIn: form.emailOptIn,
         })
       ).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
-      enqueueSnackbar('Profile updated', { variant: 'success' });
+      toast.success('Profile updated');
       setError(null);
     },
-    onError: (err) => setError(asApiError(err)?.message ?? 'Could not save your profile.'),
+    onError: (err) => {
+      setError(asApiError(err)?.message ?? 'Could not save your profile.');
+      toast.failure(err, 'Could not save your profile.');
+    },
   });
+
+  /**
+   * Guard the save rather than the mutation: comparing against the record we
+   * loaded is the only way to know nothing moved, and reporting "Profile
+   * updated" for an untouched form is how that message stops meaning anything.
+   */
+  const handleSave = () => {
+    const problem = phoneError(form.phone);
+    if (problem) {
+      setPhoneProblem(problem);
+      toast.failure(problem);
+      return;
+    }
+    setPhoneProblem(null);
+
+    // Compare only the fields this form can actually change.
+    const fields = ['firstName', 'lastName', 'gender', 'dateOfBirth', 'city', 'state', 'phone', 'skills', 'emailOptIn'] as const;
+    const pick = (source: Partial<Profile>) =>
+      Object.fromEntries(fields.map((f) => [f, source[f] ?? ''])) as Record<string, unknown>;
+
+    if (original && isUnchanged(pick(form), pick(original))) {
+      toast.noChanges();
+      return;
+    }
+    save.mutate();
+  };
 
   const set = <K extends keyof Profile>(key: K, value: Profile[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
 
   if (isLoading || !profile) {
     return (
-      <PageShell eyebrow="Volunteer" title="My Profile" maxWidth="md">
+      <PageShell title="My Profile" maxWidth="md">
         <Typography color="text.secondary">Loading…</Typography>
       </PageShell>
     );
@@ -83,7 +118,6 @@ export function ProfilePage() {
 
   return (
     <PageShell
-      eyebrow="Volunteer"
       title="My Profile"
       maxWidth="md"
       actions={<StatusPill status={profile.phase === 'In Training' ? 'pending' : profile.phase === 'Active' ? 'active' : 'draft'} />}
@@ -158,7 +192,9 @@ export function ProfilePage() {
               label="Phone"
               fullWidth
               value={form.phone ?? ''}
-              onChange={(e) => set('phone', e.target.value)}
+              onChange={(e) => { set('phone', e.target.value); setPhoneProblem(null); }}
+              error={Boolean(phoneProblem)}
+              helperText={phoneProblem ?? '10-digit mobile number'}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
@@ -214,7 +250,7 @@ export function ProfilePage() {
               : 'Individual volunteer'}
             {' · '}joined {new Date(profile.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
           </Typography>
-          <Button variant="pill" onClick={() => save.mutate()} disabled={save.isPending}>
+          <Button variant="pill" onClick={handleSave} disabled={save.isPending}>
             {save.isPending ? 'Saving…' : 'Save changes'}
           </Button>
         </Box>

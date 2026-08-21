@@ -112,7 +112,6 @@ export function Consent() {
 
   return (
     <PageShell
-      eyebrow="Volunteer Orientation"
       title="Compliance Agreement"
       description="Before accessing training materials, you must read and agree to Parinaam's three mandatory compliance policies. This consent is legally binding and forms part of your volunteer agreement."
       maxWidth="md"

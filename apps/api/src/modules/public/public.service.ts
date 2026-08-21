@@ -40,7 +40,16 @@ export class PublicService {
         (SELECT COUNT(*)::int FROM programs WHERE status = 'active')            AS active_programs,
         (SELECT COUNT(DISTINCT city)::int FROM volunteers WHERE city IS NOT NULL) AS cities,
         (SELECT COALESCE(ROUND(AVG(overall_rating), 1), 0)
-           FROM feedback_submissions)                                           AS avg_rating`,
+           FROM feedback_submissions)                                           AS avg_rating,
+        -- The prototype's "Our Impact" cards, all real:
+        (SELECT COALESCE(ROUND(AVG(attendance_pct), 0), 0) FROM v_event_attendance
+           WHERE enrolled_count > 0)                                            AS attendance_pct,
+        (SELECT COUNT(*)::int FROM v_valid_training_passes)                      AS training_completions,
+        (SELECT COUNT(*)::int FROM certificates WHERE issued)                    AS certificates_issued,
+        (SELECT COUNT(*)::int FROM organizations WHERE is_active)                AS partner_organizations,
+        -- …and the feedback strip.
+        (SELECT COUNT(*)::int FROM feedback_submissions)                         AS feedback_responses,
+        (SELECT COALESCE(ROUND(AVG(nps_score), 1), 0) FROM feedback_submissions) AS avg_nps`,
     );
 
     const programs = await this.dataSource.query(

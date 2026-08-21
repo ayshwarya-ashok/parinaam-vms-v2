@@ -9,15 +9,14 @@ import { StorageService } from '../storage/storage.service';
 import { CertificatePdfService } from './certificate-pdf.service';
 
 /**
-   * The one place a certificate's file name is decided:
-   * `<volunteerId>-<certificateNumber>.pdf`.
+   * The one place a certificate's file name is decided.
    *
-   * Both halves earn their place — the volunteer id ties the file to a person
-   * without a lookup, and the certificate number is unique per certificate, so
-   * a reissue for the same person is still a distinct file.
+   * The certificate number alone: it is already unique per certificate and
+   * carries the year, so prefixing the volunteer's UUID only made a 60-character
+   * file name that nobody could read at a glance.
    */
-function certificateFileName(volunteerId: string, certificateNumber: string): string {
-  return `${volunteerId}-${certificateNumber}.pdf`;
+function certificateFileName(certificateNumber: string): string {
+  return `${certificateNumber}.pdf`;
 }
 
 interface ParticipationRow {
@@ -231,7 +230,7 @@ export class CertificatesService {
 
     // <volunteerId>-<certificateNumber>: traceable to a person and unique per
     // certificate, so a downloaded file is identifiable without opening it.
-    const filePath = `certificates/${certificateFileName(cert.volunteerId, cert.certificateNumber!)}`;
+    const filePath = `certificates/${certificateFileName(cert.certificateNumber!)}`;
     await this.storage.put(filePath, pdfBytes);
     await this.certs.update({ id: cert.id }, { filePath });
     cert.filePath = filePath;
@@ -328,7 +327,7 @@ export class CertificatesService {
 
     return {
       data: await this.storage.get(cert.filePath),
-      filename: certificateFileName(cert.volunteerId, cert.certificateNumber!),
+      filename: certificateFileName(cert.certificateNumber!),
     };
   }
 
@@ -365,9 +364,9 @@ export class CertificatesService {
       },
       attachmentUrl: this.signer.internalUrl(
         cert.filePath!,
-        certificateFileName(cert.volunteerId, cert.certificateNumber!),
+        certificateFileName(cert.certificateNumber!),
       ),
-      attachmentName: certificateFileName(cert.volunteerId, cert.certificateNumber!),
+      attachmentName: certificateFileName(cert.certificateNumber!),
     });
   }
 

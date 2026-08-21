@@ -39,7 +39,6 @@ export function TrainingsList() {
 
   return (
     <PageShell
-      eyebrow="Admin › Trainings"
       title="Trainings"
       actions={
         <Button component={RouterLink} to="/admin/trainings/new" variant="pill">

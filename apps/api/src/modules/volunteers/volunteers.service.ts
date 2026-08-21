@@ -424,6 +424,92 @@ export class VolunteersService {
     };
   }
 
+  /**
+   * Correct what a volunteer entered, while their registration is still
+   * pending.
+   *
+   * Bounded to the pending state on purpose: before a decision, an admin
+   * fixing a transposed phone number or a mis-picked category is completing
+   * the same registration. After approval the record has been acted on —
+   * hours, certificates and compliance hang off it — so edits there belong to
+   * the volunteer's own profile, not to a review screen.
+   */
+  async updateRegistration(
+    principal: AuthPrincipal,
+    id: string,
+    dto: UpdateProfileDto & { category?: 'Individual' | 'CSR'; organizationId?: string | null },
+  ) {
+    const volunteer = await this.volunteers.findOne({ where: { id } });
+    if (!volunteer) throw new NotFoundException('Volunteer not found');
+
+    if (volunteer.registrationStatus !== 'pending') {
+      throw new BusinessException(
+        'REGISTRATION_REVIEWED',
+        `This registration has already been ${volunteer.registrationStatus}. Reviewed registrations can no longer be edited here.`,
+        409,
+      );
+    }
+
+    const category = dto.category ?? volunteer.category;
+    const organizationId =
+      category === 'CSR' ? (dto.organizationId ?? volunteer.organizationId) : null;
+
+    if (category === 'CSR' && !organizationId) {
+      throw new BusinessException(
+        'ORGANIZATION_REQUIRED',
+        'CSR volunteers must name their sponsoring organization.',
+        400,
+      );
+    }
+    if (organizationId) {
+      const org = await this.organizations.findOne({ where: { id: organizationId, isActive: true } });
+      if (!org) throw new NotFoundException('Organization not found');
+    }
+
+    const before = {
+      firstName: volunteer.firstName,
+      lastName: volunteer.lastName,
+      phone: volunteer.phone,
+      city: volunteer.city,
+      category: volunteer.category,
+    };
+
+    Object.assign(volunteer, {
+      ...(dto.firstName !== undefined && { firstName: dto.firstName }),
+      ...(dto.lastName !== undefined && { lastName: dto.lastName }),
+      ...(dto.gender !== undefined && { gender: dto.gender as Volunteer['gender'] }),
+      ...(dto.dateOfBirth !== undefined && { dateOfBirth: dto.dateOfBirth }),
+      ...(dto.city !== undefined && { city: dto.city }),
+      ...(dto.state !== undefined && { state: dto.state }),
+      ...(dto.phone !== undefined && { phone: dto.phone }),
+      ...(dto.skills !== undefined && { skills: dto.skills }),
+      ...(dto.occupation !== undefined && { occupation: dto.occupation }),
+      ...(dto.languages !== undefined && { languages: joinCodes(dto.languages) }),
+      ...(dto.areasOfInterest !== undefined && { areasOfInterest: joinCodes(dto.areasOfInterest) }),
+      ...(dto.availability !== undefined && { availability: joinCodes(dto.availability) }),
+      ...(dto.availabilityNotes !== undefined && { availabilityNotes: dto.availabilityNotes }),
+      category,
+      organizationId,
+    });
+    await this.volunteers.save(volunteer);
+
+    await this.audit.record(principal, {
+      action: 'volunteer.registration_edited',
+      entity: 'volunteers',
+      entityId: id,
+      before,
+      after: {
+        firstName: volunteer.firstName,
+        lastName: volunteer.lastName,
+        phone: volunteer.phone,
+        city: volunteer.city,
+        category: volunteer.category,
+      },
+    });
+
+    return this.adminGet(id);
+  }
+
   async pendingCount(): Promise<number> {
     return this.volunteers.count({ where: { registrationStatus: 'pending' } });
   }

@@ -53,6 +53,7 @@ const MATRIX = [
   [`GET`,    `/volunteers/${UUID}`,                     'D', 'D', 'A'],
   ['PATCH',  `/volunteers/${UUID}`,                     'D', 'D', 'A'],
   ['POST',   `/volunteers/${UUID}/erase`,               'D', 'D', 'A'],
+  ['PATCH',  `/volunteers/${UUID}/registration`,        'D', 'D', 'A'],
   ['POST',   `/volunteers/${UUID}/approve`,             'D', 'D', 'A'],
   ['POST',   `/volunteers/${UUID}/reject`,              'D', 'D', 'A'],
   ['GET',    `/events/${UUID}/session-record`,          'D', 'D', 'A'],

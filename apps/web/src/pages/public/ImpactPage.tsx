@@ -1,8 +1,9 @@
-import { Box, Button, Container, Paper, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, Navigate } from 'react-router-dom';
 import { API_BASE_URL } from '@/api/client';
+import { useAuth } from '@/app/auth';
 import { tokens } from '@/theme';
 
 interface ImpactPayload {
@@ -14,180 +15,500 @@ interface ImpactPayload {
     active_programs: number;
     cities: number;
     avg_rating: string;
+    attendance_pct: string;
+    training_completions: number;
+    certificates_issued: number;
+    partner_organizations: number;
+    feedback_responses: number;
+    avg_nps: string;
   };
   programs: Array<{ name: string; volunteers: number; hours: string; beneficiaries: number }>;
-  testimonials: Array<{ comments: string; overall_rating: number; attribution: string; program_name: string }>;
+  testimonials: Array<{
+    comments: string;
+    overall_rating: number;
+    attribution: string;
+    program_name: string;
+  }>;
   gallery: Array<{ url: string; caption: string | null }>;
 }
 
+/** The prototype's card gradients, in order. */
+const GRADIENTS = [
+  'linear-gradient(135deg,#d96c3f 0%,#bc5328 100%)',
+  'linear-gradient(135deg,#3a7a68 0%,#1d6b4d 100%)',
+  'linear-gradient(135deg,#3a60a0 0%,#2b4a80 100%)',
+  'linear-gradient(135deg,#8db8a6 0%,#5a9a84 100%)',
+  'linear-gradient(135deg,#5c6bc0 0%,#3949ab 100%)',
+  'linear-gradient(135deg,#0f2b2d 0%,#1a4a4d 100%)',
+];
+
+const SECTION_PAD = { py: { xs: 5, md: 8 }, px: { xs: 3, sm: 6, md: 12, lg: 16 } };
+const SERIF = '"Source Serif 4", Georgia, serif';
+
+function initials(attribution: string): string {
+  return attribution
+    .split(' ')
+    .map((part) => part[0])
+    .filter(Boolean)
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+}
+
 /**
- * The shareable public page. No auth context at all — it uses a bare axios
- * call so no interceptor ever attaches a token or triggers a refresh here.
+ * The public impact page, following the prototype's screen-impact-page
+ * section for section — hero, impact numbers, field gallery, volunteer
+ * voices, feedback call to action, footer — with the join/admin bar lifted to
+ * the top, where a visitor who came to sign in does not have to scroll the
+ * whole report to find the door.
+ *
+ * Every figure is live. Where the prototype hard-coded a number, this reads
+ * the equivalent from /public/impact; the gallery falls back to the
+ * prototype's gradient cards, captioned with real programmes, whenever fewer
+ * public photos exist than tiles.
  */
 export function ImpactPage() {
+  const { status, user } = useAuth();
+
   const { data } = useQuery({
     queryKey: ['public-impact'],
     queryFn: async () => (await axios.get<ImpactPayload>(`${API_BASE_URL}/public/impact`)).data,
     staleTime: 5 * 60_000,
   });
 
-  const heroStats = data
-    ? [
-        { value: data.stats.volunteers.toLocaleString('en-IN'), label: 'Volunteers' },
-        { value: Number(data.stats.hours).toLocaleString('en-IN'), label: 'Hours contributed' },
-        { value: data.stats.beneficiaries.toLocaleString('en-IN'), label: 'Lives touched' },
-        { value: String(data.stats.sessions), label: 'Sessions run' },
-        { value: String(data.stats.active_programs), label: 'Active programmes' },
-        { value: String(data.stats.cities), label: 'Cities' },
-      ]
-    : [];
+  // A signed-in visitor asked for the app, not the brochure.
+  if (status === 'authenticated' && user) {
+    return <Navigate to={user.role === 'admin' ? '/admin/dashboard' : '/app/dashboard'} replace />;
+  }
+
+  const s = data?.stats;
+  const num = (value: number | string | undefined, fallback = '—') =>
+    value === undefined ? fallback : Number(value).toLocaleString('en-IN');
+
+  const heroStats = [
+    { value: s ? num(s.volunteers) : '—', label: 'Active volunteers' },
+    { value: s ? num(s.hours) : '—', label: 'Hours volunteered' },
+    { value: s ? String(s.sessions) : '—', label: 'Events completed' },
+    { value: s && Number(s.avg_rating) > 0 ? `${s.avg_rating} ★` : '—', label: 'Avg feedback rating' },
+  ];
+
+  const impactNumbers = [
+    { num: s ? num(s.beneficiaries) : '—', lbl: 'Beneficiaries reached' },
+    { num: s ? `${Number(s.attendance_pct)}%` : '—', lbl: 'Shift attendance rate' },
+    { num: s ? String(s.training_completions) : '—', lbl: 'Training completions' },
+    { num: s ? String(s.certificates_issued) : '—', lbl: 'Certificates issued' },
+    { num: s ? String(s.cities) : '—', lbl: 'Cities reached' },
+    { num: s ? String(s.partner_organizations) : '—', lbl: 'Partner organisations' },
+  ];
+
+  // Six tiles: real public photos first, then programme cards in the
+  // prototype's gradients so the grid never renders half-empty.
+  const tiles = [
+    ...(data?.gallery ?? []).map((photo, i) => ({
+      key: `photo-${i}`,
+      url: photo.url as string | null,
+      title: photo.caption ?? 'From the field',
+      sub: 'Parinaam Foundation',
+    })),
+    ...(data?.programs ?? []).map((p, i) => ({
+      key: `prog-${i}`,
+      url: null as string | null,
+      title: p.name,
+      sub: `${p.volunteers} volunteers · ${p.beneficiaries.toLocaleString('en-IN')} reached`,
+    })),
+  ].slice(0, 6);
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#fbf6ec' }}>
-      {/* Hero */}
-      <Box sx={{ bgcolor: tokens.ink, color: '#fdf9f0', py: { xs: 6, md: 9 } }}>
-        <Container maxWidth="lg">
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="overline" sx={{ color: tokens.mint, letterSpacing: '0.14em' }}>
-              PARINAAM FOUNDATION
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button
-                component={RouterLink}
-                to="/login"
-                sx={{ color: '#fdf9f0', borderRadius: 999, px: 2, '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' } }}
-              >
-                Volunteer login
-              </Button>
-              <Button
-                component={RouterLink}
-                to="/admin/login"
-                sx={{ color: 'rgba(253,249,240,0.7)', borderRadius: 999, px: 2, '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' } }}
-              >
-                Admin
-              </Button>
-            </Box>
-          </Box>
+      {/* ── Join / Admin bar — lifted to the top ─────────────────────────── */}
+      <Box
+        sx={{
+          bgcolor: tokens.ink,
+          display: 'flex',
+          gap: 1.5,
+          justifyContent: 'center',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          py: { xs: 2.5, md: 3 },
+          px: { xs: 3, sm: 6, md: 12, lg: 16 },
+        }}
+      >
+        <Typography sx={{ color: 'rgba(255,255,255,0.75)', flex: 1, minWidth: 200, fontSize: '1.05rem' }}>
+          <Box component="strong" sx={{ color: '#fff' }}>Want to make a difference?</Box>
+          <br />
+          Join {s ? `${s.volunteers}+ volunteers` : 'the volunteers'} already creating impact with Parinaam.
+        </Typography>
+        <Button variant="pill" component={RouterLink} to="/login" sx={{ px: 3 }}>
+          Join as a Volunteer
+        </Button>
+        <Button
+          component={RouterLink}
+          to="/admin/login"
+          sx={{
+            border: '1px solid rgba(255,255,255,0.25)',
+            color: '#fff',
+            borderRadius: 999,
+            px: 3,
+            py: 1,
+            '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
+          }}
+        >
+          Admin Login
+        </Button>
+      </Box>
+
+      {/* ── Hero ─────────────────────────────────────────────────────────── */}
+      <Box
+        sx={{
+          ...SECTION_PAD,
+          position: 'relative',
+          overflow: 'hidden',
+          background: 'linear-gradient(135deg,#0f2b2d 0%,#1a4a4d 100%)',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            inset: 0,
+            background: 'radial-gradient(ellipse at 70% 30%, rgba(217,108,63,0.22), transparent 55%)',
+            pointerEvents: 'none',
+          },
+        }}
+      >
+        <Box sx={{ position: 'relative', zIndex: 1 }}>
           <Typography
-            variant="h1"
-            sx={{ fontSize: 'clamp(2.2rem, 5vw, 3.6rem)', maxWidth: '16em', lineHeight: 1.15, my: 2 }}
-          >
-            Change, measured — the impact our volunteers create.
-          </Typography>
-          <Typography sx={{ maxWidth: '38em', opacity: 0.85, mb: 4 }}>
-            Every figure on this page is drawn live from our volunteer management system —
-            hours actually attended, beneficiaries actually reached, in the words of the
-            people who were there.
-          </Typography>
-          <Box
             sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(3, 1fr)', md: 'repeat(6, 1fr)' },
-              gap: 2,
+              fontSize: '0.75rem',
+              letterSpacing: '0.2em',
+              textTransform: 'uppercase',
+              color: 'rgba(217,108,63,0.9)',
+              fontWeight: 700,
+              mb: 2,
             }}
           >
-            {heroStats.map((s) => (
-              <Box key={s.label}>
-                <Typography sx={{ fontSize: '2rem', fontWeight: 800, color: tokens.accent }}>
-                  {s.value}
-                </Typography>
-                <Typography sx={{ fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.75 }}>
-                  {s.label}
-                </Typography>
+            Parinaam Foundation &nbsp;·&nbsp; {new Date().getFullYear()} Impact Report
+          </Typography>
+          <Typography
+            component="h1"
+            sx={{
+              fontFamily: SERIF,
+              fontSize: 'clamp(2.5rem, 6vw, 5rem)',
+              color: '#fff',
+              lineHeight: 1.05,
+              maxWidth: '16ch',
+              mb: 2.5,
+            }}
+          >
+            Every hour counts.
+            <br />
+            Every volunteer matters.
+          </Typography>
+          <Typography
+            sx={{
+              color: 'rgba(255,255,255,0.7)',
+              fontSize: '1.05rem',
+              lineHeight: 1.75,
+              maxWidth: '38rem',
+              mb: 5,
+            }}
+          >
+            Parinaam connects passionate people with meaningful opportunities — building stronger
+            communities one activity at a time. Here’s the impact our volunteers created this year.
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+            {heroStats.map((stat) => (
+              <Box key={stat.label}>
+                <Box component="strong" sx={{ display: 'block', fontSize: '2.5rem', fontFamily: SERIF, color: '#fff' }}>
+                  {stat.value}
+                </Box>
+                <Box
+                  component="span"
+                  sx={{
+                    fontSize: '0.82rem',
+                    color: 'rgba(255,255,255,0.55)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em',
+                  }}
+                >
+                  {stat.label}
+                </Box>
               </Box>
             ))}
           </Box>
-        </Container>
+        </Box>
       </Box>
 
-      <Container maxWidth="lg" sx={{ py: { xs: 5, md: 7 } }}>
-        {/* Programmes */}
-        {data && data.programs.length > 0 && (
-          <>
-            <Typography variant="h3" sx={{ mb: 3 }}>Where the hours went</Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 2, mb: 6 }}>
-              {data.programs.map((p) => (
-                <Paper key={p.name} variant="outlined" sx={{ p: 3, borderRadius: 3, borderTop: `4px solid ${tokens.mint}` }}>
-                  <Typography variant="h6" sx={{ mb: 1 }}>{p.name}</Typography>
-                  <Typography sx={{ fontSize: '0.9rem', color: 'text.secondary' }}>
-                    {p.volunteers} volunteer turnouts · {Number(p.hours)} hours
-                  </Typography>
-                  <Typography sx={{ fontSize: '1.4rem', fontWeight: 800, color: tokens.accentStrong, mt: 1 }}>
-                    {p.beneficiaries.toLocaleString('en-IN')}
-                    <Typography component="span" sx={{ fontSize: '0.8rem', color: 'text.secondary', ml: 0.75 }}>
-                      beneficiaries reached
-                    </Typography>
-                  </Typography>
-                </Paper>
-              ))}
-            </Box>
-          </>
-        )}
-
-        {/* Gallery */}
-        {data && data.gallery.length > 0 && (
-          <>
-            <Typography variant="h3" sx={{ mb: 3 }}>From the field</Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 2, mb: 6 }}>
-              {data.gallery.map((photo, i) => (
-                <Paper key={i} variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden' }}>
-                  <img
-                    src={photo.url}
-                    alt={photo.caption ?? 'Volunteers in the field'}
-                    style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }}
-                    loading="lazy"
-                  />
-                  {photo.caption && (
-                    <Typography sx={{ p: 1, fontSize: '0.78rem', color: 'text.secondary' }}>
-                      {photo.caption}
-                    </Typography>
-                  )}
-                </Paper>
-              ))}
-            </Box>
-          </>
-        )}
-
-        {/* Testimonials — published only (BR-16) */}
-        {data && data.testimonials.length > 0 && (
-          <>
-            <Typography variant="h3" sx={{ mb: 3 }}>In their words</Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mb: 6 }}>
-              {data.testimonials.map((t, i) => (
-                <Paper key={i} variant="outlined" sx={{ p: 3, borderRadius: 3 }}>
-                  <Typography sx={{ color: tokens.accentStrong, fontWeight: 700, mb: 1 }}>
-                    {'★'.repeat(t.overall_rating)}{'☆'.repeat(5 - t.overall_rating)}
-                  </Typography>
-                  <Typography sx={{ fontStyle: 'italic', mb: 1.5 }}>“{t.comments}”</Typography>
-                  <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>
-                    — {t.attribution}, {t.program_name}
-                  </Typography>
-                </Paper>
-              ))}
-            </Box>
-          </>
-        )}
-
-        {/* CTA */}
-        <Paper
-          variant="outlined"
-          sx={{ p: { xs: 3, md: 5 }, borderRadius: 4, textAlign: 'center', bgcolor: 'rgba(141,184,166,0.12)' }}
+      {/* ── Our Impact ───────────────────────────────────────────────────── */}
+      <Box sx={{ ...SECTION_PAD, bgcolor: 'rgba(255,252,247,0.9)' }}>
+        <SectionLabel>Our Impact</SectionLabel>
+        <SectionTitle>What we achieved together</SectionTitle>
+        <SectionSub>
+          From health camps to digital literacy, our volunteers showed up, gave their best and made
+          a difference in hundreds of lives.
+        </SectionSub>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: 2,
+          }}
         >
-          <Typography variant="h3" sx={{ mb: 1 }}>Be part of the next number</Typography>
-          <Typography sx={{ color: 'text.secondary', mb: 3, maxWidth: '34em', mx: 'auto' }}>
-            {data && Number(data.stats.avg_rating) > 0
-              ? `Volunteers rate their sessions ${data.stats.avg_rating} out of 5 — come see why.`
-              : 'Join a session near you — training, scheduling and certificates all included.'}
-          </Typography>
-          <Button variant="pill" size="large" component={RouterLink} to="/login">
-            Volunteer with us
-          </Button>
-        </Paper>
-      </Container>
+          {impactNumbers.map((card) => (
+            <Box
+              key={card.lbl}
+              sx={{
+                p: 3,
+                borderRadius: '1.25rem',
+                textAlign: 'center',
+                bgcolor: 'rgba(255,255,255,0.75)',
+                border: '1px solid rgba(19,35,37,0.08)',
+              }}
+            >
+              <Typography sx={{ fontFamily: SERIF, fontSize: '2.8rem', lineHeight: 1, mb: 0.5, color: tokens.accentStrong }}>
+                {card.num}
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: '0.82rem',
+                  color: 'text.secondary',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.07em',
+                }}
+              >
+                {card.lbl}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
+      </Box>
 
-      <Box component="footer" sx={{ py: 4, textAlign: 'center', color: 'text.secondary', fontSize: '0.8rem' }}>
-        © {new Date().getFullYear()} Parinaam Foundation · Figures update automatically from verified attendance records.
+      {/* ── From the Field ───────────────────────────────────────────────── */}
+      <Box sx={SECTION_PAD}>
+        <SectionLabel>From the Field</SectionLabel>
+        <SectionTitle>Moments that mattered</SectionTitle>
+        <SectionSub>
+          A glimpse into the activities, smiles and hard work our volunteers brought to every event.
+        </SectionSub>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: 2,
+          }}
+        >
+          {tiles.map((tile, i) => (
+            <Box
+              key={tile.key}
+              sx={{
+                borderRadius: '1.1rem',
+                overflow: 'hidden',
+                position: 'relative',
+                aspectRatio: '4 / 3',
+                transition: 'transform 200ms ease, box-shadow 200ms ease',
+                '&:hover': { transform: 'scale(1.02)', boxShadow: tokens.shadow },
+              }}
+            >
+              {tile.url ? (
+                <Box
+                  component="img"
+                  src={tile.url}
+                  alt={tile.title}
+                  loading="lazy"
+                  sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <Box sx={{ position: 'absolute', inset: 0, background: GRADIENTS[i % GRADIENTS.length] }} />
+              )}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'linear-gradient(to top, rgba(15,43,45,0.7) 0%, transparent 50%)',
+                }}
+              />
+              <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, p: 2, color: '#fff' }}>
+                <Box component="strong" sx={{ display: 'block', fontSize: '0.92rem', fontWeight: 700 }}>
+                  {tile.title}
+                </Box>
+                <Box component="span" sx={{ fontSize: '0.78rem', opacity: 0.75 }}>
+                  {tile.sub}
+                </Box>
+              </Box>
+            </Box>
+          ))}
+        </Box>
+      </Box>
+
+      {/* ── Volunteer Voices (published testimonials only — BR-16) ───────── */}
+      {(data?.testimonials.length ?? 0) > 0 && (
+        <Box sx={{ ...SECTION_PAD, bgcolor: 'rgba(255,252,247,0.9)' }}>
+          <SectionLabel>Volunteer Voices</SectionLabel>
+          <SectionTitle>What our volunteers say</SectionTitle>
+          <SectionSub>Real experiences from the people who made it happen.</SectionSub>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+              gap: 2.5,
+            }}
+          >
+            {(data?.testimonials ?? []).map((t, i) => (
+              <Box
+                key={i}
+                sx={{
+                  p: 3,
+                  borderRadius: '1.25rem',
+                  bgcolor: 'rgba(255,255,255,0.8)',
+                  border: '1px solid rgba(19,35,37,0.08)',
+                }}
+              >
+                <Typography sx={{ fontSize: '1rem', lineHeight: 1.75, fontStyle: 'italic', mb: 2.5 }}>
+                  <Box component="span" sx={{ fontSize: '1.5rem', color: tokens.accent, fontStyle: 'normal', mr: 0.25 }}>
+                    “
+                  </Box>
+                  {t.comments}
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Box
+                    sx={{
+                      width: '2.5rem',
+                      height: '2.5rem',
+                      borderRadius: '50%',
+                      flexShrink: 0,
+                      display: 'grid',
+                      placeItems: 'center',
+                      fontWeight: 700,
+                      fontSize: '0.9rem',
+                      color: '#fff',
+                      background: GRADIENTS[i % GRADIENTS.length],
+                    }}
+                  >
+                    {initials(t.attribution)}
+                  </Box>
+                  <Box>
+                    <Typography sx={{ fontWeight: 700, fontSize: '0.9rem' }}>{t.attribution}</Typography>
+                    <Typography sx={{ fontSize: '0.78rem', color: 'text.secondary' }}>
+                      {t.program_name} &nbsp;·&nbsp; Rating: {'★'.repeat(t.overall_rating)}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+      )}
+
+      {/* ── Your Voice Matters ───────────────────────────────────────────── */}
+      <Box
+        sx={{
+          ...SECTION_PAD,
+          position: 'relative',
+          overflow: 'hidden',
+          background: 'linear-gradient(135deg,#0f2b2d 0%,#1a4a4d 100%)',
+        }}
+      >
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            background: 'radial-gradient(ellipse at 80% 50%, rgba(217,108,63,0.18), transparent 55%)',
+            pointerEvents: 'none',
+          }}
+        />
+        <Box sx={{ position: 'relative', zIndex: 1, maxWidth: 640 }}>
+          <SectionLabel sx={{ color: 'rgba(217,108,63,0.85)' }}>Your Voice Matters</SectionLabel>
+          <SectionTitle sx={{ color: '#fff', mb: 1 }}>Share your experience</SectionTitle>
+          <Typography sx={{ color: 'rgba(255,255,255,0.68)', mb: 4, fontSize: '1rem', lineHeight: 1.75 }}>
+            Volunteered with Parinaam recently? Tell us what you loved, what we can improve, and how
+            likely you are to recommend us. Your feedback shapes every future event.
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1.75, flexWrap: 'wrap', alignItems: 'center' }}>
+            <Button
+              variant="pill"
+              component={RouterLink}
+              to="/login"
+              sx={{ minWidth: '12rem', fontSize: '1rem' }}
+            >
+              ✎ Submit Feedback
+            </Button>
+            <Typography sx={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.85rem' }}>
+              Sign in to rate a session you attended
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 4, mt: 4, flexWrap: 'wrap' }}>
+            {[
+              { value: s ? String(s.feedback_responses) : '—', label: 'Responses so far' },
+              { value: s && Number(s.avg_rating) > 0 ? `${s.avg_rating}★` : '—', label: 'Average rating' },
+              { value: s && Number(s.avg_nps) > 0 ? String(s.avg_nps) : '—', label: 'Avg NPS score' },
+            ].map((stat) => (
+              <Box key={stat.label}>
+                <Box component="strong" sx={{ color: '#fff', fontSize: '1.4rem' }}>
+                  {stat.value}
+                </Box>
+                <Box component="span" sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.82rem', display: 'block' }}>
+                  {stat.label}
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+      </Box>
+
+      {/* ── Footer ───────────────────────────────────────────────────────── */}
+      <Box
+        sx={{
+          px: { xs: 3, sm: 6, md: 12, lg: 16 },
+          py: 2,
+          bgcolor: tokens.ink,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 1,
+        }}
+      >
+        <Typography sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.78rem' }}>
+          © {new Date().getFullYear()} Parinaam Foundation &nbsp;·&nbsp; parinaam.org
+        </Typography>
+        <Typography sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.78rem' }}>
+          Figures update automatically from verified attendance records.
+        </Typography>
       </Box>
     </Box>
+  );
+}
+
+function SectionLabel({ children, sx }: { children: React.ReactNode; sx?: object }) {
+  return (
+    <Typography
+      sx={{
+        fontSize: '0.75rem',
+        letterSpacing: '0.18em',
+        textTransform: 'uppercase',
+        color: tokens.accentStrong,
+        fontWeight: 700,
+        mb: 1,
+        ...sx,
+      }}
+    >
+      {children}
+    </Typography>
+  );
+}
+
+function SectionTitle({ children, sx }: { children: React.ReactNode; sx?: object }) {
+  return (
+    <Typography
+      component="h2"
+      sx={{ fontFamily: SERIF, fontSize: 'clamp(2rem, 4vw, 3rem)', mb: 1, ...sx }}
+    >
+      {children}
+    </Typography>
+  );
+}
+
+function SectionSub({ children }: { children: React.ReactNode }) {
+  return (
+    <Typography sx={{ color: 'text.secondary', mb: 5, fontSize: '1rem', maxWidth: '44rem' }}>
+      {children}
+    </Typography>
   );
 }

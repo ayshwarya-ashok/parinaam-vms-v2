@@ -69,7 +69,6 @@ export function MetricsDashboard() {
 
   return (
     <PageShell
-      eyebrow="Admin › Metrics"
       title="Metrics Dashboard"
       description="Every figure below is a live query. Change period, programme or city and the whole board re-computes consistently."
     >

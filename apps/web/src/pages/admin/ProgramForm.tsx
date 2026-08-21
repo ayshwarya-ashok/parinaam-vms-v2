@@ -109,7 +109,6 @@ export function ProgramForm() {
 
   return (
     <PageShell
-      eyebrow={`Admin › Programs › ${isEdit ? 'Edit' : 'New'}`}
       title={isEdit ? 'Edit Program' : 'Add Program'}
       maxWidth="md"
     >

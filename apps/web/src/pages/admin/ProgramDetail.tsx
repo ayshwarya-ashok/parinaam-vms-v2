@@ -63,7 +63,7 @@ export function ProgramDetail() {
 
   if (isLoading || !program) {
     return (
-      <PageShell eyebrow="Admin › Programs" title="Loading…">
+      <PageShell title="Loading…">
         <span />
       </PageShell>
     );
@@ -73,7 +73,6 @@ export function ProgramDetail() {
 
   return (
     <PageShell
-      eyebrow="Admin › Programs"
       title={program.name}
       description={program.description ?? undefined}
       actions={

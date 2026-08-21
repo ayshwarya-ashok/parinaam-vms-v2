@@ -29,7 +29,7 @@ export function SessionDetailPage() {
 
   if (isLoading || !session) {
     return (
-      <PageShell eyebrow="Volunteer › Sessions" title="Loading…">
+      <PageShell title="Loading…">
         <span />
       </PageShell>
     );
@@ -37,7 +37,6 @@ export function SessionDetailPage() {
 
   return (
     <PageShell
-      eyebrow={`${session.program.name} › ${session.activity.name}`}
       title={session.name}
     >
       <Grid container spacing={2} sx={{ mb: 3 }}>

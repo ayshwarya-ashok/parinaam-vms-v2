@@ -19,7 +19,6 @@ export function MyCertificates() {
 
   return (
     <PageShell
-      eyebrow="Volunteer"
       title="My Certificates"
       description="One certificate per programme, with your hours summed across every session you attended. Each was also emailed to you when it was issued."
       maxWidth="lg"

@@ -125,7 +125,6 @@ export function FieldExecution() {
 
   return (
     <PageShell
-      eyebrow="Admin › Field Execution"
       title="Field Execution & Attendance"
       description="Send attendance links per session — one email lets volunteers self-report, the other lets the coordinator file the occurrence report. Open any session's record to see what was logged and correct it."
     >

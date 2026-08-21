@@ -199,7 +199,7 @@ export function SessionRecord() {
 
   if (isLoading || !data) {
     return (
-      <PageShell eyebrow="Admin › Field Execution" title="Session record">
+      <PageShell title="Session record">
         <span />
       </PageShell>
     );
@@ -213,7 +213,6 @@ export function SessionRecord() {
 
   return (
     <PageShell
-      eyebrow={`Admin › ${event.program_name}`}
       title={event.name}
       description={`${event.code} · ${event.activity_name}`}
       actions={<StatusPill status={event.status} />}

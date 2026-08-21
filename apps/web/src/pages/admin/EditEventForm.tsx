@@ -122,7 +122,7 @@ export function EditEventForm() {
 
   if (!event) {
     return (
-      <PageShell eyebrow="Admin" title="Edit occurrence">
+      <PageShell title="Edit occurrence">
         <span />
       </PageShell>
     );
@@ -188,7 +188,6 @@ export function EditEventForm() {
 
   return (
     <PageShell
-      eyebrow={`Admin › ${event.program_name} › ${event.activity_name}`}
       title="Edit Occurrence"
       description={`${event.code} — changes apply to this session only, not to the rest of the series.`}
       actions={<StatusPill status={event.status} />}

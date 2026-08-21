@@ -14,6 +14,13 @@ import {
 } from 'class-validator';
 import { UUID_PATTERN } from '../../common/pipes/uuid.pipe';
 
+/**
+ * Ten digits, optionally written the way people actually type them: a +91 or
+ * 0 prefix, and spaces, dashes or brackets anywhere. The API stores what it is
+ * given; the web client normalises to bare digits before sending.
+ */
+export const PHONE_PATTERN = /^(?:\+?91[\s-]?|0)?[\s-]?(?:\d[\s-]?){10}$/;
+
 export class RegisterVolunteerDto {
   @IsString()
   @MaxLength(100)
@@ -44,6 +51,7 @@ export class RegisterVolunteerDto {
   @IsOptional()
   @IsString()
   @MaxLength(20)
+  @Matches(PHONE_PATTERN, { message: 'Enter a 10-digit mobile number' })
   phone?: string;
 
   @IsIn(['Individual', 'CSR'])
@@ -113,7 +121,8 @@ export class UpdateProfileDto {
   @IsOptional() @IsDateString() dateOfBirth?: string;
   @IsOptional() @IsString() @MaxLength(100) city?: string;
   @IsOptional() @IsString() @MaxLength(100) state?: string;
-  @IsOptional() @IsString() @MaxLength(20) phone?: string;
+  @IsOptional() @IsString() @MaxLength(20)
+  @Matches(PHONE_PATTERN, { message: 'Enter a 10-digit mobile number' }) phone?: string;
   @IsOptional() @IsString() @MaxLength(255) skills?: string;
   @IsOptional() @IsString() @MaxLength(150) occupation?: string;
   @IsOptional() @IsArray() @ArrayMaxSize(30) @IsString({ each: true }) languages?: string[];
@@ -121,6 +130,12 @@ export class UpdateProfileDto {
   @IsOptional() @IsArray() @ArrayMaxSize(30) @IsString({ each: true }) availability?: string[];
   @IsOptional() @IsString() @MaxLength(2000) availabilityNotes?: string;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() emailOptIn?: boolean;
+}
+
+/** Admin corrections to a pending registration — the profile plus category. */
+export class UpdateRegistrationDto extends UpdateProfileDto {
+  @IsOptional() @IsIn(['Individual', 'CSR']) category?: 'Individual' | 'CSR';
+  @IsOptional() @Matches(UUID_PATTERN, { message: 'must be a UUID' }) organizationId?: string;
 }
 
 export class SignConsentDto {

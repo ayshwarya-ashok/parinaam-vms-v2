@@ -23,6 +23,7 @@ import {
   ReviewRegistrationDto,
   SignConsentDto,
   UpdateProfileDto,
+  UpdateRegistrationDto,
 } from './volunteers.dto';
 import { VolunteersService } from './volunteers.service';
 
@@ -126,6 +127,22 @@ export class VolunteersController {
     @Body() dto: AdminUpdateVolunteerDto,
   ) {
     return this.service.adminUpdate(user, id, dto);
+  }
+
+  @Patch('volunteers/:id/registration')
+  @Roles('admin')
+  @ApiOperation({
+    summary: 'Correct what the volunteer entered, while the registration is pending',
+    description:
+      'Available only before approve/reject — afterwards the record has been acted on and edits ' +
+      'belong to the volunteer profile instead.',
+  })
+  updateRegistration(
+    @CurrentUser() user: AuthPrincipal,
+    @Param('id', UuidPipe) id: string,
+    @Body() dto: UpdateRegistrationDto,
+  ) {
+    return this.service.updateRegistration(user, id, dto);
   }
 
   @Post('volunteers/:id/approve')

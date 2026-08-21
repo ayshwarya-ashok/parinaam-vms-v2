@@ -94,7 +94,6 @@ export function MyTrainings() {
 
   return (
     <PageShell
-      eyebrow="Volunteer › My Trainings"
       title="My Required Trainings"
       description="Complete the three mandatory compliance trainings first — they unlock activity trainings, and both unlock session enrollment."
     >

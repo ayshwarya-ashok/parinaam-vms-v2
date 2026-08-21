@@ -21,7 +21,7 @@ import {
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { API_BASE_URL, api, asApiError } from '@/api/client';
 import {
@@ -32,6 +32,8 @@ import {
   StatusPill,
   useTableSort,
 } from '@/components';
+import { isUnchanged, useToast } from '@/app/toast';
+import { phoneError, phoneForApi } from '@/app/validation';
 import { tokens } from '@/theme';
 
 type RegistrationStatus = 'pending' | 'approved' | 'rejected';
@@ -183,7 +185,6 @@ export function VolunteerDirectory() {
 
   return (
     <PageShell
-      eyebrow="Admin › People"
       title="Volunteer Directory"
       description="Review new registrations, and activate or inactivate volunteers. Click any row to see everything the volunteer told us when they signed up."
       actions={
@@ -445,6 +446,77 @@ function VolunteerDetailDrawer({
     enabled: id !== null,
   });
 
+  const queryClient = useQueryClient();
+  const toast = useToast();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState<Record<string, string>>({});
+  const [phoneProblem, setPhoneProblem] = useState<string | null>(null);
+
+  // Leaving edit mode open across volunteers would show one person's draft
+  // against another's record.
+  useEffect(() => {
+    setEditing(false);
+    setPhoneProblem(null);
+  }, [id]);
+
+  const startEditing = () => {
+    if (!v) return;
+    setDraft({
+      firstName: v.firstName,
+      lastName: v.lastName,
+      phone: v.phone ?? '',
+      city: v.city ?? '',
+      state: v.state ?? '',
+      occupation: v.occupation ?? '',
+      skills: v.skills ?? '',
+      availabilityNotes: v.availabilityNotes ?? '',
+    });
+    setPhoneProblem(null);
+    setEditing(true);
+  };
+
+  const saveEdit = useMutation({
+    mutationFn: async (body: Record<string, string | undefined>) =>
+      (await api.patch(`/volunteers/${id}/registration`, body)).data,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['volunteer-detail', id] });
+      void queryClient.invalidateQueries({ queryKey: ['directory'] });
+      setEditing(false);
+      toast.success('Registration details updated');
+    },
+    onError: (err) => toast.failure(err, 'Could not save the changes.'),
+  });
+
+  const handleSave = () => {
+    const problem = phoneError(draft.phone);
+    if (problem) {
+      setPhoneProblem(problem);
+      toast.failure(problem);
+      return;
+    }
+    if (draft.firstName.trim() === '') {
+      toast.failure('A first name is required.');
+      return;
+    }
+
+    const originalDraft = {
+      firstName: v?.firstName ?? '',
+      lastName: v?.lastName ?? '',
+      phone: v?.phone ?? '',
+      city: v?.city ?? '',
+      state: v?.state ?? '',
+      occupation: v?.occupation ?? '',
+      skills: v?.skills ?? '',
+      availabilityNotes: v?.availabilityNotes ?? '',
+    };
+    if (isUnchanged(draft, originalDraft)) {
+      toast.noChanges();
+      return;
+    }
+
+    saveEdit.mutate({ ...draft, phone: phoneForApi(draft.phone) });
+  };
+
   // Codes are stored; labels are looked up so a relabelled option reads correctly.
   const labelsFor = (category: string, codes: string | null): string[] => {
     if (!codes) return [];
@@ -495,12 +567,16 @@ function VolunteerDetailDrawer({
               <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', mb: 1 }}>
                 This registration is awaiting your review
               </Typography>
-              <Box sx={{ display: 'flex', gap: 1 }}>
+              <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary', mb: 1.5 }}>
+                Correct anything the volunteer mistyped before you decide — details become
+                read-only once the registration is approved or rejected.
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                 <Button
                   variant="pill"
                   size="small"
                   sx={{ px: 2 }}
-                  disabled={busy}
+                  disabled={busy || editing}
                   onClick={() => onApprove(v.id)}
                 >
                   ✓ Approve
@@ -509,10 +585,16 @@ function VolunteerDetailDrawer({
                   variant="pillOutlined"
                   size="small"
                   sx={{ px: 2, color: tokens.accentStrong }}
+                  disabled={editing}
                   onClick={() => onReject(v as unknown as DirectoryRow)}
                 >
                   ✕ Reject
                 </Button>
+                {!editing && (
+                  <Button variant="pillOutlined" size="small" sx={{ px: 2 }} onClick={startEditing}>
+                    ✎ Edit details
+                  </Button>
+                )}
               </Box>
             </Paper>
           )}
@@ -526,6 +608,39 @@ function VolunteerDetailDrawer({
             </Paper>
           )}
 
+          {editing ? (
+            <Section title="Edit registration details">
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mt: 1 }}>
+                <TextField size="small" label="First name" value={draft.firstName}
+                  onChange={(e) => setDraft({ ...draft, firstName: e.target.value })} />
+                <TextField size="small" label="Last name" value={draft.lastName}
+                  onChange={(e) => setDraft({ ...draft, lastName: e.target.value })} />
+                <TextField size="small" label="Phone" value={draft.phone}
+                  error={Boolean(phoneProblem)}
+                  helperText={phoneProblem ?? '10-digit mobile number'}
+                  onChange={(e) => { setDraft({ ...draft, phone: e.target.value }); setPhoneProblem(null); }} />
+                <TextField size="small" label="Occupation" value={draft.occupation}
+                  onChange={(e) => setDraft({ ...draft, occupation: e.target.value })} />
+                <TextField size="small" label="City" value={draft.city}
+                  onChange={(e) => setDraft({ ...draft, city: e.target.value })} />
+                <TextField size="small" label="State" value={draft.state}
+                  onChange={(e) => setDraft({ ...draft, state: e.target.value })} />
+              </Box>
+              <TextField size="small" fullWidth sx={{ mt: 2 }} label="Skills" value={draft.skills}
+                onChange={(e) => setDraft({ ...draft, skills: e.target.value })} />
+              <TextField size="small" fullWidth multiline minRows={2} sx={{ mt: 2 }}
+                label="Availability notes" value={draft.availabilityNotes}
+                onChange={(e) => setDraft({ ...draft, availabilityNotes: e.target.value })} />
+              <Box sx={{ display: 'flex', gap: 1.5, mt: 2 }}>
+                <Button variant="pill" size="small" sx={{ px: 2 }} disabled={saveEdit.isPending} onClick={handleSave}>
+                  {saveEdit.isPending ? 'Saving…' : 'Save details'}
+                </Button>
+                <Button variant="pillOutlined" size="small" sx={{ px: 2 }} onClick={() => setEditing(false)}>
+                  Cancel
+                </Button>
+              </Box>
+            </Section>
+          ) : (
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: { xs: 0, md: 3 } }}>
             <Section title="Contact">
               <Field label="Email" value={v.email} />
@@ -540,6 +655,7 @@ function VolunteerDetailDrawer({
               {v.organization && <Field label="Organization" value={v.organization.name} />}
             </Section>
           </Box>
+          )}
 
           <Section title="How they would like to help">
             <ChipRow labels={labelsFor('AREA_OF_INTEREST', v.areasOfInterest)} empty="No areas selected" />

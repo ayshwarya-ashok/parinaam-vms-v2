@@ -110,7 +110,6 @@ export function ScheduleEventForm() {
 
   return (
     <PageShell
-      eyebrow={`Admin › ${activity?.programName ?? ''} › ${activity?.name ?? ''}`}
       title="Schedule Session"
       description="Fields left at their defaults inherit from the activity. The coordinator falls back to the program's default when unset."
       maxWidth="md"

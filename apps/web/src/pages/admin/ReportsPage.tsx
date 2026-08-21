@@ -80,7 +80,6 @@ export function ReportsPage() {
 
   return (
     <PageShell
-      eyebrow="Admin › Reports"
       title="Reports"
       description="The volunteer summary — programmes, sessions, hours, attendance, trainings and certificates per person. All three exports contain exactly the rows below."
       actions={

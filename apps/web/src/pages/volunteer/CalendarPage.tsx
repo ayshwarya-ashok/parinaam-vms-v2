@@ -72,7 +72,6 @@ export function CalendarPage() {
 
   return (
     <PageShell
-      eyebrow="Calendar"
       title={`${MONTHS[month]} ${year}`}
       actions={
         <>

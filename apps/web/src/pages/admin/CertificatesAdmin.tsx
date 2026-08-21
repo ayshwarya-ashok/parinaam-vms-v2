@@ -101,7 +101,6 @@ export function CertificatesAdmin() {
 
   return (
     <PageShell
-      eyebrow="Admin › Recognition"
       title="Issue Certificates"
       description="Every volunteer with attended hours, per programme. Issuing renders the PDF, stores it, and emails it with the document attached."
       actions={

@@ -2,7 +2,6 @@ import { Box, Container, Typography } from '@mui/material';
 import type { ReactNode } from 'react';
 
 interface PageShellProps {
-  eyebrow?: string;
   title: string;
   description?: string;
   actions?: ReactNode;
@@ -10,9 +9,14 @@ interface PageShellProps {
   maxWidth?: 'md' | 'lg' | 'xl';
 }
 
-/** The prototype's inner-shell layout: eyebrow, serif title, actions on the right. */
+/**
+ * The prototype's inner-shell layout: serif title, actions on the right.
+ *
+ * There is no eyebrow. It used to print "Admin › People" above the title,
+ * which is exactly what the breadcrumb strip says one line higher — and unlike
+ * the strip, it was not clickable.
+ */
 export function PageShell({
-  eyebrow,
   title,
   description,
   actions,
@@ -32,7 +36,6 @@ export function PageShell({
         }}
       >
         <Box>
-          {eyebrow && <Typography variant="overline">{eyebrow}</Typography>}
           <Typography variant="h2" sx={{ fontSize: 'clamp(1.8rem, 3vw, 2.5rem)' }}>
             {title}
           </Typography>
