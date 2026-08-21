@@ -1,6 +1,6 @@
-import { CssBaseline, GlobalStyles, ThemeProvider } from '@mui/material';
+import { CssBaseline, GlobalStyles, IconButton, ThemeProvider } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { SnackbarProvider } from 'notistack';
+import { SnackbarProvider, closeSnackbar } from 'notistack';
 import type { ReactNode } from 'react';
 import { neutralToastStyles, theme } from '@/theme';
 import { AuthProvider } from './auth';
@@ -42,9 +42,23 @@ export function Providers({ children }: { children: ReactNode }) {
           autoHideDuration={3200}
           anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
           // "No changes to save" is not information, a warning or a success —
-          // it is the absence of an outcome, so it gets the ink palette rather
-          // than a blue that competes with the two toasts that mean something.
+          // it is the absence of an outcome, so it gets a neutral grey (see
+          // neutralToastStyles) rather than a blue competing with the two
+          // toasts that do report one.
           iconVariant={{ info: '' }}
+          // Dismissable: a toast that has been read should not have to be
+          // waited out, and an error worth reading twice should not vanish
+          // because the timer ran while it was being read.
+          action={(key) => (
+            <IconButton
+              size="small"
+              aria-label="Dismiss notification"
+              onClick={() => closeSnackbar(key)}
+              sx={{ color: 'inherit', opacity: 0.8, '&:hover': { opacity: 1 } }}
+            >
+              ✕
+            </IconButton>
+          )}
         >
           <ErrorBoundary>
             <OfflineBanner />

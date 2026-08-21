@@ -20,6 +20,7 @@ export interface SessionUser {
     firstName: string;
     lastName: string;
     phase: string;
+    registrationStatus?: 'pending' | 'approved' | 'rejected';
   } | null;
 }
 

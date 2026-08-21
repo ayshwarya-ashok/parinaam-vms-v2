@@ -4,11 +4,19 @@ import {
   Breadcrumbs,
   Button,
   Container,
+  Drawer,
+  IconButton,
   Link,
+  List,
+  ListItemButton,
+  ListItemText,
   Toolbar,
   Typography,
 } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import { useState } from 'react';
 import { Link as RouterLink, Outlet, useLocation, useMatches, useNavigate } from 'react-router-dom';
+import { Alert } from '@mui/material';
 import { useAuth } from '../auth';
 import { BreadcrumbProvider, useBreadcrumbTrail, type Crumb } from '../breadcrumbs';
 
@@ -41,12 +49,24 @@ export function AppLayout(props: AppLayoutProps) {
 }
 
 function AppLayoutInner({ variant, nav }: AppLayoutProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
   const matches = useMatches();
   const navigate = useNavigate();
   const location = useLocation();
   const dynamicTrail = useBreadcrumbTrail();
 
   const home = variant === 'admin' ? '/admin/dashboard' : '/app/dashboard';
+
+  /*
+   * Below this width the pills go behind a hamburger. The two shells have
+   * different appetites — nine admin sections need more room than seven
+   * volunteer ones — so the breakpoint follows the variant rather than
+   * forcing the volunteer shell into a menu it does not need.
+   */
+  const navBreakpoint = variant === 'admin' ? 'lg' : 'md';
+
+  const isActive = (to: string) =>
+    location.pathname === to || location.pathname.startsWith(`${to}/`);
   const routeCrumbs: Crumb[] = matches
     .filter((m) => (m.handle as RouteHandle | undefined)?.crumb)
     .map((m, index) => ({
@@ -61,7 +81,8 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
       ? [...routeCrumbs.slice(0, -1), ...dynamicTrail, routeCrumbs[routeCrumbs.length - 1]]
       : dynamicTrail;
 
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  const pendingReview = variant === 'volunteer' && user?.volunteer?.registrationStatus === 'pending';
 
   const handleLogout = async () => {
     await logout();
@@ -71,7 +92,27 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
   return (
     <Box sx={{ minHeight: '100vh' }}>
       <AppBar position="sticky">
-        <Toolbar sx={{ gap: 2, flexWrap: 'wrap' }}>
+        {/*
+          nowrap is what keeps the sticky breadcrumbs honest: their top offset
+          assumes a single-row app bar, and a wrapped second line of nav pills
+          used to make the bar taller than the offset, sliding the crumbs
+          underneath it. On narrow screens the nav scrolls sideways instead.
+        */}
+        {/*
+          One row at every width — the sticky breadcrumbs' offset depends on
+          it. Wide screens show the pills inline; narrow ones fold them into a
+          drawer behind the hamburger, which stays friendlier than a sideways
+          scroll nobody discovers.
+        */}
+        <Toolbar sx={{ gap: 1.5, flexWrap: 'nowrap' }}>
+          <IconButton
+            aria-label="Open navigation menu"
+            onClick={() => setMenuOpen(true)}
+            sx={{ color: '#fff', display: { xs: 'inline-flex', [navBreakpoint]: 'none' } }}
+          >
+            <MenuIcon />
+          </IconButton>
+
           {/*
             The wordmark is the first nav item and behaves like one: it goes
             home, for whichever home this session has.
@@ -79,26 +120,34 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
           <Button
             component={RouterLink}
             to={home}
+            aria-label="Parinaam — go to dashboard"
             sx={{
-              color: 'secondary.main',
-              fontWeight: 800,
-              letterSpacing: '0.14em',
-              fontSize: '0.85rem',
-              px: 1.25,
+              px: 1,
               mr: 1,
-              borderRadius: 999,
-              whiteSpace: 'nowrap',
+              borderRadius: 2,
+              flexShrink: 0,
               '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
             }}
           >
-            PARINAAM
+            <Box
+              component="img"
+              src="/parinaam-logo-dark.svg"
+              alt="Parinaam"
+              sx={{ height: 34, display: 'block' }}
+            />
           </Button>
-          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', flex: 1 }}>
+
+          <Box
+            sx={{
+              display: { xs: 'none', [navBreakpoint]: 'flex' },
+              gap: 0.5,
+              flexWrap: 'nowrap',
+              flex: 1,
+              minWidth: 0,
+            }}
+          >
             {nav.map((item) => {
-              // Prefix match so a detail page keeps its section highlighted,
-              // but never let the dashboard's short path swallow its siblings.
-              const active =
-                location.pathname === item.to || location.pathname.startsWith(`${item.to}/`);
+              const active = isActive(item.to);
               return (
                 <Button
                   key={item.to}
@@ -107,6 +156,8 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
                   size="small"
                   aria-current={active ? 'page' : undefined}
                   sx={{
+                    flexShrink: 0,
+                    whiteSpace: 'nowrap',
                     color: active ? '#fff' : 'rgba(255,255,255,0.72)',
                     fontWeight: active ? 700 : 500,
                     bgcolor: active ? 'rgba(255,255,255,0.16)' : 'transparent',
@@ -133,6 +184,10 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
               );
             })}
           </Box>
+
+          {/* Spacer when the pills are folded away, so Logout stays right-aligned. */}
+          <Box sx={{ flex: 1, display: { xs: 'block', [navBreakpoint]: 'none' } }} />
+
           <Button
             size="small"
             sx={{
@@ -140,6 +195,8 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
               border: '1px solid rgba(255,255,255,0.25)',
               borderRadius: 999,
               px: 2,
+              flexShrink: 0,
+              whiteSpace: 'nowrap',
             }}
             onClick={handleLogout}
           >
@@ -147,6 +204,44 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
           </Button>
         </Toolbar>
       </AppBar>
+
+      {/* The folded nav. Same destinations, same active state, one per row. */}
+      <Drawer
+        anchor="left"
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        PaperProps={{ sx: { width: 260, bgcolor: '#0f2b2d', color: '#fff' } }}
+      >
+        <Box sx={{ px: 2.5, pt: 2.5, pb: 1 }}>
+          <Box component="img" src="/parinaam-logo-dark.svg" alt="Parinaam" sx={{ height: 40, display: 'block' }} />
+        </Box>
+        <List sx={{ px: 1 }}>
+          {nav.map((item) => {
+            const active = isActive(item.to);
+            return (
+              <ListItemButton
+                key={item.to}
+                component={RouterLink}
+                to={item.to}
+                onClick={() => setMenuOpen(false)}
+                aria-current={active ? 'page' : undefined}
+                sx={{
+                  borderRadius: 2,
+                  mb: 0.25,
+                  color: active ? '#fff' : 'rgba(255,255,255,0.72)',
+                  bgcolor: active ? 'rgba(255,255,255,0.14)' : 'transparent',
+                  '&:hover': { bgcolor: 'rgba(255,255,255,0.10)' },
+                }}
+              >
+                <ListItemText
+                  primary={item.label}
+                  primaryTypographyProps={{ fontSize: '0.92rem', fontWeight: active ? 700 : 500 }}
+                />
+              </ListItemButton>
+            );
+          })}
+        </List>
+      </Drawer>
 
       {crumbs.length > 0 && (
         <Box
@@ -193,6 +288,15 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
         </Box>
       )}
 
+      {pendingReview && (
+        <Container maxWidth="xl" sx={{ pt: 2 }}>
+          <Alert severity="info" sx={{ borderRadius: 3 }}>
+            Your registration is being reviewed by our team. You can explore sessions and complete
+            your trainings meanwhile — enrolling opens up once you are approved, and we will email
+            you either way.
+          </Alert>
+        </Container>
+      )}
       <Outlet />
     </Box>
   );

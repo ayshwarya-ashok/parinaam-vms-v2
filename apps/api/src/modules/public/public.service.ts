@@ -32,7 +32,12 @@ export class PublicService {
 
     const [stats] = await this.dataSource.query(
       `SELECT
-        (SELECT COUNT(*)::int FROM volunteers)                                  AS volunteers,
+        -- "Active volunteers" means people who could show up tomorrow:
+        -- approved registrations on accounts that can still sign in. Pending,
+        -- rejected and erased records are none of those things.
+        (SELECT COUNT(*)::int FROM volunteers v
+           JOIN users u ON u.id = v.user_id
+           WHERE u.is_active AND v.registration_status = 'approved')             AS volunteers,
         (SELECT COALESCE(SUM(hours_contributed), 0) FROM attendance_records
            WHERE attended)                                                      AS hours,
         (SELECT COALESCE(SUM(beneficiaries_reached), 0)::int FROM event_reports) AS beneficiaries,

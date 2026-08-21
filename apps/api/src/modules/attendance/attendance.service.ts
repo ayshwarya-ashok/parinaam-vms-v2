@@ -589,7 +589,15 @@ export class AttendanceService {
   async adminRecord(
     principal: AuthPrincipal,
     eventId: string,
-    dto: { volunteerId: string; attended: boolean; hoursContributed?: number; notes?: string; absenceReason?: string },
+    dto: {
+      volunteerId: string;
+      attended: boolean;
+      hoursContributed?: number;
+      notes?: string;
+      absenceReason?: string;
+      /** Explicit flag for someone who was never enrolled but showed up. */
+      walkIn?: boolean;
+    },
   ) {
     const existing = await this.records.findOne({
       where: { eventId, volunteerId: dto.volunteerId },
@@ -598,15 +606,57 @@ export class AttendanceService {
       return this.adminOverride(principal, existing.id, dto as never);
     }
 
+    /*
+     * A new record needs a reason to exist. Either the volunteer was enrolled
+     * (the normal case), or the admin explicitly says this is a walk-in — an
+     * arbitrary volunteerId in a URL must not be enough to put hours on
+     * somebody's record. Walk-ins must also be people the foundation would
+     * let through the door: an approved registration on an active account.
+     */
+    const [enrollment] = await this.dataSource.query(
+      `SELECT 1 FROM event_enrollments WHERE event_id = $1 AND volunteer_id = $2 AND status = 'enrolled'`,
+      [eventId, dto.volunteerId],
+    );
+    if (!enrollment) {
+      if (!dto.walkIn) {
+        throw new BusinessException(
+          'NOT_ENROLLED',
+          'This volunteer is not enrolled in the session. Mark them as a walk-in to record their attendance anyway.',
+          400,
+        );
+      }
+      const [eligible] = await this.dataSource.query(
+        `SELECT 1 FROM volunteers v JOIN users u ON u.id = v.user_id
+         WHERE v.id = $1 AND u.is_active AND v.registration_status = 'approved'`,
+        [dto.volunteerId],
+      );
+      if (!eligible) {
+        throw new BusinessException(
+          'WALKIN_NOT_ELIGIBLE',
+          'Walk-ins must be active, approved volunteers.',
+          400,
+        );
+      }
+    }
+
+    if (dto.attended && dto.hoursContributed === undefined) {
+      throw new BusinessException(
+        'HOURS_REQUIRED',
+        'Enter the hours contributed when marking a volunteer present.',
+        400,
+      );
+    }
+
     const saved = await this.records.save(
       this.records.create({
         eventId,
         volunteerId: dto.volunteerId,
         attended: dto.attended,
-        hoursContributed:
-          dto.hoursContributed !== undefined ? String(dto.hoursContributed) : null,
+        hoursContributed: dto.attended ? String(dto.hoursContributed) : '0',
         notes: dto.notes ?? null,
-        absenceReason: (dto.absenceReason as AttendanceRecord['absenceReason']) ?? null,
+        absenceReason: dto.attended
+          ? null
+          : ((dto.absenceReason as AttendanceRecord['absenceReason']) ?? null),
         source: 'admin',
         recordedBy: principal.sub,
       }),
@@ -640,6 +690,33 @@ export class AttendanceService {
       source: 'admin' as const,
       recordedBy: principal.sub,
     });
+
+    /*
+     * The two attendance states clean up after each other.
+     *
+     * Present clears the absence fields — the DB refuses attended=true with an
+     * absence_reason still set, so without this an admin who marked someone
+     * absent by mistake could never mark them present again. Absent zeroes the
+     * hours and times — the edit dialog carries whatever value was last on
+     * screen, and hours from a session somebody missed must not survive into
+     * their certificate totals.
+     */
+    if (record.attended) {
+      record.absenceReason = null;
+      record.absenceDetail = null;
+      if (record.hoursContributed === null) {
+        throw new BusinessException(
+          'HOURS_REQUIRED',
+          'Enter the hours contributed when marking a volunteer present.',
+          400,
+        );
+      }
+    } else {
+      record.hoursContributed = '0';
+      record.arrivalTime = null;
+      record.departureTime = null;
+    }
+
     const saved = await this.records.save(record);
 
     await this.audit.record(principal, {

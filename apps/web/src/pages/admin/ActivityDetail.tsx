@@ -35,6 +35,9 @@ export function ActivityDetail() {
   const queryClient = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
   const { data: activity, isLoading } = useActivity(id);
+  // Local date, not UTC: "has this session's day arrived?" is a wall-clock question.
+  const now = new Date();
+  const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const { sorted, sort, toggle } = useTableSort(activity?.events, {
     code: (e) => e.code,
     date: (e) => `${String(e.date).slice(0, 10)} ${e.start_time}`,
@@ -62,6 +65,15 @@ export function ActivityDetail() {
     void queryClient.invalidateQueries({ queryKey: ['activity', id] });
     void queryClient.invalidateQueries({ queryKey: ['program'] });
   };
+
+  const markCompleted = useMutation({
+    mutationFn: async (eventId: string) => (await api.post(`/events/${eventId}/complete`)).data,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['activity', id] });
+      enqueueSnackbar('Session marked completed — it now counts as conducted', { variant: 'success' });
+    },
+    onError: (err) => enqueueSnackbar(asApiError(err)?.message ?? 'Could not mark completed', { variant: 'error' }),
+  });
 
   const publish = useMutation({
     mutationFn: async (eventId: string) => (await api.post(`/events/${eventId}/publish`)).data,
@@ -230,6 +242,17 @@ export function ActivityDetail() {
                           Publish
                         </Button>
                       </Tooltip>
+                    )}
+                    {e.status === 'upcoming' && String(e.date).slice(0, 10) <= todayIso && (
+                      <Button
+                        size="small"
+                        variant="pill"
+                        sx={{ px: 1.5, py: 0.25 }}
+                        disabled={markCompleted.isPending}
+                        onClick={() => markCompleted.mutate(e.id)}
+                      >
+                        ✓ Mark completed
+                      </Button>
                     )}
                     {(e.status === 'draft' || e.status === 'upcoming') && (
                       <>

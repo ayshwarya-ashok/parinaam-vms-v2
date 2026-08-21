@@ -96,6 +96,9 @@ export class TemplateService implements OnModuleInit {
     const fullContext = {
       walletUrl: `${webUrl}/app/certificates`,
       feedbackUrl: `${webUrl}/app/feedback`,
+      // The site root is the public impact page, so "go to the app" links
+      // point at the sign-in card instead of a brochure.
+      loginUrl: `${webUrl}/login`,
       ...context,
       orgName: this.config.get('MAIL_FROM_NAME'),
       webUrl,

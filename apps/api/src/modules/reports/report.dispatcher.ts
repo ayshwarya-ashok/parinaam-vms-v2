@@ -34,9 +34,22 @@ export class ReportDispatcher {
     try {
       const due = await this.schedules.findDue();
       for (const schedule of due) {
-        await this.fire(schedule.id).catch((err) =>
-          this.logger.error(`Schedule ${schedule.name} failed: ${(err as Error).message}`),
-        );
+        try {
+          await this.fire(schedule.id);
+        } catch (err) {
+          /*
+           * Advance the clock even on failure. Leaving next_run_at in the past
+           * meant a schedule whose export always failed was retried every five
+           * minutes forever — ~288 failed report_runs a day and nothing
+           * gained, since whatever broke the export is still broken five
+           * minutes later. The failed run row records the attempt; the next
+           * try happens when the schedule would naturally fire again.
+           */
+          await this.schedules.markRan(schedule.id).catch(() => undefined);
+          this.logger.error(
+            `Schedule ${schedule.name} failed and was advanced to its next slot: ${(err as Error).message}`,
+          );
+        }
       }
     } finally {
       this.running = false;

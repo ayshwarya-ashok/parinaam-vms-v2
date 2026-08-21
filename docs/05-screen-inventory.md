@@ -17,8 +17,8 @@ M6 Recognition & Insight
 
 | # | Prototype id | Screen (v2 name) | Route | Role | Module | Phase | Primary endpoints |
 |---|---|---|---|---|---|:--:|---|
-| 1 | `screen-landing` | Landing — login / signup | `/` | public | M1 | P1 | `POST /auth/login`, `POST /auth/check-email` |
-| 2 | `screen-registration` | Volunteer registration | `/register` | volunteer | M1 | P1 | `POST /volunteers`, `GET /organizations` |
+| 1 | `screen-landing` | Sign in / sign up | `/login` *(moved — `/` is the impact page)* | public | M1 | P1 | `POST /auth/login`, `POST /auth/check-email` |
+| 2 | `screen-registration` | Volunteer registration | `/register` | public | M1 | P1 | `POST /auth/register` (atomic account+profile), `GET /reference-values`, `GET /organizations` |
 | 3 | `screen-volunteer` | Volunteer dashboard | `/app/dashboard` | volunteer | M3 | P3 | `GET /events?scope=open`, `POST /enrollments/batch` |
 | 4 | `screen-admin-login` | Admin login *(no OTP field)* | `/admin/login` | public | M1 | P1 | `POST /auth/login` |
 | 5 | `screen-admin-dashboard` | Admin hub | `/admin/dashboard` | admin | M2 | P2 | `GET /analytics/summary` |
@@ -47,7 +47,7 @@ M6 Recognition & Insight
 | 27 | `screen-dashboard` | Metrics dashboard | `/admin/metrics` | admin | M6 | P7 | `GET /analytics/dashboard` |
 | 28 | `screen-reports` | Reports | `/admin/reports` | admin | M6 | P7 | `GET /reports/volunteers`, `POST /reports/export` |
 | 29 | `screen-auto-reports` | Automated reports | `/admin/reports/scheduled` | admin | M6 | P7 | `GET/POST/PATCH/DELETE /reports/scheduled` |
-| 30 | `screen-impact-page` | Public impact page | `/impact` | public | M6 | P8 | `GET /public/impact` |
+| 30 | `screen-impact-page` | Public impact page | `/` (also `/impact`) | public | M6 | P8 | `GET /public/impact` |
 
 Screens added beyond the prototype:
 
@@ -133,3 +133,16 @@ admin does not assume volunteers have been told.
 | P7 | 27, 28, 29 | 3 |
 | P8 | 30 | 1 |
 | | **Total** | **33** |
+
+
+## Screens added post-MVP
+
+| Screen | Route | Role | Purpose |
+|---|---|---|---|
+| Session record | `/admin/sessions/:id` | admin | Roster (upcoming) / attendance + coordinator report (completed); corrections, walk-ins, Mark completed |
+| Edit occurrence | `/admin/events/:id/edit` | admin | Was a stub through Phase 7; edits one occurrence, guards capacity and reschedules |
+
+Navigation conventions changed post-MVP: clickable sticky breadcrumbs replaced "← Back"
+buttons everywhere, the nav folds into a hamburger drawer on narrow screens, and the last
+routed stub was removed — every route in the table is a real screen.
+See `07-post-mvp-refinements.md`.

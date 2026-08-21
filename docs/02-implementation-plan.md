@@ -527,3 +527,23 @@ overlap. Do not parallelise P5 with P4: attendance depends on enrollment being f
    test in `n8n/README.md`. This is the one manual step in the stack.
 3. **Start Phase 0.** The database layer and the email stack are delivered; what remains is the
    application scaffolds, the MUI theme, the `NotificationsModule` wiring and CI.
+
+
+---
+
+## Delivery record (added post-implementation)
+
+All eight phases shipped between 2026-08-17 and 2026-08-20; commits `78094d0` (P1) through
+`da5fe2f` (P8). Deviations from this plan, made deliberately and recorded at the time:
+
+- **Certificates render with pdf-lib, not Puppeteer** — a ~300 MB Chromium layer was not worth
+  one fixed A4 layout; the swap is contained to `CertificatePdfService`.
+- **argon2id landed in Phase 8 as planned**, with bcrypt seeds upgrading transparently on the
+  first successful login (hashes carry their algorithm prefix).
+- **Sessions are completed by an explicit admin action** (post-MVP, audit round) rather than a
+  background sweep — "the date passed" and "the session happened" are different claims.
+- **Descoped from the local delivery** and documented in the P8 commit: ZAP baseline, k6 load
+  tests (and the results-driven index migration), Lighthouse scoring, CI E2E suite, UAT
+  sign-off. The authorization-matrix test and a timed backup/restore rehearsal shipped instead.
+
+Post-MVP work continued in nine review rounds — see `07-post-mvp-refinements.md`.

@@ -22,7 +22,12 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_BASE_URL, api, asApiError } from '@/api/client';
 import { useAuth } from '@/app/auth';
-import { phoneError, phoneForApi } from '@/app/validation';
+import {
+  firstProblem,
+  phoneForApi,
+  validateProfile,
+  type ProfileErrors,
+} from '@/app/validation';
 import { tokens } from '@/theme';
 
 interface OrganizationOption {
@@ -79,7 +84,7 @@ export function Register() {
     complianceRead: false,
   });
   const [error, setError] = useState<string | null>(null);
-  const [phoneProblem, setPhoneProblem] = useState<string | null>(null);
+  const [problems, setProblems] = useState<ProfileErrors>({});
   const [busy, setBusy] = useState(false);
 
   // Both lists are public: the form must render before an account exists, so
@@ -111,6 +116,7 @@ export function Register() {
 
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => {
     setForm((f) => ({ ...f, [key]: value }));
+    setProblems((current) => (key in current ? { ...current, [key]: undefined } : current));
     setError(null);
   };
 
@@ -132,13 +138,13 @@ export function Register() {
       setError('Please select the organization sponsoring your volunteering.');
       return;
     }
-    const badPhone = phoneError(form.phone);
-    if (badPhone) {
-      setPhoneProblem(badPhone);
-      setError(badPhone);
+    const found = validateProfile(form);
+    if (Object.keys(found).length > 0) {
+      setProblems(found);
+      setError(firstProblem(found));
       return;
     }
-    setPhoneProblem(null);
+    setProblems({});
 
     setBusy(true);
     const profile = {
@@ -184,7 +190,7 @@ export function Register() {
     <Container maxWidth="xl" sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center' }}>
       <Grid container spacing={6} sx={{ py: 6, alignItems: 'center', width: '100%' }}>
         <Grid size={{ xs: 12, md: 5 }}>
-          <Typography variant="overline">Parinaam Volunteer Management</Typography>
+          <Box component="img" src="/parinaam-logo.svg" alt="Parinaam Volunteer Management" sx={{ height: 56, display: 'block', mb: 1 }} />
           <Typography variant="h1" sx={{ fontSize: 'clamp(2.6rem, 5vw, 4rem)', mt: 1 }}>
             Tell us about yourself.
           </Typography>
@@ -241,6 +247,8 @@ export function Register() {
                   autoComplete="given-name"
                   value={form.firstName}
                   onChange={(e) => set('firstName', e.target.value)}
+                  error={Boolean(problems.firstName)}
+                  helperText={problems.firstName}
                 />
                 <TextField
                   label="Last name"
@@ -248,6 +256,8 @@ export function Register() {
                   autoComplete="family-name"
                   value={form.lastName}
                   onChange={(e) => set('lastName', e.target.value)}
+                  error={Boolean(problems.lastName)}
+                  helperText={problems.lastName}
                 />
               </Box>
 
@@ -260,14 +270,19 @@ export function Register() {
                   autoComplete="bday"
                   value={form.dateOfBirth}
                   onChange={(e) => set('dateOfBirth', e.target.value)}
+                  required
+                  error={Boolean(problems.dateOfBirth)}
+                  helperText={problems.dateOfBirth}
                 />
                 <TextField
                   select
                   label="Gender"
                   value={form.gender}
                   onChange={(e) => set('gender', e.target.value)}
+                  required
+                  error={Boolean(problems.gender)}
+                  helperText={problems.gender}
                 >
-                  <MenuItem value="">Prefer not to answer</MenuItem>
                   {['Female', 'Male', 'Non-binary', 'Prefer not to say'].map((g) => (
                     <MenuItem key={g} value={g}>
                       {g}
@@ -282,12 +297,18 @@ export function Register() {
                   autoComplete="address-level2"
                   value={form.city}
                   onChange={(e) => set('city', e.target.value)}
+                  required
+                  error={Boolean(problems.city)}
+                  helperText={problems.city}
                 />
                 <TextField
                   label="State"
                   autoComplete="address-level1"
                   value={form.state}
                   onChange={(e) => set('state', e.target.value)}
+                  required
+                  error={Boolean(problems.state)}
+                  helperText={problems.state}
                 />
               </Box>
 
@@ -296,10 +317,11 @@ export function Register() {
                 type="tel"
                 autoComplete="tel"
                 placeholder="+91 00000 00000"
-                helperText={phoneProblem ?? 'A 10-digit mobile number, so a coordinator can reach you on the day'}
-                error={Boolean(phoneProblem)}
+                required
+                helperText={problems.phone ?? 'A 10-digit mobile number, so a coordinator can reach you on the day'}
+                error={Boolean(problems.phone)}
                 value={form.phone}
-                onChange={(e) => { set('phone', e.target.value); setPhoneProblem(null); }}
+                onChange={(e) => set('phone', e.target.value)}
               />
 
               {/* ── How you would like to help ────────────────────────────── */}

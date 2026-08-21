@@ -393,3 +393,42 @@ feedback_submissions ──1:M── feedback_issues
 
 scheduled_reports ──1:M── report_runs
 ```
+
+
+---
+
+## Schema changes since v1 (V010–V012)
+
+The body of this document describes the schema as designed (V001–V009, 36 tables). Three
+migrations landed afterwards; the live schema is **37 tables**.
+
+**V010 — email attachments live on the outbox row.** `email_logs.attachment_url/-name`:
+attachments used to travel as transient queue-job data, so an outbox-sweep retry re-sent the
+message without its certificate. The durable row now carries the pointer.
+
+**V011 — registration review and the richer sign-up profile.**
+- `volunteers.registration_status` (`pending | approved | rejected`) with `reviewed_by`,
+  `reviewed_at`, `rejection_reason`, guarded by a CHECK: a decision must be attributable,
+  and a rejection must carry a reason. Pre-existing volunteers backfilled as `approved`.
+- Profile fields from the public registration form: `occupation`, `languages`,
+  `areas_of_interest`, `availability` (comma-joined **codes**, never labels),
+  `availability_notes`.
+- New table **`reference_values`** (category, code, label, sort, active): the admin-editable
+  vocabulary those codes come from. Seeded in S001 (LANGUAGE, AREA_OF_INTEREST, AVAILABILITY).
+
+**V012 — hours only count when the volunteer was there.** `v_program_participation`,
+`v_event_attendance` and `v_volunteer_report_summary` summed `hours_contributed` over
+every record while counting sessions with `FILTER (WHERE attended)` — an absent record with
+stale hours produced a certificate source reading "2.75 hours across 0 sessions". Hours now
+carry the same filter. `v_volunteer_report_summary` additionally excludes erased volunteers
+(`…@erased.invalid`), whose rows are anonymised husks.
+
+**Seeds added:** S003 (a fully-worked activity: completed sessions with mixed attendance
+sources, a full upcoming session with a real waitlist, a draft) and S004 (completes volunteer
+identity fields the mandatory-field rule requires; normalises phones to bare ten digits;
+never touches erased records).
+
+**Semantics established post-design:** enrolling requires `registration_status = 'approved'`;
+attendance records for non-enrolled volunteers require an explicit walk-in and an
+active+approved volunteer; `events.status = 'completed'` is set only by the admin's
+"Mark completed" action.
