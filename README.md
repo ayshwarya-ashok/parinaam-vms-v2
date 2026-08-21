@@ -28,28 +28,35 @@ feedback and attendance attach to **occurrences**.
 
 ## Current state
 
-**Phase 0 is complete.** The stack runs end to end: API, worker, web shell, and the
-n8n email pipeline are all live and verified.
+**Complete.** All eight implementation phases shipped, followed by nine rounds of post-MVP
+refinement driven by hands-on product-owner testing and a full-codebase audit — see
+`docs/07-post-mvp-refinements.md` for the round-by-round record.
 
 | Delivered | Location |
 |---|---|
-| Design docs (design, plan, data model, API, screens, gaps) | `docs/` |
-| Schema — 36 tables, 8 views, 6 business functions | `database/migrations/` |
-| Reference + demo data | `database/seeds/` |
-| NestJS API + worker (one image, ROLE-gated) | `apps/api/` |
-| Email pipeline: outbox → n8n → SMTP → signed callback | `apps/api/src/modules/notifications/` |
-| n8n workflow + SMTP credential (imported via CLI) | `n8n/` |
-| React 18 + MUI web shell: theme, layouts, 33 routes stubbed | `apps/web/` |
-| CI: lint, typecheck, tests, migration + workflow checks | `.github/workflows/ci.yml` |
+| Design docs (design, plan, data model, API, screens, gaps, refinements) | `docs/` |
+| Runbooks: deploy, restore, incident response, add admin, edit n8n workflow | `docs/runbooks/` |
+| Schema — 37 tables, 8 views, 6 business functions (migrations V001–V012) | `database/migrations/` |
+| Reference + demo data (S001–S004, incl. a fully-worked activity) | `database/seeds/` |
+| NestJS API + worker (one image, ROLE-gated), argon2id auth, signed link tokens | `apps/api/` |
+| Email pipeline: outbox → n8n → SMTP → signed callback, with attachments | `apps/api/src/modules/notifications/` |
+| n8n workflow + SMTP credential (imported via CLI, drift-checked) | `n8n/` |
+| React 18 + MUI SPA — every route is a real screen; public impact page at `/` | `apps/web/` |
+| Certificates (pdf-lib, logo header), reports (CSV/Excel/PDF), scheduled reports | `apps/api/src/modules/{certificates,reports}/` |
+| Metrics dashboard: 10 live Chart.js panels, custom date ranges | `apps/web/src/pages/admin/MetricsDashboard.tsx` |
+| Authorization matrix test — 53 endpoints × 3 roles, run against the live API | `apps/api/scripts/authz-matrix.mjs` |
+| Backup/restore covering the VMS **and** n8n databases, rehearsed and timed | `scripts/backup.sh`, `scripts/restore.sh` |
 
-**Verified end to end**: a test email travels API → n8n → Mailpit and the signed
-callback marks it `sent`; an unsigned callback is rejected 401; killing n8n leaves
-mail safely `queued` and the outbox sweeper delivers it on recovery.
+**The volunteer journey works end to end**: register (atomic account+profile, pending admin
+review) → approval email → consent → mandatory trainings with server-scored quizzes → browse
+and enroll (capacity, waitlists with auto-promotion, conflict warnings) → attendance via signed
+no-login links → per-programme certificate PDF, emailed with the logo on it → per-session
+feedback feeding public testimonials.
 
-Next: **Phase 1 — identity, onboarding and compliance consent.**
-
-
----
+**Demo logins** (all passwords `Parinaam@123`): admin `admin@parinaam.org`; volunteers
+`rahul@example.org`, `meera@example.org`, `ananya@example.org` among others — and one
+registration (`anita.rao@example.org`) is intentionally left pending so the review flow can
+be exercised.
 
 ## Quick start
 
@@ -82,7 +89,7 @@ docker compose exec db psql -U parinaam -d parinaam_vms \
       join events e on e.activity_id=a.id group by 1,2 order by 3 desc limit 3;"
 ```
 
-Once the application exists (Phase 0): `docker compose --profile app up -d --build` adds the API
+Then `docker compose --profile app up -d --build` adds the API
 (`:3001`), worker and web app (`:5174`).
 
 ### One-time n8n setup
@@ -140,9 +147,9 @@ out of the box:
 ## Repository layout
 
 ```
-apps/api/          NestJS API + worker            (Phase 0)
-apps/web/          React + MUI SPA                (Phase 0)
-packages/shared/   DTO types and Zod schemas      (Phase 0)
+apps/api/          NestJS API + worker
+apps/web/          React + MUI SPA
+packages/shared/   DTO types and Zod schemas
 database/
   migrations/      V001–V009 — schema source of truth
   seeds/           S001 reference, S002 demo

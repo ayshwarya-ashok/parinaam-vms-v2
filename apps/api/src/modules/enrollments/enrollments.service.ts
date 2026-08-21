@@ -34,6 +34,22 @@ export class EnrollmentsService {
     private readonly notifications: NotificationsService,
   ) {}
 
+  /**
+   * Enrolling is the review gate's teeth. A pending volunteer can explore,
+   * sign consent and complete trainings — all of that is preparation — but a
+   * seat on a roster is a commitment the foundation makes back, and that
+   * waits for an administrator's approval.
+   */
+  private assertApproved(volunteer: Volunteer): void {
+    if (volunteer.registrationStatus !== 'approved') {
+      throw new BusinessException(
+        'REGISTRATION_PENDING',
+        'Your registration is still being reviewed. Enrolling opens up once an administrator approves it — we will email you.',
+        403,
+      );
+    }
+  }
+
   private async volunteerOf(principal: AuthPrincipal): Promise<Volunteer> {
     const volunteer = await this.volunteers.findOne({ where: { userId: principal.sub } });
     if (!volunteer) {
@@ -50,6 +66,7 @@ export class EnrollmentsService {
 
   async enroll(principal: AuthPrincipal, eventId: string, opts: EnrollOptions) {
     const volunteer = await this.volunteerOf(principal);
+    this.assertApproved(volunteer);
 
     return this.dataSource.transaction(async (mgr) => {
       // Lock the occurrence row: two concurrent enrollments must serialise on
@@ -312,6 +329,7 @@ export class EnrollmentsService {
   // ── Batch (Confirm Participation) ──────────────────────────────────────────
 
   async enrollBatch(principal: AuthPrincipal, eventIds: string[], opts: EnrollOptions) {
+    this.assertApproved(await this.volunteerOf(principal));
     // Per-occurrence results so the dashboard can show partial success — one
     // full session must not sink the other three.
     const results = [];

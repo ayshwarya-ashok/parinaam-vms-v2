@@ -9,6 +9,16 @@
 | **Source inputs** | `VMS_prototype_v2.html` (interactive prototype, 30 screens), `VMS_database_model.md` (v1.0 relational model) |
 | **Supersedes** | v2.0 (2026-08-16). Changes in this revision: the Program → Activity → Event remodel, n8n-orchestrated email, Mailpit as the sample mailbox, and 2FA removed from scope. |
 
+
+> **Post-MVP addendum (2026-08-21).** This document describes the system as designed. Nine
+> review rounds and a codebase audit refined it after delivery; where this document and
+> `07-post-mvp-refinements.md` disagree, the refinements document wins. The largest deltas:
+> registration is atomic (account + profile in one transaction) and **admin-reviewed**;
+> enrolling requires an approved registration; hours count **attended records only** (V012);
+> sessions are completed by an explicit admin action; `/` serves the public impact page with
+> sign-in at `/login`; certificates carry the Parinaam logo and are named
+> `<certificateNumber>.pdf`.
+
 ---
 
 ## Table of contents
@@ -427,7 +437,7 @@ Fonts are self-hosted via `@fontsource`, so the app has no third-party runtime d
 ### 8.2 Routing
 
 ```
-/                                   Landing (login | signup)
+/                                   Public impact page (sign-in at /login)
 /register  /admin/login  /impact
 /attendance/:token                  Volunteer attendance form   (link token)
 /report/:token                      Coordinator event report    (link token)
@@ -483,7 +493,7 @@ navigable; colour is never the sole carrier of meaning.
 Full schema in `database/migrations/`; entity reference in `03-data-model.md`; departures from
 the v1 model in `06-gap-analysis.md`.
 
-### 9.1 Shape at a glance — 36 tables
+### 9.1 Shape at a glance — 36 tables as designed (37 live: reference_values, V011)
 
 | Group | Tables |
 |---|---|

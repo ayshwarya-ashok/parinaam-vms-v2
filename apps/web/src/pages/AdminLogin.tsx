@@ -61,7 +61,8 @@ export function AdminLogin() {
           backdropFilter: 'blur(18px)',
         }}
       >
-        <Typography variant="overline">Parinaam Admin</Typography>
+        <Box component="img" src="/parinaam-logo.svg" alt="Parinaam" sx={{ height: 52, display: 'block', mb: 0.5, mx: 'auto' }} />
+        <Typography variant="overline">Admin</Typography>
         <Typography variant="h3" sx={{ fontSize: '2rem', mb: 1 }}>
           Administrator Sign In
         </Typography>

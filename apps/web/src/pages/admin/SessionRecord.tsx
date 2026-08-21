@@ -129,6 +129,12 @@ function fmtDate(iso: string): string {
   });
 }
 
+/** Local wall-clock date — "has the day arrived?" is not a UTC question. */
+function todayIsoLocal(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
 const SOURCE_LABEL: Record<string, string> = {
   self: 'volunteer',
   coordinator: 'coordinator',
@@ -147,6 +153,9 @@ const SOURCE_LABEL: Record<string, string> = {
 export function SessionRecord() {
   const { id } = useParams<{ id: string }>();
   const [edit, setEdit] = useState<EditState | null>(null);
+  const [walkInOpen, setWalkInOpen] = useState(false);
+  const [walkInVolunteer, setWalkInVolunteer] = useState('');
+  const [walkInHours, setWalkInHours] = useState('');
   const queryClient = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
 
@@ -174,11 +183,65 @@ export function SessionRecord() {
     source: (r) => r.source,
   });
 
+  // Active, approved volunteers — the only people an admin may record as
+  // walk-ins. Fetched lazily: most sessions never need it.
+  const { data: activeVolunteers } = useQuery({
+    queryKey: ['walk-in-candidates'],
+    queryFn: async () =>
+      (
+        await api.get<{ data: Array<{ id: string; firstName: string; lastName: string; email: string }> }>(
+          '/volunteers',
+          { params: { registrationStatus: 'approved', limit: 100 } },
+        )
+      ).data.data,
+    enabled: walkInOpen,
+  });
+
+  const rosterIds = new Set((data?.roster ?? []).map((r) => r.volunteer_id));
+  const walkInCandidates = (activeVolunteers ?? []).filter((v) => !rosterIds.has(v.id));
+
+  const recordWalkIn = useMutation({
+    mutationFn: async () =>
+      (
+        await api.post(`/events/${id}/attendance`, {
+          volunteerId: walkInVolunteer,
+          attended: true,
+          hoursContributed: Number(walkInHours),
+          notes: 'Walk-in recorded by admin.',
+          walkIn: true,
+        })
+      ).data,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['session-record', id] });
+      setWalkInOpen(false);
+      setWalkInVolunteer('');
+      setWalkInHours('');
+      enqueueSnackbar('Walk-in recorded', { variant: 'success' });
+    },
+    onError: (err) => enqueueSnackbar(asApiError(err)?.message ?? 'Could not record the walk-in', { variant: 'error' }),
+  });
+
+  const markCompleted = useMutation({
+    mutationFn: async () => (await api.post(`/events/${id}/complete`)).data,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['session-record', id] });
+      void queryClient.invalidateQueries({ queryKey: ['dispatches'] });
+      enqueueSnackbar('Session marked completed', { variant: 'success' });
+    },
+    onError: (err) => enqueueSnackbar(asApiError(err)?.message ?? 'Could not mark completed', { variant: 'error' }),
+  });
+
   const save = useMutation({
     mutationFn: async (state: EditState) => {
+      /*
+       * The payload mirrors the state transition, not the form's leftovers.
+       * Hours travel only with Present (Absent zeroes them server-side too —
+       * a stale value from the previous state must not survive into
+       * certificate totals), and a reason travels only with Absent.
+       */
       const body = {
         attended: state.attended,
-        hoursContributed: state.hours === '' ? undefined : Number(state.hours),
+        hoursContributed: state.attended && state.hours !== '' ? Number(state.hours) : undefined,
         notes: state.notes || undefined,
         absenceReason: !state.attended && state.absenceReason ? state.absenceReason : undefined,
       };
@@ -215,7 +278,16 @@ export function SessionRecord() {
     <PageShell
       title={event.name}
       description={`${event.code} · ${event.activity_name}`}
-      actions={<StatusPill status={event.status} />}
+      actions={
+        <>
+          {event.status === 'upcoming' && String(event.date).slice(0, 10) <= todayIsoLocal() && (
+            <Button variant="pill" disabled={markCompleted.isPending} onClick={() => markCompleted.mutate()}>
+              ✓ Mark completed
+            </Button>
+          )}
+          <StatusPill status={event.status} />
+        </>
+      }
     >
       {event.status === 'cancelled' && (
         <Alert severity="warning" sx={{ mb: 2, borderRadius: 3 }}>
@@ -289,9 +361,16 @@ export function SessionRecord() {
       </Box>
 
       {/* ── Attendance marked by volunteers ─────────────────────────────────── */}
-      <Typography variant="h6" sx={{ mb: 0.5 }}>
-        {isUpcoming ? `Enrolled volunteers (${summary.enrolled})` : 'Volunteer attendance'}
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+        <Typography variant="h6">
+          {isUpcoming ? `Enrolled volunteers (${summary.enrolled})` : 'Volunteer attendance'}
+        </Typography>
+        {!isUpcoming && event.status === 'completed' && (
+          <Button size="small" variant="pillOutlined" sx={{ px: 1.5 }} onClick={() => setWalkInOpen(true)}>
+            + Add walk-in
+          </Button>
+        )}
+      </Box>
       <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary', mb: 1 }}>
         {isUpcoming
           ? 'Who has signed up so far. Hours are logged after the session runs.'
@@ -508,6 +587,56 @@ export function SessionRecord() {
         />
       )}
 
+      {/* ── Walk-in dialog: someone who showed up without enrolling ─────────── */}
+      <Dialog
+        open={walkInOpen}
+        onClose={() => setWalkInOpen(false)}
+        PaperProps={{ sx: { borderRadius: 4, width: 440, maxWidth: '100%' } }}
+      >
+        <DialogTitle sx={{ fontFamily: '"Source Serif 4", Georgia, serif' }}>
+          Record a walk-in
+        </DialogTitle>
+        <DialogContent sx={{ display: 'grid', gap: 2, pt: '8px !important' }}>
+          <Alert severity="info" sx={{ borderRadius: 2 }}>
+            For someone who attended without enrolling. Only active, approved volunteers can be
+            recorded; the entry is marked as an admin action in the audit trail.
+          </Alert>
+          <TextField
+            select
+            label="Volunteer"
+            value={walkInVolunteer}
+            onChange={(e) => setWalkInVolunteer(e.target.value)}
+            helperText={walkInCandidates.length === 0 ? 'Every active volunteer is already on this roster.' : undefined}
+          >
+            {walkInCandidates.map((v) => (
+              <MenuItem key={v.id} value={v.id}>
+                {v.firstName} {v.lastName} — {v.email}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            label="Hours contributed"
+            type="number"
+            required
+            inputProps={{ min: 0.25, step: 0.25 }}
+            value={walkInHours}
+            onChange={(e) => setWalkInHours(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button variant="pillOutlined" onClick={() => setWalkInOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="pill"
+            disabled={!walkInVolunteer || walkInHours === '' || recordWalkIn.isPending}
+            onClick={() => recordWalkIn.mutate()}
+          >
+            {recordWalkIn.isPending ? 'Recording…' : 'Record attendance'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* ── Correction dialog ───────────────────────────────────────────────── */}
       <Dialog
         open={edit !== null}
@@ -538,9 +667,12 @@ export function SessionRecord() {
               <TextField
                 label="Hours contributed"
                 type="number"
+                required
                 inputProps={{ min: 0, step: 0.25 }}
                 value={edit.hours}
                 onChange={(e) => setEdit({ ...edit, hours: e.target.value })}
+                error={edit.hours === ''}
+                helperText={edit.hours === '' ? 'Hours are required when marking present.' : undefined}
               />
             ) : (
               <TextField
@@ -571,7 +703,11 @@ export function SessionRecord() {
           <Button variant="pillOutlined" onClick={() => setEdit(null)}>
             Cancel
           </Button>
-          <Button variant="pill" disabled={save.isPending} onClick={() => edit && save.mutate(edit)}>
+          <Button
+            variant="pill"
+            disabled={save.isPending || (edit?.attended === true && edit.hours === '')}
+            onClick={() => edit && save.mutate(edit)}
+          >
             {save.isPending ? 'Saving…' : 'Save attendance'}
           </Button>
         </DialogActions>

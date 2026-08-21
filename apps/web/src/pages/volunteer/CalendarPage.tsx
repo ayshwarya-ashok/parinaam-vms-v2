@@ -13,6 +13,15 @@ const MONTHS = [
 ];
 const PILL_COLORS = [tokens.accent, tokens.info, tokens.success, '#5c6bc0', '#3a7a68', tokens.accentStrong];
 
+/**
+ * A Date as the LOCAL yyyy-mm-dd. toISOString() renders UTC, which for anyone
+ * east of Greenwich is yesterday until the offset elapses — in IST the "today"
+ * highlight sat on the wrong square until 05:30 every morning.
+ */
+function localIso(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 /** Stable colour per programme, so a series reads as one band across the month. */
 function programColor(programId: string): string {
   let hash = 0;
@@ -37,14 +46,14 @@ export function CalendarPage() {
     const list: Array<{ iso: string; day: number; current: boolean }> = [];
     for (let i = first - 1; i >= 0; i--) {
       const d = new Date(year, month, -i);
-      list.push({ iso: d.toISOString().slice(0, 10), day: d.getDate(), current: false });
+      list.push({ iso: localIso(d), day: d.getDate(), current: false });
     }
     for (let d = 1; d <= days; d++) {
       list.push({ iso: `${monthKey}-${String(d).padStart(2, '0')}`, day: d, current: true });
     }
     while (list.length % 7 !== 0) {
       const d = new Date(year, month + 1, list.length - first - days + 1);
-      list.push({ iso: d.toISOString().slice(0, 10), day: d.getDate(), current: false });
+      list.push({ iso: localIso(d), day: d.getDate(), current: false });
     }
     return list;
   }, [year, month, monthKey]);
@@ -56,7 +65,7 @@ export function CalendarPage() {
     setSelected(null);
   };
 
-  const todayIso = today.toISOString().slice(0, 10);
+  const todayIso = localIso(today);
 
   /** Jump straight to a date: move the grid to its month and open that day. */
   const jumpTo = (iso: string) => {

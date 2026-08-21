@@ -77,6 +77,7 @@ class OverrideDto {
 
 /** Admin logging attendance for someone who never submitted: who, and were they there. */
 class AdminRecordDto extends OverrideDto {
+  @IsOptional() @IsBoolean() walkIn?: boolean;
   @Matches(UUID_PATTERN, { message: 'must be a UUID' }) volunteerId!: string;
   // Optional on the base DTO, required here — there is nothing to infer from.
   @IsBoolean() declare attended: boolean;

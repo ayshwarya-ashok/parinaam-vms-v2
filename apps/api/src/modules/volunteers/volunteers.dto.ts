@@ -6,6 +6,7 @@ import {
   IsDateString,
   IsEmail,
   IsIn,
+  IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
@@ -30,29 +31,33 @@ export class RegisterVolunteerDto {
   @MaxLength(100)
   lastName!: string;
 
-  @IsOptional()
+  /*
+   * Identity and contact are mandatory on a new registration: a coordinator
+   * running a session needs to know who is coming, how to reach them on the
+   * day and where they are. They were optional while registration was a
+   * two-step afterthought; it is one form now, and it asks.
+   */
   @IsIn(['Female', 'Male', 'Non-binary', 'Prefer not to say'])
-  gender?: string;
+  gender!: string;
 
-  @IsOptional()
   @IsDateString()
-  dateOfBirth?: string;
+  dateOfBirth!: string;
 
-  @IsOptional()
   @IsString()
+  @IsNotEmpty({ message: 'City is required' })
   @MaxLength(100)
-  city?: string;
+  city!: string;
 
-  @IsOptional()
   @IsString()
+  @IsNotEmpty({ message: 'State is required' })
   @MaxLength(100)
-  state?: string;
+  state!: string;
 
-  @IsOptional()
   @IsString()
+  @IsNotEmpty({ message: 'Phone number is required' })
   @MaxLength(20)
   @Matches(PHONE_PATTERN, { message: 'Enter a 10-digit mobile number' })
-  phone?: string;
+  phone!: string;
 
   @IsIn(['Individual', 'CSR'])
   category!: 'Individual' | 'CSR';
@@ -114,14 +119,20 @@ export class ReviewRegistrationDto {
   reason?: string;
 }
 
+/**
+ * A partial update: absent means "leave it alone". What it cannot do is blank
+ * a mandatory field back out — @IsNotEmpty applies only when the key is
+ * present, which is exactly the distinction between "not editing this" and
+ * "clearing this".
+ */
 export class UpdateProfileDto {
-  @IsOptional() @IsString() @MaxLength(100) firstName?: string;
-  @IsOptional() @IsString() @MaxLength(100) lastName?: string;
+  @IsOptional() @IsString() @IsNotEmpty({ message: 'First name is required' }) @MaxLength(100) firstName?: string;
+  @IsOptional() @IsString() @IsNotEmpty({ message: 'Last name is required' }) @MaxLength(100) lastName?: string;
   @IsOptional() @IsIn(['Female', 'Male', 'Non-binary', 'Prefer not to say']) gender?: string;
   @IsOptional() @IsDateString() dateOfBirth?: string;
-  @IsOptional() @IsString() @MaxLength(100) city?: string;
-  @IsOptional() @IsString() @MaxLength(100) state?: string;
-  @IsOptional() @IsString() @MaxLength(20)
+  @IsOptional() @IsString() @IsNotEmpty({ message: 'City is required' }) @MaxLength(100) city?: string;
+  @IsOptional() @IsString() @IsNotEmpty({ message: 'State is required' }) @MaxLength(100) state?: string;
+  @IsOptional() @IsString() @IsNotEmpty({ message: 'Phone number is required' }) @MaxLength(20)
   @Matches(PHONE_PATTERN, { message: 'Enter a 10-digit mobile number' }) phone?: string;
   @IsOptional() @IsString() @MaxLength(255) skills?: string;
   @IsOptional() @IsString() @MaxLength(150) occupation?: string;
