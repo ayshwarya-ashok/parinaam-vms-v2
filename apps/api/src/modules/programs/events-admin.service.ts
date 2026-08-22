@@ -141,6 +141,9 @@ export class EventsAdminService {
     if (event.status === 'cancelled') {
       throw new BusinessException('EVENT_CANCELLED', 'A cancelled occurrence cannot be edited.');
     }
+
+    const capacityRaised = dto.maxSlots !== undefined && dto.maxSlots > (event.maxSlots ?? 0);
+
     Object.assign(event, {
       ...(dto.name !== undefined && { name: dto.name }),
       ...(dto.date !== undefined && { date: dto.date }),
@@ -151,6 +154,95 @@ export class EventsAdminService {
       ...(dto.maxSlots !== undefined && { maxSlots: dto.maxSlots }),
       ...(dto.coordinatorId !== undefined && { coordinatorId: dto.coordinatorId }),
     });
+    await this.events.save(event);
+
+    /*
+     * New seats go to the queue, not to whoever refreshes fastest.
+     *
+     * The DB's promotion routine only fires on enrollment cancellations, so a
+     * capacity increase has to invoke it explicitly — the edit form has
+     * promised this behaviour all along. Snapshot the queue around the call so
+     * the people who moved up can be congratulated by email, and only email
+     * after the transaction is out of the picture (fn_promote_waitlist commits
+     * with this statement).
+     */
+    if (capacityRaised && event.status === 'upcoming') {
+      const before: Array<{ volunteer_id: string }> = await this.dataSource.query(
+        'SELECT volunteer_id FROM waitlist_entries WHERE event_id = $1 ORDER BY position',
+        [id],
+      );
+      await this.dataSource.query('SELECT fn_promote_waitlist($1)', [id]);
+      const after: Array<{ volunteer_id: string }> = await this.dataSource.query(
+        'SELECT volunteer_id FROM waitlist_entries WHERE event_id = $1',
+        [id],
+      );
+      const stillWaiting = new Set(after.map((w) => w.volunteer_id));
+      const promoted = before.map((w) => w.volunteer_id).filter((v) => !stillWaiting.has(v));
+      for (const volunteerId of promoted) {
+        await this.queuePromotionEmail(volunteerId, id);
+      }
+    }
+
+    return this.adminDetail(id);
+  }
+
+  /** Same message a withdrawal-driven promotion sends — one seat, one email. */
+  private async queuePromotionEmail(volunteerId: string, eventId: string): Promise<void> {
+    const [row] = await this.dataSource.query(
+      `SELECT u.email, v.first_name, COALESCE(e.name, a.name) AS display_name,
+              e.date, e.start_time, e.location, a.program_id
+       FROM volunteers v
+       JOIN users u ON u.id = v.user_id
+       CROSS JOIN events e
+       JOIN activities a ON a.id = e.activity_id
+       WHERE v.id = $1 AND e.id = $2`,
+      [volunteerId, eventId],
+    );
+    if (!row) return;
+
+    await this.notifications.queueEmail({
+      templateKey: 'waitlist_promoted',
+      to: row.email,
+      recipientType: 'volunteer',
+      volunteerId,
+      eventId,
+      programId: row.program_id,
+      context: {
+        firstName: row.first_name,
+        eventName: row.display_name,
+        eventDate: fmtDate(row.date),
+        eventTime: String(row.start_time).slice(0, 5),
+        location: row.location ?? 'to be confirmed',
+      },
+    });
+  }
+
+  /**
+   * Close the book on a session that has run.
+   *
+   * Deliberately an admin ACTION rather than a background sweep: "the date
+   * passed" and "the session happened" are not the same claim, and completed
+   * is what dashboards count as conducted. Only an upcoming session whose
+   * date has arrived can be completed — a draft never opened, and the future
+   * has not happened yet.
+   */
+  async complete(id: string) {
+    const event = await this.events.findOneBy({ id });
+    if (!event) throw new NotFoundException('Event not found');
+    if (event.status !== 'upcoming') {
+      throw new BusinessException(
+        'NOT_UPCOMING',
+        `Only an upcoming session can be marked completed — this one is ${event.status}.`,
+      );
+    }
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+    if (String(event.date) > today) {
+      throw new BusinessException(
+        'NOT_YET_RUN',
+        'This session is in the future. Complete it after it has run, or cancel it if it will not.',
+      );
+    }
+    event.status = 'completed';
     await this.events.save(event);
     return this.adminDetail(id);
   }

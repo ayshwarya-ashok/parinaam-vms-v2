@@ -179,13 +179,16 @@ export const theme = createTheme({
 
 /**
  * notistack's info variant carries "No changes to save" — the absence of an
- * outcome. Neutral ink keeps it from reading as a second kind of success, or
- * as the blue that normally means "here is something you should know".
+ * outcome. Light grey on dark grey keeps it from reading as a second kind of
+ * success, or as the blue that normally means "here is something you should
+ * know": nothing happened, and the toast should look like nothing happened.
  */
 export const neutralToastStyles = {
   '.notistack-MuiContent-info': {
-    backgroundColor: tokens.ink,
-    color: 'rgba(255,255,255,0.92)',
+    backgroundColor: '#e6e4e0',
+    color: '#3d4744',
     fontWeight: 500,
+    border: '1px solid rgba(19,35,37,0.12)',
+    boxShadow: tokens.shadowSm,
   },
 };

@@ -27,8 +27,9 @@ export function LinkFormShell({
     <Container maxWidth="sm" sx={{ py: { xs: 2, sm: 4 } }}>
       <Paper elevation={8} sx={{ borderRadius: 4, overflow: 'hidden' }}>
         <Box sx={{ bgcolor: 'primary.main', px: 3, py: 2 }}>
+          <Box component="img" src="/parinaam-logo-dark.svg" alt="Parinaam Foundation" sx={{ height: 34, display: 'block', mb: 0.75 }} />
           <Typography variant="overline" sx={{ color: 'secondary.main' }}>
-            Parinaam Foundation · {strap}
+            {strap}
           </Typography>
           <Typography sx={{ color: '#fff', fontFamily: '"Source Serif 4", Georgia, serif', fontSize: '1.4rem' }}>
             {title}

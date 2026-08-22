@@ -56,7 +56,7 @@ field; sorting is `?sort=field&order=asc|desc`; date ranges are `?from=&to=`.
 |---|---|---|---|
 | POST | `/auth/register` | public | Account **and** profile in one transaction — an abandoned form creates nothing. Lands as `pending` for admin review |
 | POST | `/auth/check-email` | public | `{available}` — lets the form fail fast before the long part |
-| POST | `/auth/login` | public | `{ email, password }` → access token + refresh cookie. **No `totp`** — 2FA is out of scope |
+| POST | `/auth/login` | public | `{ email, password }` → access token + refresh cookie. **No `totp`** — 2FA is out of scope. Failures are specific: `ACCOUNT_NOT_FOUND`, `INVALID_PASSWORD`, `REGISTRATION_REJECTED` (with the reason), `ACCOUNT_DEACTIVATED`, `ACCOUNT_LOCKED` |
 | POST | `/auth/refresh` | refresh cookie | Rotate; reuse revokes the family |
 | POST | `/auth/logout` | bearer | Revoke the current family |
 | POST | `/auth/forgot-password` | public | Always 202 |
@@ -78,7 +78,8 @@ field; sorting is `?sort=field&order=asc|desc`; date ranges are `?from=&to=`.
 | POST | `/volunteers` | volunteer | Complete a profile on an account orphaned by the old two-step signup |
 | GET | `/reference-values` | none | Option lists (LANGUAGE, AREA_OF_INTEREST, AVAILABILITY) the registration form renders from |
 | GET | `/events/:id/session-record` | admin | Occurrence + enrolment roster with volunteer-logged attendance + coordinator report |
-| POST | `/events/:id/attendance` | admin | Log attendance for a volunteer who never submitted (upsert) |
+| POST | `/events/:id/complete` | admin | Mark a past `upcoming` session `completed` — the explicit claim dashboards count as *conducted* |
+| POST | `/events/:id/attendance` | admin | Log/upsert attendance. Requires the volunteer to be enrolled, or `walkIn: true` for an active approved volunteer; present requires hours |
 
 `/organizations` and `/coordinators` are standard admin CRUD. Coordinator `DELETE` deactivates
 rather than deletes, because events reference coordinators with `ON DELETE RESTRICT`.
@@ -210,7 +211,7 @@ rather than deletes, because events reference coordinators with `ON DELETE RESTR
 | Method | Path | Auth | Purpose |
 |---|---|---|---|
 | GET | `/analytics/summary` | admin | Admin hub tile counts |
-| GET | `/analytics/dashboard` | admin | `?period=all\|month\|quarter\|year&programId=&city=`. One payload: KPIs + all chart series |
+| GET | `/analytics/dashboard` | admin | `?period=all\|month\|quarter\|year\|custom&from=&to=&programId=&city=`. One payload: KPIs + all chart series; `custom` takes inclusive ISO dates |
 | GET | `/reports/volunteers` | admin | From `v_volunteer_report_summary` |
 | POST | `/reports/export` | admin | `{ reportType, format, filters }`. <5,000 rows streams; above, returns `{ runId }` and emails |
 | GET | `/reports/runs/:runId` | admin | Export status and download link |

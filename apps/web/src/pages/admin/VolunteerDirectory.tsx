@@ -8,6 +8,7 @@ import {
   DialogTitle,
   Divider,
   Drawer,
+  MenuItem,
   Paper,
   Table,
   TableBody,
@@ -33,7 +34,12 @@ import {
   useTableSort,
 } from '@/components';
 import { isUnchanged, useToast } from '@/app/toast';
-import { phoneError, phoneForApi } from '@/app/validation';
+import {
+  firstProblem,
+  phoneForApi,
+  validateProfile,
+  type ProfileErrors,
+} from '@/app/validation';
 import { tokens } from '@/theme';
 
 type RegistrationStatus = 'pending' | 'approved' | 'rejected';
@@ -205,7 +211,7 @@ export function VolunteerDirectory() {
         search={{
           value: q,
           onChange: (v) => { setQ(v); setPage(0); },
-          placeholder: 'Search name or email…',
+          placeholder: 'Search name, email or phone…',
         }}
         groups={[
           {
@@ -450,13 +456,13 @@ function VolunteerDetailDrawer({
   const toast = useToast();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<Record<string, string>>({});
-  const [phoneProblem, setPhoneProblem] = useState<string | null>(null);
+  const [problems, setProblems] = useState<ProfileErrors>({});
 
   // Leaving edit mode open across volunteers would show one person's draft
   // against another's record.
   useEffect(() => {
     setEditing(false);
-    setPhoneProblem(null);
+    setProblems({});
   }, [id]);
 
   const startEditing = () => {
@@ -464,6 +470,8 @@ function VolunteerDetailDrawer({
     setDraft({
       firstName: v.firstName,
       lastName: v.lastName,
+      gender: v.gender ?? '',
+      dateOfBirth: v.dateOfBirth ?? '',
       phone: v.phone ?? '',
       city: v.city ?? '',
       state: v.state ?? '',
@@ -471,8 +479,14 @@ function VolunteerDetailDrawer({
       skills: v.skills ?? '',
       availabilityNotes: v.availabilityNotes ?? '',
     });
-    setPhoneProblem(null);
+    setProblems({});
     setEditing(true);
+  };
+
+  /** Edit a field and clear whatever complaint it had. */
+  const editField = (key: string, value: string) => {
+    setDraft((d) => ({ ...d, [key]: value }));
+    setProblems((current) => (key in current ? { ...current, [key]: undefined } : current));
   };
 
   const saveEdit = useMutation({
@@ -488,20 +502,19 @@ function VolunteerDetailDrawer({
   });
 
   const handleSave = () => {
-    const problem = phoneError(draft.phone);
-    if (problem) {
-      setPhoneProblem(problem);
-      toast.failure(problem);
+    const found = validateProfile(draft);
+    if (Object.keys(found).length > 0) {
+      setProblems(found);
+      toast.failure(firstProblem(found));
       return;
     }
-    if (draft.firstName.trim() === '') {
-      toast.failure('A first name is required.');
-      return;
-    }
+    setProblems({});
 
     const originalDraft = {
       firstName: v?.firstName ?? '',
       lastName: v?.lastName ?? '',
+      gender: v?.gender ?? '',
+      dateOfBirth: v?.dateOfBirth ?? '',
       phone: v?.phone ?? '',
       city: v?.city ?? '',
       state: v?.state ?? '',
@@ -611,26 +624,41 @@ function VolunteerDetailDrawer({
           {editing ? (
             <Section title="Edit registration details">
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mt: 1 }}>
-                <TextField size="small" label="First name" value={draft.firstName}
-                  onChange={(e) => setDraft({ ...draft, firstName: e.target.value })} />
-                <TextField size="small" label="Last name" value={draft.lastName}
-                  onChange={(e) => setDraft({ ...draft, lastName: e.target.value })} />
-                <TextField size="small" label="Phone" value={draft.phone}
-                  error={Boolean(phoneProblem)}
-                  helperText={phoneProblem ?? '10-digit mobile number'}
-                  onChange={(e) => { setDraft({ ...draft, phone: e.target.value }); setPhoneProblem(null); }} />
+                <TextField size="small" required label="First name" value={draft.firstName}
+                  error={Boolean(problems.firstName)} helperText={problems.firstName}
+                  onChange={(e) => editField('firstName', e.target.value)} />
+                <TextField size="small" required label="Last name" value={draft.lastName}
+                  error={Boolean(problems.lastName)} helperText={problems.lastName}
+                  onChange={(e) => editField('lastName', e.target.value)} />
+                <TextField size="small" required select label="Gender" value={draft.gender}
+                  error={Boolean(problems.gender)} helperText={problems.gender}
+                  onChange={(e) => editField('gender', e.target.value)}>
+                  {['Female', 'Male', 'Non-binary', 'Prefer not to say'].map((g) => (
+                    <MenuItem key={g} value={g}>{g}</MenuItem>
+                  ))}
+                </TextField>
+                <TextField size="small" required type="date" label="Date of birth"
+                  InputLabelProps={{ shrink: true }} value={draft.dateOfBirth}
+                  error={Boolean(problems.dateOfBirth)} helperText={problems.dateOfBirth}
+                  onChange={(e) => editField('dateOfBirth', e.target.value)} />
+                <TextField size="small" required label="Phone" value={draft.phone}
+                  error={Boolean(problems.phone)}
+                  helperText={problems.phone ?? '10-digit mobile number'}
+                  onChange={(e) => editField('phone', e.target.value)} />
                 <TextField size="small" label="Occupation" value={draft.occupation}
-                  onChange={(e) => setDraft({ ...draft, occupation: e.target.value })} />
-                <TextField size="small" label="City" value={draft.city}
-                  onChange={(e) => setDraft({ ...draft, city: e.target.value })} />
-                <TextField size="small" label="State" value={draft.state}
-                  onChange={(e) => setDraft({ ...draft, state: e.target.value })} />
+                  onChange={(e) => editField('occupation', e.target.value)} />
+                <TextField size="small" required label="City" value={draft.city}
+                  error={Boolean(problems.city)} helperText={problems.city}
+                  onChange={(e) => editField('city', e.target.value)} />
+                <TextField size="small" required label="State" value={draft.state}
+                  error={Boolean(problems.state)} helperText={problems.state}
+                  onChange={(e) => editField('state', e.target.value)} />
               </Box>
               <TextField size="small" fullWidth sx={{ mt: 2 }} label="Skills" value={draft.skills}
-                onChange={(e) => setDraft({ ...draft, skills: e.target.value })} />
+                onChange={(e) => editField('skills', e.target.value)} />
               <TextField size="small" fullWidth multiline minRows={2} sx={{ mt: 2 }}
                 label="Availability notes" value={draft.availabilityNotes}
-                onChange={(e) => setDraft({ ...draft, availabilityNotes: e.target.value })} />
+                onChange={(e) => editField('availabilityNotes', e.target.value)} />
               <Box sx={{ display: 'flex', gap: 1.5, mt: 2 }}>
                 <Button variant="pill" size="small" sx={{ px: 2 }} disabled={saveEdit.isPending} onClick={handleSave}>
                   {saveEdit.isPending ? 'Saving…' : 'Save details'}

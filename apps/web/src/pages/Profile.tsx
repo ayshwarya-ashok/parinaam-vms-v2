@@ -13,7 +13,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { api, asApiError } from '@/api/client';
 import { isUnchanged, useToast } from '@/app/toast';
-import { phoneError, phoneForApi } from '@/app/validation';
+import {
+  firstProblem,
+  phoneForApi,
+  validateProfile,
+  type ProfileErrors,
+} from '@/app/validation';
 import { PageShell, StatusPill } from '@/components';
 
 interface Profile {
@@ -38,7 +43,7 @@ export function ProfilePage() {
   const toast = useToast();
   const [form, setForm] = useState<Partial<Profile>>({});
   const [original, setOriginal] = useState<Partial<Profile> | null>(null);
-  const [phoneProblem, setPhoneProblem] = useState<string | null>(null);
+  const [problems, setProblems] = useState<ProfileErrors>({});
   const [error, setError] = useState<string | null>(null);
 
   const { data: profile, isLoading } = useQuery({
@@ -85,13 +90,13 @@ export function ProfilePage() {
    * updated" for an untouched form is how that message stops meaning anything.
    */
   const handleSave = () => {
-    const problem = phoneError(form.phone);
-    if (problem) {
-      setPhoneProblem(problem);
-      toast.failure(problem);
+    const found = validateProfile(form);
+    if (Object.keys(found).length > 0) {
+      setProblems(found);
+      toast.failure(firstProblem(found));
       return;
     }
-    setPhoneProblem(null);
+    setProblems({});
 
     // Compare only the fields this form can actually change.
     const fields = ['firstName', 'lastName', 'gender', 'dateOfBirth', 'city', 'state', 'phone', 'skills', 'emailOptIn'] as const;
@@ -105,8 +110,10 @@ export function ProfilePage() {
     save.mutate();
   };
 
-  const set = <K extends keyof Profile>(key: K, value: Profile[K]) =>
+  const set = <K extends keyof Profile>(key: K, value: Profile[K]) => {
     setForm((f) => ({ ...f, [key]: value }));
+    setProblems((current) => (key in current ? { ...current, [key]: undefined } : current));
+  };
 
   if (isLoading || !profile) {
     return (
@@ -136,6 +143,9 @@ export function ProfilePage() {
               fullWidth
               value={form.firstName ?? ''}
               onChange={(e) => set('firstName', e.target.value)}
+              required
+              error={Boolean(problems.firstName)}
+              helperText={problems.firstName}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
@@ -144,6 +154,9 @@ export function ProfilePage() {
               fullWidth
               value={form.lastName ?? ''}
               onChange={(e) => set('lastName', e.target.value)}
+              required
+              error={Boolean(problems.lastName)}
+              helperText={problems.lastName}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
@@ -153,6 +166,9 @@ export function ProfilePage() {
               fullWidth
               value={form.gender ?? ''}
               onChange={(e) => set('gender', e.target.value)}
+              required
+              error={Boolean(problems.gender)}
+              helperText={problems.gender}
             >
               {['Female', 'Male', 'Non-binary', 'Prefer not to say'].map((g) => (
                 <MenuItem key={g} value={g}>
@@ -169,6 +185,9 @@ export function ProfilePage() {
               InputLabelProps={{ shrink: true }}
               value={form.dateOfBirth ?? ''}
               onChange={(e) => set('dateOfBirth', e.target.value)}
+              required
+              error={Boolean(problems.dateOfBirth)}
+              helperText={problems.dateOfBirth}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
@@ -177,6 +196,9 @@ export function ProfilePage() {
               fullWidth
               value={form.city ?? ''}
               onChange={(e) => set('city', e.target.value)}
+              required
+              error={Boolean(problems.city)}
+              helperText={problems.city}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
@@ -185,16 +207,20 @@ export function ProfilePage() {
               fullWidth
               value={form.state ?? ''}
               onChange={(e) => set('state', e.target.value)}
+              required
+              error={Boolean(problems.state)}
+              helperText={problems.state}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
               label="Phone"
               fullWidth
+              required
               value={form.phone ?? ''}
-              onChange={(e) => { set('phone', e.target.value); setPhoneProblem(null); }}
-              error={Boolean(phoneProblem)}
-              helperText={phoneProblem ?? '10-digit mobile number'}
+              onChange={(e) => set('phone', e.target.value)}
+              error={Boolean(problems.phone)}
+              helperText={problems.phone ?? '10-digit mobile number'}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
