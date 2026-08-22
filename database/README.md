@@ -1,0 +1,62 @@
+# database — schema source of truth
+
+The SQL in this directory **is** the schema. TypeORM runs with `synchronize: false`; entities
+mirror these files and a drift between them is a bug in the entity, not the SQL.
+
+## Layout
+
+```
+docker-init/01_bootstrap.sh   first-boot: create n8n's DB, apply every migration (checksummed
+                              into schema_migrations), load S001, then S002+ if SEED_DEMO_DATA
+migrations/  V001–V012        forward-only, additive, never edited after applying
+seeds/       S001–S004        idempotent — safe to re-run
+```
+
+## Migrations
+
+| Range | What it built |
+|---|---|
+| V001–V009 | The designed schema: 36 tables, 8 views, 6 business functions — identity, the Program → Activity → Event hierarchy, trainings/quizzes, enrollment + waitlists, field execution, recognition, ops |
+| V010 | Email attachments live on the outbox row (sweep retries keep the file) |
+| V011 | Registration review (`registration_status` + reviewer columns, CHECK: a rejection needs a reason) · richer sign-up profile · **`reference_values`** catalog → 37 tables |
+| V012 | Hours count **attended records only** in `v_program_participation`, `v_event_attendance`, `v_volunteer_report_summary`; the report view also drops erased volunteers |
+
+**Adding one:** create `V0NN__short_description.sql`; never edit an applied file (the bootstrap
+records a SHA-256 per file); long index builds use `CREATE INDEX CONCURRENTLY` in their own
+non-transactional migration; update `docs/03-data-model.md` in the same change. Apply to a
+running stack with `MSYS_NO_PATHCONV=1 docker compose exec -T db psql -U parinaam -d
+parinaam_vms -v ON_ERROR_STOP=1 -f /database/migrations/V0NN__…sql`, then insert the
+`schema_migrations` row.
+
+## Views and functions worth knowing
+
+- `fn_is_event_enrollable(event)` — the single definition of "can anyone still join": event
+  `upcoming`, activity + programme `active`, date not past (the BR-17 cascade in one call).
+- `fn_promote_waitlist(event)` — locks the event, fills open seats from the queue in order.
+  Fired by the cancellation trigger **and called explicitly when an admin raises capacity**.
+- `fn_recompute_volunteer_phase(volunteer)` — owns Onboarding → In Training → Active.
+- `v_event_capacity`, `v_valid_training_passes`, `v_volunteer_compliance`,
+  `v_program_participation` (the certificate source), `v_dashboard_kpis`.
+
+## Seeds
+
+| File | Purpose |
+|---|---|
+| S001 | Reference data — **every environment**, production included: app settings, feedback tag catalog, `reference_values` (languages, interests, availability) |
+| S002 | The demo world: programmes, sessions in every state, volunteers at every phase, deliberate fixtures (an overlap pair for BR-11, a full session, a discontinued activity) |
+| S003 | One fully-worked activity (*Lake Clean-up Drive*): completed sessions with mixed attendance sources, an upcoming session full with a live waitlist, a draft |
+| S004 | Completes volunteer identity fields the mandatory-field rule requires; normalises phones to bare ten digits; **never touches erased records** |
+
+Training-material PDFs are generated, not shipped — run `scripts/generate-seed-materials.mjs`
+once after first boot (see the root README §1.6).
+
+## Useful commands
+
+```bash
+docker compose exec db psql -U parinaam -d parinaam_vms          # psql shell
+select * from schema_migrations order by version;                 # what's applied
+docker compose down -v && docker compose up -d                    # rebuild from scratch
+sh scripts/backup.sh ./backups                                    # dump BOTH databases (n8n too)
+```
+
+Full column-level documentation: `docs/03-data-model.md` (including the post-V009 appendix).
