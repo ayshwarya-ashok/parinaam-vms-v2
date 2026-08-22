@@ -289,7 +289,7 @@ Each of these runs end to end on the seed data, in a few minutes:
 ```
 apps/api/          NestJS API + worker (one image, ROLE-gated)
 apps/web/          React 18 + MUI SPA
-packages/shared/   DTO types and Zod schemas
+packages/shared/   contract types + BUSINESS_ERROR_CODES (reference; unused by the apps yet)
 database/
   migrations/      V001–V012 — schema source of truth (forward-only, checksummed)
   seeds/           S001 reference · S002 demo · S003 worked activity · S004 identity backfill
@@ -299,6 +299,11 @@ scripts/           backup/restore, n8n drift check, seed-material generator
 docs/              design docs 01–07 + runbooks/
 docker-compose.yml
 ```
+
+Each top-level directory has its own README with the conventions that matter inside it:
+[`apps/api`](apps/api/README.md) · [`apps/web`](apps/web/README.md) ·
+[`database`](database/README.md) · [`n8n`](n8n/README.md) · [`scripts`](scripts/README.md) ·
+[`packages/shared`](packages/shared/README.md).
 
 ## Where to read next
 
