@@ -133,6 +133,26 @@ All demo accounts use the password **`Parinaam@123`**.
 | CSR volunteer | `csr@techcorp.in` | Holds the **corporate** certificate naming TechCorp |
 | Volunteer | `anita.rao@example.org` | **Registration pending** — can log in and train, cannot enroll until approved |
 
+### Infrastructure service credentials
+
+Everything below comes from `.env` (copied from `.env.example` in §1.4) — these are the dev
+defaults every teammate gets on a fresh clone. None of them are production secrets.
+
+| Service | URL / port | Credentials |
+|---|---|---|
+| Web app | http://localhost:5174 | Demo accounts above (`Parinaam@123`) |
+| API + Swagger | http://localhost:3001 · docs at `/api/docs` | JWT — log in via `POST /api/v1/auth/login` with any demo account |
+| PostgreSQL | `localhost:5432` | user `parinaam` / password `parinaam_dev_pw` · databases `parinaam_vms` (app) and `n8n` |
+| Adminer | http://localhost:8082 | System **PostgreSQL**, server **`db`** (not localhost — Adminer connects inside the Docker network), then the PostgreSQL credentials above |
+| Redis | `localhost:6379` | No password (`docker compose exec redis redis-cli ping` → PONG) |
+| n8n editor | http://localhost:5679 | No shared account — n8n v1 forces per-install owner setup: the first visit shows a **set-up-owner** screen where you create your own login. If someone else already claimed it, run `docker compose exec n8n n8n user-management:reset` and set yours (workflows and credentials survive) |
+| Mailpit UI | http://localhost:8026 | No login — open it to read every email the system sends |
+| Mailpit SMTP | `localhost:1026` (containers use `mailpit:1025`) | No auth |
+
+The application-level secrets (`JWT_*`, `LINK_TOKEN_SECRET`, `VMS_WEBHOOK_SECRET`,
+`N8N_ENCRYPTION_KEY`) also live in `.env` with `_change_me` dev values — services read them
+automatically; you never type them anywhere.
+
 ## 1.10 Troubleshooting
 
 | Symptom | Cause & fix |
@@ -289,7 +309,7 @@ Each of these runs end to end on the seed data, in a few minutes:
 ```
 apps/api/          NestJS API + worker (one image, ROLE-gated)
 apps/web/          React 18 + MUI SPA
-packages/shared/   DTO types and Zod schemas
+packages/shared/   contract types + BUSINESS_ERROR_CODES (reference; unused by the apps yet)
 database/
   migrations/      V001–V012 — schema source of truth (forward-only, checksummed)
   seeds/           S001 reference · S002 demo · S003 worked activity · S004 identity backfill
@@ -299,6 +319,11 @@ scripts/           backup/restore, n8n drift check, seed-material generator
 docs/              design docs 01–07 + runbooks/
 docker-compose.yml
 ```
+
+Each top-level directory has its own README with the conventions that matter inside it:
+[`apps/api`](apps/api/README.md) · [`apps/web`](apps/web/README.md) ·
+[`database`](database/README.md) · [`n8n`](n8n/README.md) · [`scripts`](scripts/README.md) ·
+[`packages/shared`](packages/shared/README.md).
 
 ## Where to read next
 
