@@ -1,17 +1,16 @@
 # Parinaam VMS v2
 
-Volunteer Management System for Parinaam Foundation — a rebuild derived from
-`VMS_prototype_v2.html` and `VMS_database_model.md` v1.0.
+Volunteer Management System for Parinaam Foundation — a full rebuild derived from
+`VMS_prototype_v2.html` and `VMS_database_model.md`, delivered in eight phases and refined
+through nine post-MVP review rounds (`docs/07-post-mvp-refinements.md`).
 
 **Stack** React 18 + MUI · NestJS 10 · PostgreSQL 16 · Redis · **n8n** (email orchestration) ·
-**Mailpit** (sample mailbox) — all in Docker.
+**Mailpit** (sample mailbox) — all in Docker, all local.
 
-> Independent of the earlier `parinaam-vms` repository, which is out of scope. Ports are shifted
-> so both stacks can run side by side on the same machine.
+> Independent of the earlier `parinaam-vms` repository, which must not be touched. Ports are
+> shifted so both stacks run side by side on the same machine.
 
----
-
-## The domain model, in one picture
+**The domain model, in one picture:**
 
 ```
 programs            (no dates)      "Community Health Camp"      ← can be discontinued
@@ -19,173 +18,301 @@ programs            (no dates)      "Community Health Camp"      ← can be disc
           └── events (DATED)        15 Jul 09:00 · 19 Aug 09:00  ← volunteers enroll HERE
 ```
 
-**"Event" means the dated occurrence** — the opposite of what it means in the prototype HTML,
-where the top-level container was called an event. `docs/01-design-document.md` §2.1 has the
-mapping table. Certificates attach to **programmes** (hours summed across occurrences attended);
-feedback and attendance attach to **occurrences**.
+Certificates attach to **programmes** (hours summed across attended occurrences); feedback and
+attendance attach to **occurrences**. `docs/01-design-document.md` §2 has the full model.
 
 ---
 
-## Current state
+# Part 1 — Setup & Run
 
-**Phase 0 is complete.** The stack runs end to end: API, worker, web shell, and the
-n8n email pipeline are all live and verified.
+## 1.1 Prerequisites
 
-| Delivered | Location |
-|---|---|
-| Design docs (design, plan, data model, API, screens, gaps) | `docs/` |
-| Schema — 36 tables, 8 views, 6 business functions | `database/migrations/` |
-| Reference + demo data | `database/seeds/` |
-| NestJS API + worker (one image, ROLE-gated) | `apps/api/` |
-| Email pipeline: outbox → n8n → SMTP → signed callback | `apps/api/src/modules/notifications/` |
-| n8n workflow + SMTP credential (imported via CLI) | `n8n/` |
-| React 18 + MUI web shell: theme, layouts, 33 routes stubbed | `apps/web/` |
-| CI: lint, typecheck, tests, migration + workflow checks | `.github/workflows/ci.yml` |
+- **Docker Desktop** (the whole stack runs in containers — no local Node or Postgres needed)
+- ~4 GB free RAM for the seven containers
+- A free run of ports **3001, 5174, 5679, 8026, 1026, 8082, 5432, 6379**
 
-**Verified end to end**: a test email travels API → n8n → Mailpit and the signed
-callback marks it `sent`; an unsigned callback is rejected 401; killing n8n leaves
-mail safely `queued` and the outbox sweeper delivers it on recovery.
+## 1.2 Clone the repository
 
-Next: **Phase 1 — identity, onboarding and compliance consent.**
+```bash
+git clone <repo-url> parinaam-vms-v2
+cd parinaam-vms-v2
+```
 
+## 1.3 Install dependencies
 
----
+Nothing to install on your machine. Each container installs its own dependencies on first
+build; source directories are bind-mounted, so code changes hot-reload without rebuilds.
 
-## Quick start
-
-Requires Docker Desktop.
+## 1.4 Environment variables
 
 ```bash
 cp .env.example .env
-docker compose up -d
 ```
 
-That brings up PostgreSQL, Redis, n8n, Mailpit and Adminer. On its **first** boot the database
-container applies every migration in order, creates n8n's own database, loads reference data,
-and — because `SEED_DEMO_DATA=true` — loads the demo dataset.
+The defaults run out of the box. The ones worth knowing:
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `SEED_DEMO_DATA` | `true` | Load the demo dataset on first boot (set `false` for a clean DB) |
+| `API_PORT` / `WEB_PORT` | `3001` / `5174` | Host ports for API and web app |
+| `VITE_API_BASE_URL` | `http://localhost:3001/api/v1` | Must match the host you open the app on (`localhost` vs `127.0.0.1` are different sites for the auth cookie) |
+| `VMS_WEBHOOK_SECRET` | dev value | HMAC secret shared between API and n8n — change per environment |
+| `*_SECRET` / passwords | dev values | Change every one of them anywhere beyond a laptop |
+
+## 1.5 Database setup
+
+Automatic. On the database container's **first** boot it applies migrations `V001–V012` in
+order (recording a SHA-256 checksum per file in `schema_migrations`), creates n8n's own
+database, and loads seeds. Nothing to run by hand.
+
+```bash
+# rebuild everything from scratch, re-running migrations + seeds:
+docker compose down -v && docker compose up -d
+```
+
+## 1.6 Seed / sample data
+
+With `SEED_DEMO_DATA=true` you get a dataset built so **every business rule is demoable out of
+the box** (reference date 2026-08-18):
+
+- 6 programmes, 12+ activities, ~17 sessions across every state (draft / upcoming / completed / cancelled)
+- **Lake Clean-up Drive** (Green Bengaluru) — the fully-worked activity: three completed
+  sessions with mixed attendance sources and a documented absence, an upcoming session
+  deliberately **full with a live waitlist**, and a **draft** for testing Publish/Edit
+- One registration left **pending** (`anita.rao@example.org`) so the approval flow has a subject
+- Two issued certificates (individual + corporate), published testimonials feeding the public page
+- Two sessions on 10 Sep that deliberately **overlap**, for the scheduling-conflict flow
+- Real PDF training materials — run once after first boot:
+
+```bash
+docker compose cp scripts/generate-seed-materials.mjs api:/app/gen.mjs
+docker compose exec -T api sh -c "node /app/gen.mjs && rm /app/gen.mjs"
+```
+
+## 1.7 Start the backend
+
+```bash
+docker compose up -d                                # db, redis, n8n, mailpit, adminer
+docker compose --profile app up -d --build          # + api, worker, web
+```
+
+**One-time n8n setup** (the email path) — import the workflow and credential:
+
+```bash
+docker compose exec n8n n8n import:credentials --input=/workflows/vms-smtp.credentials.json
+docker compose exec n8n n8n import:workflow --input=/workflows/vms-email-dispatch.json
+docker compose exec n8n n8n publish:workflow --id=vmsEmailDispatch1
+```
+
+Health check: `curl localhost:3001/api/v1/health/ready` should report db, redis **and n8n** up.
+
+## 1.8 Start the frontend
+
+Started by the same `--profile app` command above. Open **http://localhost:5174** — the public
+impact page. Everything you need is reachable from there.
 
 | Service | URL |
 |---|---|
-| PostgreSQL | `localhost:5432` · db `parinaam_vms` · user `parinaam` |
-| **Mailpit — the sample mailbox** | **http://localhost:8026** |
+| **Web app** | **http://localhost:5174** |
+| API (Swagger at `/api/docs`) | http://localhost:3001 |
+| **Mailpit — every email the system sends lands here** | **http://localhost:8026** |
 | n8n editor | http://localhost:5679 |
-| Adminer (DB browser) | http://localhost:8082 |
-| Redis | `localhost:6379` |
+| Adminer (DB browser — server `db`, user `parinaam`, db `parinaam_vms`) | http://localhost:8082 |
 
-Verify the schema:
-
-```bash
-docker compose exec db psql -U parinaam -d parinaam_vms \
-  -c "select * from v_dashboard_kpis;" \
-  -c "select p.name, a.name, count(e.id) as occurrences
-      from programs p join activities a on a.program_id=p.id
-      join events e on e.activity_id=a.id group by 1,2 order by 3 desc limit 3;"
-```
-
-Once the application exists (Phase 0): `docker compose --profile app up -d --build` adds the API
-(`:3001`), worker and web app (`:5174`).
-
-### One-time n8n setup
-
-The email path needs a five-minute manual step the first time — import the workflow and create
-the SMTP credential. **Full instructions and a copy-paste smoke test are in `n8n/README.md`.**
-
----
-
-## Validating that email works
-
-Mailpit accepts every message and delivers nothing onward, so you can exercise the real send
-path without mailing actual volunteers.
-
-1. Open **http://localhost:8026**.
-2. Trigger anything that sends — or run the smoke test in `n8n/README.md` to post a signed
-   payload straight at n8n.
-3. The message appears in the inbox.
-
-`GET http://localhost:8026/api/v1/messages` is the same data as JSON; the E2E suite asserts
-against it, so *"cancelling this occurrence produced exactly N messages"* is a real test rather
-than a hopeful log line.
-
-The pipeline is: **API writes `email_logs` → renders the template → signed webhook to n8n → n8n
-sends via SMTP → signed callback updates `email_logs`.** The API never opens an SMTP connection.
-Going to production changes one thing: n8n's SMTP credential points at a real relay.
-
----
-
-## Demo credentials
+## 1.9 Login credentials
 
 All demo accounts use the password **`Parinaam@123`**.
 
-| Role | Email | State |
+| Role | Email | Why this account is interesting |
 |---|---|---|
-| Admin | `admin@parinaam.org` | — |
-| Volunteer | `ananya@example.org` | Active — all compliance passed, enrolled in upcoming occurrences |
-| Volunteer | `rahul@example.org` | In Training — POCSO attempts exhausted (3 fails); drives the admin-reset flow |
-| Volunteer | `deepa@example.org` | Onboarding — no consent signed |
-| CSR volunteer | `csr@techcorp.in` | Active — receives a corporate certificate naming TechCorp |
+| **Admin** | `admin@parinaam.org` | Full admin — start here |
+| Volunteer | `rahul@example.org` | Active; holds certificate PAR-2026-000001; waitlisted on the Sept Lake drive |
+| Volunteer | `meera@example.org` | Active; enrolled in the (full) Sept Lake drive; a published testimonial is hers |
+| Volunteer | `ananya@example.org` | Active, all compliance passed |
+| Volunteer | `deepa@example.org` | Onboarding — hasn't signed consent yet; shows the consent gate |
+| CSR volunteer | `csr@techcorp.in` | Holds the **corporate** certificate naming TechCorp |
+| Volunteer | `anita.rao@example.org` | **Registration pending** — can log in and train, cannot enroll until approved |
 
-The dataset assumes a reference date of **2026-08-18** and is built so every rule is demoable
-out of the box:
+## 1.10 Troubleshooting
 
-- **Recurrence** — Blood Pressure Screening runs twice (15 Jul completed, 19 Aug upcoming).
-- **Discontinuation** — the Cleanup Drive activity is discontinued; the Environment Awareness
-  programme is still a draft. Neither accepts enrollment.
-- **Waitlist** — Basic Computer Skills on 22 Jul is full (3/3) with two volunteers queued.
-- **Conflict** — the two 10 Sep occurrences deliberately overlap (08:00–11:00 and 09:30–11:30).
-- **Union training gate** — Rahul is missing `tc1`, `tc2` and `t2` for the August screening, but
-  *not* `t1`, which he passed at programme level.
+| Symptom | Cause & fix |
+|---|---|
+| `localhost` URLs time out but `127.0.0.1` works | Docker Desktop's IPv6 port proxy has died. Restart Docker Desktop. (CORS accepts both origins, but the auth cookie needs the app and API on the **same** hostname.) |
+| A port is already in use | The legacy `parinaam-vms` stack uses 5678/1025/8025/3000/5173 — this stack is shifted on purpose; check nothing else claims 3001/5174/5679/8026/8082. |
+| n8n shows a sign-in page | Someone completed its owner setup with an unknown password: `docker compose exec n8n n8n user-management:reset`, then set your own on the setup screen. Workflows survive. |
+| Emails stuck in `queued` | The worker or n8n is down. `docker compose logs worker n8n`. Nothing is lost — the outbox sweeper delivers everything once the path recovers. Run `node scripts/n8n-drift-check.mjs` to confirm the live workflow matches the repo and is active. |
+| New/changed email template not taking effect | Templates load at boot: `docker compose restart api worker`. |
+| `psql -f /database/...` mangles the path (Git Bash on Windows) | Prefix the command with `MSYS_NO_PATHCONV=1`. |
+| "Open" on a training material 404s | The seed PDFs haven't been generated — run the generator in §1.6. |
+| Want a truly clean slate | `docker compose down -v && docker compose up -d` re-runs migrations and seeds. |
+
+Deeper operational issues: `docs/runbooks/` (deploy, restore, incident response, adding an
+admin, editing the n8n workflow safely).
+
+---
+
+# Part 2 — VMS Functional Guide
+
+What the system does and where to click. Keep **Mailpit (http://localhost:8026)** open in a
+second tab throughout — half the product's behaviour is visible there.
+
+## 2.1 Admin login
+
+`http://localhost:5174` → **Admin Login** (top bar) → `admin@parinaam.org` / `Parinaam@123`.
+You land on the admin hub: cards for every module, live counts on top. The nav bar (folding
+into a hamburger on narrow windows) covers Programs, Calendar, Trainings, Volunteers, Field
+Execution, Recognition, Metrics and Reports.
+
+## 2.2 Volunteer login
+
+`http://localhost:5174` → **Volunteer login** → any volunteer account. The volunteer shell has
+its own nav: Dashboard, Events, Calendar, Trainings, Certificates, Feedback, Profile. Log in as
+`deepa@example.org` to see the consent gate; as `anita.rao@example.org` to see the
+"registration under review" banner and the enrollment lock.
+
+## 2.3 Registration & onboarding
+
+- **Sign up** (from the login page) collects credentials, then the profile — identity fields
+  (name, gender, DOB, city, state, 10-digit phone) are mandatory. Account and profile are
+  created **atomically on submit**: abandoning the form leaves nothing behind.
+- New registrations land as **pending**. Admin → **Volunteers** shows a "🔔 N awaiting review"
+  button; click a row for the full drawer (everything they entered, editable while pending) and
+  **Approve** or **Reject** (a reason is required and is emailed to the applicant; rejection
+  deactivates the account).
+- Pending volunteers can explore, sign consent and complete trainings — but **cannot enroll**
+  until approved.
+- Onboarding proper: the volunteer signs the POCSO/POSH/NDA consent, which moves them
+  Onboarding → In Training; passing all mandatory trainings moves them → Active.
+
+## 2.4 Activity & scheduling
+
+Admin → **Programs**. The hierarchy is programme → activity → session (dated occurrence):
+
+- Create a programme (draft) → add activities (defaults for duration, capacity, location,
+  required trainings) → **Schedule Session** — single, or a **repeat series** (weekly/monthly)
+  created as drafts.
+- **Publish** flips a draft to *open to volunteers* — before that, only staff can see it.
+- **Edit Occurrence** changes one session only; it refuses capacity below current enrolment and
+  warns that rescheduling does not auto-notify enrollees. **Raising capacity auto-promotes the
+  waitlist** (with emails).
+- **Cancel** notifies every enrolled and waitlisted volunteer (check Mailpit). Discontinuing an
+  activity or programme blocks enrollment down the whole tree.
+- After a session's date passes, **Mark completed** closes the book — that's what dashboards
+  count as *conducted*.
+
+## 2.5 Orientation & training
+
+- Admin → **Trainings**: compliance (mandatory) vs activity trainings, materials (PDFs open
+  inline), quiz questions, passing score, attempt limits, validity period. **Assessments** per
+  training shows every volunteer's attempts, with an admin reset for exhausted attempts.
+- Volunteer → **Trainings**: mandatory ones unlock activity ones (BR-04). Quizzes are scored
+  server-side with an answer review. A valid **compliance** pass is final for its window — no
+  retake. **Activity** trainings can be retaken, with an explicit warning that the **latest
+  score is retained even if lower** — a failing retake really does revoke the pass.
+
+## 2.6 Field execution & attendance
+
+Admin → **Field Execution** — one row per session:
+
+- **Send emails** dispatches two kinds of signed, no-login links (7-day expiry): volunteers
+  self-report attendance (hours, optional evidence photos — EXIF-stripped); the coordinator
+  files the occurrence report (actual timing, beneficiaries reached, highlights/challenges).
+  Open the actual links from Mailpit to play both roles.
+- Click a session (or **Record**) for the **session record**: upcoming shows the roster and
+  waitlist; completed shows who came, hours logged and by whom, plus the coordinator report.
+  Admins can **correct any row** (audited, attributed), **log attendance for silent
+  volunteers**, and record **walk-ins** — picked from active approved volunteers only.
+- Volunteers who never respond get exactly one automatic reminder (daily sweep, 09:00 IST).
+
+## 2.7 Recognition & retention
+
+Admin → **Recognition**:
+
+- **Certificates** — one per volunteer per programme, hours summed across *attended*
+  occurrences. Issue singly or **bulk per programme**; the PDF (with the Parinaam logo,
+  corporate variant for CSR volunteers) is stored, downloadable, and **emailed as an
+  attachment**. If attendance changes after issue the row shows *hours changed* with a
+  **Reissue**.
+- **Feedback** — per-occurrence ratings, NPS and tagged issues/improvements, with analytics
+  (ranked tags). **Publish as testimonial** is an explicit act; only published quotes appear on
+  the public page, attributed as first name + last initial.
+- Volunteer side: **Certificates** (wallet + download) and **Feedback** (rate attended
+  sessions once each; invitations arrive by email after attendance is recorded).
+
+## 2.8 Dashboard & reporting
+
+- Admin → **Metrics** — ten live charts and six KPI tiles, all one query, filtered by period
+  (including a **custom date range**), programme and city. Every figure reconciles with SQL.
+- Admin → **Reports** — the volunteer summary table (sortable, attendance bars) with **CSV /
+  Excel / PDF exports that contain identical rows**, plus a run history.
+- **Automated reports** — schedules (daily/weekly/monthly at a time IST) that generate and
+  email the file as an attachment; pause/resume recomputes the next run; **Run now** fires
+  without touching the clock. Watch the attachment arrive in Mailpit.
+- Public: **http://localhost:5174/** — the impact page every visitor sees, entirely live-data:
+  headline stats, impact numbers, field photos, published testimonials.
+
+## 2.9 Key workflows to try
+
+Each of these runs end to end on the seed data, in a few minutes:
+
+1. **Approve a registration.** Admin → Volunteers → "1 awaiting review" → open **Anita Rao** —
+   read everything she entered, edit a field, **Approve**. Mailpit: her approval email, whose
+   button goes to the sign-in page. Log in as her: the banner is gone and enrolling works.
+2. **Full volunteer lifecycle.** Sign up a brand-new volunteer → note the pending banner and
+   the enrollment lock → approve them as admin → sign consent → pass a mandatory quiz → enroll
+   in an open session. Watch each email arrive as you go.
+3. **Waitlist promotion, two ways.** As `rahul@example.org` you're #1 on the waitlist for the
+   full **September Drive**. Either withdraw `meera@example.org` from it, or — better — as
+   admin **Edit Occurrence** and raise capacity from 2 to 3. Rahul is enrolled automatically
+   and congratulated by email.
+4. **Run a session end to end.** Publish the draft **October Drive** (Green Bengaluru → Lake
+   Clean-up Drive) → enroll a volunteer → Field Execution → **Send emails** → open both links
+   from Mailpit and submit attendance + the coordinator report → back as admin: correct a row,
+   add a **walk-in**, then **Mark completed**.
+5. **Issue a certificate.** Recognition → Certificates → filter Green Bengaluru → **Issue** for
+   a volunteer with attended hours. Download the logo-headed PDF; find the same PDF attached to
+   the email in Mailpit.
+6. **Close the feedback loop.** As a volunteer who attended (e.g. `meera@example.org`), rate a
+   session under **Feedback**. As admin, see it in Recognition → Feedback analytics and
+   **Publish as testimonial** — then refresh the public page: the quote is live.
+7. **A funder report.** Metrics → period **Custom range** (try 1–30 June 2026: one session,
+   11.75 hours, 320 beneficiaries). Reports → export the same data three ways → create an
+   automated weekly schedule → **Run now** → the Excel lands in Mailpit as an attachment.
+8. **The retake rule.** As `rahul@example.org` open the *Orientation* training: it offers a
+   retake with the latest-score warning. Fail it on purpose — the pass is revoked; pass it
+   again — restored, with the full attempt history kept.
 
 ---
 
 ## Repository layout
 
 ```
-apps/api/          NestJS API + worker            (Phase 0)
-apps/web/          React + MUI SPA                (Phase 0)
-packages/shared/   DTO types and Zod schemas      (Phase 0)
+apps/api/          NestJS API + worker (one image, ROLE-gated)
+apps/web/          React 18 + MUI SPA
+packages/shared/   DTO types and Zod schemas
 database/
-  migrations/      V001–V009 — schema source of truth
-  seeds/           S001 reference, S002 demo
+  migrations/      V001–V012 — schema source of truth (forward-only, checksummed)
+  seeds/           S001 reference · S002 demo · S003 worked activity · S004 identity backfill
   docker-init/     first-boot bootstrap
-n8n/
-  workflows/       version-controlled workflow exports
-  README.md        contract, setup, smoke test
-docs/
+n8n/               version-controlled workflow + credential exports, contract, smoke test
+scripts/           backup/restore, n8n drift check, seed-material generator
+docs/              design docs 01–07 + runbooks/
 docker-compose.yml
 ```
 
----
+## Where to read next
 
-## Working with the database
+1. **`docs/07-post-mvp-refinements.md`** — what changed after the MVP and why; the product
+   decisions and app-wide conventions live here.
+2. `docs/01-design-document.md` — the domain model (§2), business rules (§10), email
+   architecture (§12).
+3. `docs/04-api-specification.md` — every endpoint; live Swagger at `localhost:3001/api/docs`.
+4. `docs/runbooks/` — deploy, restore (rehearsed and timed), incident response.
 
-| Task | Command |
-|---|---|
-| Rebuild from scratch | `docker compose down -v && docker compose up -d` |
-| Skip demo data | set `SEED_DEMO_DATA=false` before the first boot |
-| psql shell | `docker compose exec db psql -U parinaam -d parinaam_vms` |
-| Applied migrations | `select * from schema_migrations order by version;` |
-| Dump | `docker compose exec db pg_dump -U parinaam -Fc parinaam_vms > backup.dump` |
+## Email, in one paragraph
 
-Back up the **`n8n` database too** — it holds workflow definitions and credentials.
-
-### Adding a migration
-
-1. Create `database/migrations/V0NN__short_description.sql`. Never edit an applied file — the
-   bootstrap records a SHA-256 checksum per file.
-2. Migrations are **forward-only and additive**.
-3. Long index builds use `CREATE INDEX CONCURRENTLY` in their own non-transactional migration.
-4. Update `docs/03-data-model.md` in the same pull request.
-
----
-
-## Where to start reading
-
-1. `docs/01-design-document.md` — §2 (the domain model), §10 (business rules), §12 (n8n),
-   §20 (decisions and open risks).
-2. `docs/06-gap-analysis.md` §0 — why the hierarchy changed and what it cost.
-3. `docs/02-implementation-plan.md` — the nine phases.
-
-**Three questions remain open** (design doc §20.3), none blocking: whether discontinuing a
-programme should auto-cancel its scheduled occurrences; whether occurrences of one activity may
-have different coordinators (assumed yes); and whether certificates should be re-issuable after
-further participation (assumed yes).
+The API never opens an SMTP connection. Every send is a row in `email_logs` first (same
+transaction as the business event), then a signed webhook to n8n, which delivers via SMTP and
+reports back through a signed callback. Mailpit swallows everything locally; an outbox sweeper
+retries anything stalled, attachments included. Going to production changes exactly one thing:
+n8n's SMTP credential points at a real relay.
