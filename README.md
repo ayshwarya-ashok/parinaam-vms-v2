@@ -219,6 +219,17 @@ Admin → **Programs**. The hierarchy is programme → activity → session (dat
   activity or programme blocks enrollment down the whole tree.
 - After a session's date passes, **Mark completed** closes the book — that's what dashboards
   count as *conducted*.
+- **Beneficiary communities** (Admin → Communities): every published session must serve at
+  least one; the community page lists its sessions by status (upcoming / in progress /
+  completed).
+- **Phases** (optional, on the session record): a session can be multi-phase — each phase is a
+  day or a date range owned by the Parinaam team, a partner (a named volunteer lead marks it),
+  or both in collaboration. Completing every phase completes the session automatically; while
+  phases run, the session shows as **in progress** (counted separately from *conducted*).
+  Attendance on phased sessions is logged **per visit** (volunteer + day + hours), and hours
+  add up across all phases for certificates. Admin overrides of phase status are audited, and
+  knocking a phase back reverts the session. A session with no phases behaves exactly as the
+  bullet above. Try it: **Green Bengaluru → Lakefront Sapling Drive**.
 
 ## 2.5 Orientation & training
 

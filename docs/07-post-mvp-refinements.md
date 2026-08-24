@@ -210,6 +210,48 @@ The supplied `parinaam_logo.svg` became the single source of truth for the mark:
 
 ---
 
+## Round 10 — Communities, phases and visit-level attendance  (`e4ed32c`, `96ec3ab`, `3431516`, `87b8831`)
+
+The largest post-MVP change: a client refinement (2026-08-24) reshaping what a "session" can
+be. Delivered as four independently verified increments, one migration each (V013–V015).
+
+**⚖ Product decisions (client's answers to the five design questions):**
+1. Partner-side phase completion is marked by a **named lead**, never "anyone enrolled".
+2. Phased sessions record attendance **per visit** — one record per volunteer per phase per
+   day; certificate hours are the sum across all phases of the session.
+3. Enrollment closes when a session goes `inprogress`; the admin can still add any active
+   volunteer to a phase (the walk-in gate, reused).
+4. Only `completed` counts as "conducted"; `inprogress` is a **separate** metric everywhere.
+5. Knocking a completed phase back **reverts the session**, with an audit-log entry.
+
+**What was built:**
+- **Beneficiary communities** (V013): admin-managed master data; every published session must
+  serve ≥1 (`COMMUNITY_REQUIRED` on create-as-upcoming / publish / emptying edits). Archive,
+  never delete. Community pages list sessions by status; existing sessions were backfilled to
+  a seeded default.
+- **Session phases** (V014): `event_status` gained `inprogress`; `event_phases` carries
+  ownership (`parinaam`/`partner`/`collab`), a day or date range, two completion marks, and
+  audited override columns. `fn_recompute_event_phase_status` is the only writer of a phased
+  session's status: all phases complete → completed (automatic — the manual action refuses
+  phased sessions with `PHASED_SESSION`); any started → inprogress. **Sessions with zero
+  phases keep the classic single-day lifecycle untouched.**
+- **Visit-level attendance** (V015): `attendance_records` splits into two shapes — classic
+  rows (one per event+volunteer) and visit rows (unique per volunteer+phase+day, presence
+  only). The one-per-session UNIQUE became two partial indexes; the V012 views were rewritten
+  with DISTINCT session counts while hours stay plain SUMs, so a 5-visit × 2h volunteer
+  carries 10h into certificates, reports and the Impact page.
+- **The trust surface**: volunteers gained their first write on session state —
+  `POST /phases/:id/partner-complete`, guarded to the named lead (`PHASE_NOT_YOURS`
+  otherwise). The volunteer dashboard lists open phase-lead responsibilities; session detail
+  shows the phase board.
+
+Verified live end-to-end across a 3-phase demo session (Lakefront Sapling Drive under Green
+Bengaluru): auto-complete on the last mark, revert cascade with `session.reverted` audit row,
+every guard code, view arithmetic, and a classic-session regression. The authz matrix grew to
+**69 endpoints × 3 roles = 207 checks**.
+
+---
+
 ## Conventions the refinements established
 
 These emerged during the rounds and now apply app-wide; new code should follow them.
@@ -233,4 +275,4 @@ Every fix in every round was **verified against the running system before commit
 reproducing the bug first where one was claimed (e.g. the phantom-hours certificate source,
 the impossible absent→present transition), then proving the fix, then reverting any test
 mutations. The authorization matrix (`apps/api/scripts/authz-matrix.mjs`) grew with each new
-endpoint and stands at **53 endpoints × 3 roles = 159 checks** at the time of writing.
+endpoint and stands at **69 endpoints × 3 roles = 207 checks** at the time of writing.

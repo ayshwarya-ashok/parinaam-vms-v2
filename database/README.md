@@ -8,7 +8,7 @@ mirror these files and a drift between them is a bug in the entity, not the SQL.
 ```
 docker-init/01_bootstrap.sh   first-boot: create n8n's DB, apply every migration (checksummed
                               into schema_migrations), load S001, then S002+ if SEED_DEMO_DATA
-migrations/  V001–V012        forward-only, additive, never edited after applying
+migrations/  V001–V015        forward-only, additive, never edited after applying
 seeds/       S001–S004        idempotent — safe to re-run
 ```
 
@@ -20,6 +20,9 @@ seeds/       S001–S004        idempotent — safe to re-run
 | V010 | Email attachments live on the outbox row (sweep retries keep the file) |
 | V011 | Registration review (`registration_status` + reviewer columns, CHECK: a rejection needs a reason) · richer sign-up profile · **`reference_values`** catalog → 37 tables |
 | V012 | Hours count **attended records only** in `v_program_participation`, `v_event_attendance`, `v_volunteer_report_summary`; the report view also drops erased volunteers |
+| V013 | **Beneficiary communities** + session links (≥1 per published session, service-enforced); backfill to a seeded default |
+| V014 | **Session phases**: `inprogress` event status, `event_phases` (ownership, completion marks, audited override), `fn_recompute_event_phase_status` — the only writer of a phased session's status |
+| V015 | **Visit-level attendance**: `phase_id`/`visit_date` on `attendance_records`, two partial unique indexes replacing the one-per-session UNIQUE, views rewritten (DISTINCT session counts, hours stay SUMs) |
 
 **Adding one:** create `V0NN__short_description.sql`; never edit an applied file (the bootstrap
 records a SHA-256 per file); long index builds use `CREATE INDEX CONCURRENTLY` in their own
@@ -35,6 +38,9 @@ parinaam_vms -v ON_ERROR_STOP=1 -f /database/migrations/V0NN__…sql`, then inse
 - `fn_promote_waitlist(event)` — locks the event, fills open seats from the queue in order.
   Fired by the cancellation trigger **and called explicitly when an admin raises capacity**.
 - `fn_recompute_volunteer_phase(volunteer)` — owns Onboarding → In Training → Active.
+- `fn_recompute_event_phase_status(event)` — derives a phased session's status from its
+  phases (all complete → completed, any started → inprogress); sessions without phases
+  keep the manual lifecycle and are never touched.
 - `v_event_capacity`, `v_valid_training_passes`, `v_volunteer_compliance`,
   `v_program_participation` (the certificate source), `v_dashboard_kpis`.
 
