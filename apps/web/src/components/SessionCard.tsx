@@ -31,9 +31,33 @@ export function SessionCard({ session, onEnroll, onWithdraw, onLeaveWaitlist }: 
   const barColor = pct >= 100 ? tokens.accentStrong : pct >= 75 ? tokens.accent : tokens.success;
   const locked = session.prereqsMet === false;
   const full = capacity.spotsLeft === 0 && session.myState === 'none';
+  const completed = session.status === 'completed';
 
   let action: React.ReactNode;
-  if (!session.isEnrollable && session.myState === 'none') {
+  if (completed) {
+    const label =
+      session.myAttendance === 'present'
+        ? `✓ You attended${session.myHours ? ` — ${session.myHours}h` : ''}`
+        : session.myAttendance === 'absent'
+          ? 'You were marked absent'
+          : session.myState === 'enrolled'
+            ? 'You were enrolled — attendance not recorded'
+            : 'Session completed';
+    action = (
+      <Button
+        fullWidth
+        disabled
+        variant="pillOutlined"
+        sx={
+          session.myAttendance === 'present'
+            ? { color: `${tokens.success} !important`, borderColor: alpha(tokens.success, 0.4) }
+            : undefined
+        }
+      >
+        {label}
+      </Button>
+    );
+  } else if (!session.isEnrollable && session.myState === 'none') {
     action = (
       <Button fullWidth disabled variant="pillOutlined">
         Not open for enrollment
@@ -127,8 +151,14 @@ export function SessionCard({ session, onEnroll, onWithdraw, onLeaveWaitlist }: 
             {capacity.enrolled}/{capacity.maxSlots} filled
             {capacity.waitlisted > 0 ? ` · ${capacity.waitlisted} waiting` : ''}
           </Typography>
-          <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: full ? tokens.accentStrong : tokens.success }}>
-            {full ? 'Full' : `${capacity.spotsLeft} open`}
+          <Typography
+            sx={{
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              color: completed ? 'text.secondary' : full ? tokens.accentStrong : tokens.success,
+            }}
+          >
+            {completed ? 'Completed' : full ? 'Full' : `${capacity.spotsLeft} open`}
           </Typography>
         </Box>
       </Box>
@@ -137,7 +167,7 @@ export function SessionCard({ session, onEnroll, onWithdraw, onLeaveWaitlist }: 
         <Chip label={`Skill: ${session.skillRequired}`} size="small" variant="outlined" sx={{ alignSelf: 'flex-start' }} />
       )}
 
-      {session.conflict && session.myState === 'none' && (
+      {session.conflict && session.myState === 'none' && !completed && (
         <Box sx={{ display: 'flex', gap: 0.75, alignItems: 'center', px: 1.25, py: 0.75, borderRadius: 2, bgcolor: alpha(tokens.accentStrong, 0.08) }}>
           <WarningAmberIcon sx={{ fontSize: 16, color: 'secondary.dark' }} />
           <Typography sx={{ fontSize: '0.78rem', color: 'secondary.dark' }}>

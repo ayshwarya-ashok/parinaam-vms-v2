@@ -6,29 +6,52 @@ import { useEnrollFlow } from '@/components/EnrollFlow';
 import { SessionCard } from '@/components/SessionCard';
 
 export function BrowseSessions() {
+  const [view, setView] = useState('upcoming');
   const [q, setQ] = useState('');
   const [type, setType] = useState('all');
   const [enrollState, setEnrollState] = useState('all');
+  const [mine, setMine] = useState('all');
   const [sort, setSort] = useState('date');
+
+  const showingCompleted = view === 'completed';
 
   const { data: sessions = [], isLoading } = useSessions({
     q: q || undefined,
     type: type === 'all' ? undefined : type,
-    enrollState: enrollState === 'all' ? undefined : enrollState,
+    enrollState: showingCompleted || enrollState === 'all' ? undefined : enrollState,
     sort,
-    scope: 'open',
+    scope: showingCompleted ? 'completed' : 'open',
   });
+
+  const visible = showingCompleted
+    ? mine === 'mine'
+      ? sessions.filter((s) => s.myState === 'enrolled' || s.myAttendance !== null)
+      : sessions
+    : sessions;
 
   const { onEnroll, onWithdraw, onLeaveWaitlist, dialogs } = useEnrollFlow();
 
   return (
     <PageShell
-      title="Browse Sessions"
-      description="Enroll in upcoming volunteer sessions. Sessions marked 🔒 need trainings completed first — the union of program-level and activity-level requirements."
+      title={showingCompleted ? 'Completed Sessions' : 'Browse Sessions'}
+      description={
+        showingCompleted
+          ? 'Sessions that have run. "My sessions" narrows to the ones you were enrolled in or attended.'
+          : 'Enroll in upcoming volunteer sessions. Sessions marked 🔒 need trainings completed first — the union of program-level and activity-level requirements.'
+      }
     >
       <FilterBar
         search={{ value: q, onChange: setQ, placeholder: 'Search sessions…' }}
         groups={[
+          {
+            label: 'View',
+            value: view,
+            onChange: setView,
+            options: [
+              { value: 'upcoming', label: 'Upcoming' },
+              { value: 'completed', label: 'Completed' },
+            ],
+          },
           {
             label: 'Sort',
             value: sort,
@@ -50,22 +73,38 @@ export function BrowseSessions() {
               { value: 'Online', label: 'Online' },
             ],
           },
-          {
-            label: 'Status',
-            value: enrollState,
-            onChange: setEnrollState,
-            options: [
-              { value: 'all', label: 'All' },
-              { value: 'open', label: 'Open' },
-              { value: 'waitlist', label: 'Waitlist' },
-              { value: 'enrolled', label: 'My enrollments' },
-            ],
-          },
+          showingCompleted
+            ? {
+                label: 'Show',
+                value: mine,
+                onChange: setMine,
+                options: [
+                  { value: 'all', label: 'All sessions' },
+                  { value: 'mine', label: 'My sessions' },
+                ],
+              }
+            : {
+                label: 'Status',
+                value: enrollState,
+                onChange: setEnrollState,
+                options: [
+                  { value: 'all', label: 'All' },
+                  { value: 'open', label: 'Open' },
+                  { value: 'waitlist', label: 'Waitlist' },
+                  { value: 'enrolled', label: 'My enrollments' },
+                ],
+              },
         ]}
       />
 
-      {!isLoading && sessions.length === 0 && (
-        <EmptyState message="No sessions match your filters." />
+      {!isLoading && visible.length === 0 && (
+        <EmptyState
+          message={
+            showingCompleted && mine === 'mine'
+              ? 'No completed sessions with your enrollment or attendance yet.'
+              : 'No sessions match your filters.'
+          }
+        />
       )}
 
       <Box
@@ -75,7 +114,7 @@ export function BrowseSessions() {
           gap: 2,
         }}
       >
-        {sessions.map((session) => (
+        {visible.map((session) => (
           <SessionCard
             key={session.id}
             session={session}
@@ -87,7 +126,7 @@ export function BrowseSessions() {
       </Box>
 
       <Typography sx={{ mt: 1.5, fontSize: '0.82rem', color: 'text.secondary' }}>
-        Showing {sessions.length} session{sessions.length === 1 ? '' : 's'}
+        Showing {visible.length} session{visible.length === 1 ? '' : 's'}
       </Typography>
 
       {dialogs}

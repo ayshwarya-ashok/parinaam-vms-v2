@@ -23,6 +23,8 @@ export interface SessionRow {
   prereqsMet: boolean | null;
   myState: 'enrolled' | 'waitlisted' | 'none';
   waitlistPosition: number | null;
+  myAttendance: 'present' | 'absent' | null;
+  myHours: number | null;
   conflict: { name: string; startTime: string } | null;
 }
 

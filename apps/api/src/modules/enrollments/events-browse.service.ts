@@ -13,7 +13,7 @@ export interface BrowseQuery {
   to?: string;
   enrollState?: 'all' | 'open' | 'waitlist' | 'enrolled';
   sort?: 'date' | 'time' | 'venue' | 'slots';
-  scope?: 'open' | 'all';
+  scope?: 'open' | 'all' | 'completed';
 }
 
 /**
@@ -49,6 +49,7 @@ export class EventsBrowseService {
                    ELSE fn_event_prereqs_met($1, e.id) END AS prereqs_met,
               en.id IS NOT NULL AS is_enrolled,
               w.position AS waitlist_position,
+              ar.attended AS my_attended, ar.hours_contributed AS my_hours,
               conf.conflicting_name, conf.conflicting_start
        FROM events e
        JOIN activities a ON a.id = e.activity_id
@@ -59,6 +60,8 @@ export class EventsBrowseService {
          ON en.event_id = e.id AND en.volunteer_id = $1 AND en.status = 'enrolled'
        LEFT JOIN waitlist_entries w
          ON w.event_id = e.id AND w.volunteer_id = $1
+       LEFT JOIN attendance_records ar
+         ON ar.event_id = e.id AND ar.volunteer_id = $1
        LEFT JOIN LATERAL (
          SELECT conflicting_name, conflicting_start
          FROM fn_volunteer_conflicts($1, e.id) LIMIT 1
@@ -71,8 +74,10 @@ export class EventsBrowseService {
          AND ($6::date IS NULL OR e.date >= $6)
          AND ($7::date IS NULL OR e.date <= $7)
          AND (CASE WHEN $8 = 'open' THEN e.status = 'upcoming' AND e.date >= CURRENT_DATE
+                   WHEN $8 = 'completed' THEN e.status = 'completed'
                    ELSE e.status <> 'cancelled' END)
-       ORDER BY e.date, e.start_time
+       ORDER BY CASE WHEN $8 = 'completed' THEN e.date END DESC,
+                e.date, e.start_time
        LIMIT 200`,
       [
         volunteerId,
@@ -115,6 +120,13 @@ export class EventsBrowseService {
           ? ('waitlisted' as const)
           : ('none' as const),
       waitlistPosition: r.waitlist_position ? Number(r.waitlist_position) : null,
+      myAttendance:
+        r.my_attended === null || r.my_attended === undefined
+          ? null
+          : r.my_attended
+            ? ('present' as const)
+            : ('absent' as const),
+      myHours: r.my_hours === null || r.my_hours === undefined ? null : Number(r.my_hours),
       conflict: r.conflicting_name
         ? { name: r.conflicting_name, startTime: String(r.conflicting_start).slice(0, 5) }
         : null,

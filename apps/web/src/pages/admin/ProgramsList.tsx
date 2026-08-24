@@ -86,7 +86,8 @@ export function ProgramsList() {
               <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
                 <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>
                   {p.activeActivities} activit{p.activeActivities === 1 ? 'y' : 'ies'} ·{' '}
-                  {p.upcomingEvents} upcoming session{p.upcomingEvents === 1 ? '' : 's'}
+                  {p.upcomingEvents} upcoming session{p.upcomingEvents === 1 ? '' : 's'} ·{' '}
+                  {p.completedEvents} completed session{p.completedEvents === 1 ? '' : 's'}
                 </Typography>
                 <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary', mt: 0.25 }}>
                   next: {fmtDate(p.nextEventDate)}

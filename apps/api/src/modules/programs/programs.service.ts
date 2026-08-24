@@ -47,6 +47,7 @@ export class ProgramsService {
       `SELECT a.program_id,
               COUNT(DISTINCT a.id) FILTER (WHERE a.status = 'active')::int AS active_activities,
               COUNT(e.id) FILTER (WHERE e.status = 'upcoming')::int       AS upcoming_events,
+              COUNT(e.id) FILTER (WHERE e.status = 'completed')::int      AS completed_events,
               MIN(e.date) FILTER (WHERE e.status = 'upcoming' AND e.date >= CURRENT_DATE) AS next_event_date
        FROM activities a
        LEFT JOIN events e ON e.activity_id = a.id
@@ -70,6 +71,7 @@ export class ProgramsService {
           : null,
         activeActivities: Number(byProgram.get(p.id)?.active_activities ?? 0),
         upcomingEvents: Number(byProgram.get(p.id)?.upcoming_events ?? 0),
+        completedEvents: Number(byProgram.get(p.id)?.completed_events ?? 0),
         nextEventDate: byProgram.get(p.id)?.next_event_date ?? null,
         createdAt: p.createdAt,
       })),

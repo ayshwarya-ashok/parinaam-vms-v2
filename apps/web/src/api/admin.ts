@@ -12,6 +12,7 @@ export interface ProgramRow {
   defaultCoordinator: { id: string; name: string } | null;
   activeActivities: number;
   upcomingEvents: number;
+  completedEvents: number;
   nextEventDate: string | null;
 }
 
@@ -31,7 +32,8 @@ export interface ActivityRow {
   completed_events: number;
 }
 
-export interface ProgramDetail extends Omit<ProgramRow, 'activeActivities' | 'upcomingEvents' | 'nextEventDate'> {
+export interface ProgramDetail
+  extends Omit<ProgramRow, 'activeActivities' | 'upcomingEvents' | 'completedEvents' | 'nextEventDate'> {
   discontinueReason: string | null;
   activities: ActivityRow[];
   trainings: TrainingRef[];
