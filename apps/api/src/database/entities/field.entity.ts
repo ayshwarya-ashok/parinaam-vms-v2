@@ -89,6 +89,17 @@ export class AttendanceRecord {
   @Column({ type: 'boolean', default: false })
   attended!: boolean;
 
+  /**
+   * Visit-level rows (phased sessions): phaseId + visitDate set, attended
+   * always true, unique per (volunteer, phase, day). Classic session rows
+   * keep both NULL and stay unique per (event, volunteer).
+   */
+  @Column({ name: 'phase_id', type: 'uuid', nullable: true })
+  phaseId!: string | null;
+
+  @Column({ name: 'visit_date', type: 'date', nullable: true })
+  visitDate!: string | null;
+
   @Column({ name: 'arrival_time', type: 'time', nullable: true })
   arrivalTime!: string | null;
 

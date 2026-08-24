@@ -49,7 +49,7 @@ export class EventsBrowseService {
                    ELSE fn_event_prereqs_met($1, e.id) END AS prereqs_met,
               en.id IS NOT NULL AS is_enrolled,
               w.position AS waitlist_position,
-              ar.attended AS my_attended, ar.hours_contributed AS my_hours,
+              ar.my_attended, ar.my_hours,
               conf.conflicting_name, conf.conflicting_start
        FROM events e
        JOIN activities a ON a.id = e.activity_id
@@ -60,8 +60,14 @@ export class EventsBrowseService {
          ON en.event_id = e.id AND en.volunteer_id = $1 AND en.status = 'enrolled'
        LEFT JOIN waitlist_entries w
          ON w.event_id = e.id AND w.volunteer_id = $1
-       LEFT JOIN attendance_records ar
-         ON ar.event_id = e.id AND ar.volunteer_id = $1
+       LEFT JOIN LATERAL (
+         -- Aggregated: phased sessions hold one row PER VISIT, so a bare join
+         -- would fan the session out. Hours sum across every attended row.
+         SELECT bool_or(a.attended) AS my_attended,
+                SUM(a.hours_contributed) FILTER (WHERE a.attended) AS my_hours
+         FROM attendance_records a
+         WHERE a.event_id = e.id AND a.volunteer_id = $1
+       ) ar ON $1::uuid IS NOT NULL
        LEFT JOIN LATERAL (
          SELECT conflicting_name, conflicting_start
          FROM fn_volunteer_conflicts($1, e.id) LIMIT 1

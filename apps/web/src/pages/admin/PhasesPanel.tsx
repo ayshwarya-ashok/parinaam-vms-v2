@@ -18,6 +18,17 @@ import { useToast } from '@/app/toast';
 import { StatusPill } from '@/components';
 import { tokens } from '@/theme';
 
+export interface VisitRow {
+  id: string;
+  phase_id: string;
+  visit_date: string;
+  hours_contributed: string;
+  notes: string | null;
+  volunteer_id: string;
+  first_name: string;
+  last_name: string;
+}
+
 export interface PhaseRow {
   id: string;
   name: string;
@@ -78,14 +89,24 @@ export function PhasesPanel({
   eventId,
   eventStatus,
   phases,
+  visits = [],
+  enrolledIds = [],
 }: {
   eventId: string;
   eventStatus: string;
   phases: PhaseRow[];
+  visits?: VisitRow[];
+  enrolledIds?: string[];
 }) {
   const queryClient = useQueryClient();
   const toast = useToast();
   const [form, setForm] = useState<PhaseFormState | null>(null);
+  const [visitForm, setVisitForm] = useState<{
+    phase: PhaseRow;
+    volunteerId: string;
+    visitDate: string;
+    hours: string;
+  } | null>(null);
   const [override, setOverride] = useState<{
     phase: PhaseRow;
     status: PhaseRow['status'];
@@ -110,7 +131,7 @@ export function PhasesPanel({
           data: Array<{ id: string; firstName: string; lastName: string; email: string }>;
         }>('/volunteers', { params: { registrationStatus: 'approved', limit: 100 } })
       ).data.data,
-    enabled: form !== null,
+    enabled: form !== null || visitForm !== null,
   });
 
   const save = useMutation({
@@ -156,6 +177,31 @@ export function PhasesPanel({
       invalidate();
     },
     onError: (err) => toast.failure(asApiError(err)?.message ?? 'Could not update the phase.'),
+  });
+
+  const logVisit = useMutation({
+    mutationFn: async (vf: { phase: PhaseRow; volunteerId: string; visitDate: string; hours: string }) =>
+      api.post(`/phases/${vf.phase.id}/visits`, {
+        volunteerId: vf.volunteerId,
+        visitDate: vf.visitDate,
+        hoursContributed: Number(vf.hours),
+        walkIn: !enrolledIds.includes(vf.volunteerId) || undefined,
+      }),
+    onSuccess: () => {
+      toast.success('Visit logged');
+      setVisitForm(null);
+      invalidate();
+    },
+    onError: (err) => toast.failure(asApiError(err)?.message ?? 'Could not log the visit.'),
+  });
+
+  const deleteVisit = useMutation({
+    mutationFn: async (recordId: string) => api.delete(`/attendance/visits/${recordId}`),
+    onSuccess: () => {
+      toast.success('Visit removed');
+      invalidate();
+    },
+    onError: (err) => toast.failure(asApiError(err)?.message ?? 'Could not remove the visit.'),
   });
 
   const doOverride = useMutation({
@@ -237,10 +283,54 @@ export function PhasesPanel({
                     {p.partner_marked_at ? '✓' : '…'}
                   </Typography>
                 )}
+                {visits.filter((vi) => vi.phase_id === p.id).length > 0 && (
+                  <Box sx={{ mt: 0.75, display: 'grid', gap: 0.25 }}>
+                    {visits
+                      .filter((vi) => vi.phase_id === p.id)
+                      .map((vi) => (
+                        <Typography
+                          key={vi.id}
+                          sx={{ fontSize: '0.78rem', color: 'text.secondary' }}
+                        >
+                          🗓 {fmtDate(vi.visit_date)} — {vi.first_name} {vi.last_name},{' '}
+                          {Number(vi.hours_contributed)}h
+                          {editable && (
+                            <Box
+                              component="span"
+                              onClick={() => deleteVisit.mutate(vi.id)}
+                              sx={{
+                                ml: 0.75,
+                                cursor: 'pointer',
+                                color: tokens.accentStrong,
+                                '&:hover': { textDecoration: 'underline' },
+                              }}
+                            >
+                              ✕
+                            </Box>
+                          )}
+                        </Typography>
+                      ))}
+                  </Box>
+                )}
               </Box>
 
               {editable && (
                 <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0, flexWrap: 'wrap' }}>
+                  <Button
+                    size="small"
+                    variant="pillOutlined"
+                    sx={{ px: 1.5, py: 0.25 }}
+                    onClick={() =>
+                      setVisitForm({
+                        phase: p,
+                        volunteerId: '',
+                        visitDate: String(p.start_date).slice(0, 10),
+                        hours: '',
+                      })
+                    }
+                  >
+                    + Log visit
+                  </Button>
                   {p.status === 'upcoming' && (
                     <Button
                       size="small"
@@ -390,6 +480,72 @@ export function PhasesPanel({
             onClick={() => form && save.mutate(form)}
           >
             {form?.id ? 'Save' : 'Add phase'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Log visit ─────────────────────────────────────────────────────── */}
+      <Dialog open={visitForm !== null} onClose={() => setVisitForm(null)} fullWidth maxWidth="xs">
+        <DialogTitle>Log visit — {visitForm?.phase.name}</DialogTitle>
+        <DialogContent sx={{ display: 'grid', gap: 2, pt: '8px !important' }}>
+          <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>
+            One visit = one record: who came, which day, how many hours. Hours add up across every
+            visit and phase — that total is what certificates read. Volunteers not enrolled in the
+            session are added to the phase directly.
+          </Typography>
+          <TextField
+            select
+            label="Volunteer"
+            value={visitForm?.volunteerId ?? ''}
+            onChange={(e) =>
+              setVisitForm((v) => (v ? { ...v, volunteerId: e.target.value } : v))
+            }
+          >
+            {volunteers.map((v) => (
+              <MenuItem key={v.id} value={v.id}>
+                {v.firstName} {v.lastName}
+                {enrolledIds.includes(v.id) ? '' : ' (not enrolled — will be added)'}
+              </MenuItem>
+            ))}
+          </TextField>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+            <TextField
+              label="Visit date"
+              type="date"
+              InputLabelProps={{ shrink: true }}
+              inputProps={{
+                min: String(visitForm?.phase.start_date ?? '').slice(0, 10),
+                max: String(visitForm?.phase.end_date ?? '').slice(0, 10),
+              }}
+              value={visitForm?.visitDate ?? ''}
+              onChange={(e) =>
+                setVisitForm((v) => (v ? { ...v, visitDate: e.target.value } : v))
+              }
+            />
+            <TextField
+              label="Hours"
+              type="number"
+              inputProps={{ min: 0.25, max: 24, step: 0.25 }}
+              value={visitForm?.hours ?? ''}
+              onChange={(e) => setVisitForm((v) => (v ? { ...v, hours: e.target.value } : v))}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button variant="pillOutlined" onClick={() => setVisitForm(null)}>
+            Cancel
+          </Button>
+          <Button
+            variant="pill"
+            disabled={
+              logVisit.isPending ||
+              !visitForm?.volunteerId ||
+              !visitForm?.visitDate ||
+              !visitForm?.hours
+            }
+            onClick={() => visitForm && logVisit.mutate(visitForm)}
+          >
+            Log visit
           </Button>
         </DialogActions>
       </Dialog>

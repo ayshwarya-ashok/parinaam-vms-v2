@@ -71,6 +71,7 @@ export const BUSINESS_ERROR_CODES = [
   'TOKEN_CONSUMED',
   'TOKEN_EXPIRED',
   'TOKEN_INVALID',
+  'VISIT_INVALID',
   'WALKIN_NOT_ELIGIBLE',
   // recognition & feedback
   'ALREADY_ISSUED',

@@ -91,6 +91,8 @@ const MATRIX = [
   ['POST',   `/phases/${UUID}/start`,                   'D', 'D', 'A'],
   ['POST',   `/phases/${UUID}/complete`,                'D', 'D', 'A'],
   ['POST',   `/phases/${UUID}/override`,                'D', 'D', 'A'],
+  ['POST',   `/phases/${UUID}/visits`,                  'D', 'D', 'A'],
+  ['DELETE', `/attendance/visits/${UUID}`,              'D', 'D', 'A'],
   // shared-but-authorized-inside (guard admits both roles; ownership decides)
   ['GET',    `/certificates/${UUID}/download`,          'D', 'A', 'A'],
 ];

@@ -1,5 +1,6 @@
 import {
   IsBoolean,
+  IsDateString,
   IsIn,
   IsInt,
   IsMilitaryTime,
@@ -14,6 +15,7 @@ import { Transform } from 'class-transformer';
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -83,6 +85,16 @@ class AdminRecordDto extends OverrideDto {
   @IsBoolean() declare attended: boolean;
 }
 
+/** One visit under a phase: who, which day, how long. Always presence. */
+class RecordVisitDto {
+  @Matches(UUID_PATTERN, { message: 'must be a UUID' }) volunteerId!: string;
+  @IsDateString() visitDate!: string;
+  @IsNumber() @Min(0.25) hoursContributed!: number;
+  @IsOptional() @IsString() @MaxLength(2000) notes?: string;
+  /** Explicit flag for a volunteer the admin adds to the phase mid-session. */
+  @IsOptional() @IsBoolean() walkIn?: boolean;
+}
+
 const IMAGE_LIMITS = { fileSize: 8 * 1024 * 1024, files: 2 };
 
 @ApiTags('attendance')
@@ -147,6 +159,24 @@ export class AttendanceController {
   @Roles('admin')
   records(@Param('id', UuidPipe) id: string) {
     return this.service.recordsOf(id);
+  }
+
+  @Post('phases/:id/visits')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Log one visit (volunteer, day, hours) under a phase — hours accumulate across visits' })
+  recordVisit(
+    @CurrentUser() user: AuthPrincipal,
+    @Param('id', UuidPipe) id: string,
+    @Body() dto: RecordVisitDto,
+  ) {
+    return this.service.recordVisit(user, id, dto);
+  }
+
+  @Delete('attendance/visits/:recordId')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Remove a mis-logged visit' })
+  deleteVisit(@CurrentUser() user: AuthPrincipal, @Param('recordId', UuidPipe) recordId: string) {
+    return this.service.deleteVisit(user, recordId);
   }
 
   @Get('events/:id/report')

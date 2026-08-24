@@ -33,7 +33,7 @@ import {
   useTableSort,
 } from '@/components';
 import { tokens } from '@/theme';
-import { PhasesPanel, type PhaseRow } from './PhasesPanel';
+import { PhasesPanel, type PhaseRow, type VisitRow } from './PhasesPanel';
 
 const ABSENCE_REASONS = [
   'Personal emergency',
@@ -111,6 +111,7 @@ interface SessionRecordPayload {
   } | null;
   photos: Array<{ id: string; caption: string | null }>;
   phases: PhaseRow[];
+  visits: VisitRow[];
   summary: { enrolled: number; submitted: number; attended: number; totalHours: number };
 }
 
@@ -332,7 +333,15 @@ export function SessionRecord() {
         </Box>
       </Paper>
 
-      <PhasesPanel eventId={event.id} eventStatus={event.status} phases={data?.phases ?? []} />
+      <PhasesPanel
+        eventId={event.id}
+        eventStatus={event.status}
+        phases={data?.phases ?? []}
+        visits={data?.visits ?? []}
+        enrolledIds={(data?.roster ?? [])
+          .filter((r) => r.enrollment_status === 'enrolled')
+          .map((r) => r.volunteer_id)}
+      />
 
       <Box
         sx={{
