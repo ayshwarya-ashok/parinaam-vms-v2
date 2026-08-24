@@ -28,7 +28,38 @@ export interface SessionRow {
   conflict: { name: string; startTime: string } | null;
 }
 
+export interface SessionPhase {
+  id: string;
+  name: string;
+  description: string | null;
+  responsibility: 'parinaam' | 'partner' | 'collab';
+  status: 'upcoming' | 'inprogress' | 'completed';
+  start_date: string;
+  end_date: string;
+  parinaam_marked: boolean;
+  partner_marked: boolean;
+  lead_first_name: string | null;
+  lead_last_name: string | null;
+  i_am_lead: boolean | null;
+}
+
+export interface MyPhaseRow {
+  id: string;
+  name: string;
+  responsibility: 'partner' | 'collab';
+  status: 'upcoming' | 'inprogress';
+  start_date: string;
+  end_date: string;
+  parinaam_marked_at: string | null;
+  partner_marked_at: string | null;
+  event_id: string;
+  event_name: string;
+  event_status: string;
+  program_name: string;
+}
+
 export interface SessionDetail extends SessionRow {
+  phases: SessionPhase[];
   trainings: Array<{
     id: string;
     code: string;
@@ -82,6 +113,26 @@ export const useSession = (id: string | undefined) =>
     queryFn: async () => (await api.get<SessionDetail>(`/events/${id}`)).data,
     enabled: !!id,
   });
+
+export const useMyPhases = () =>
+  useQuery({
+    queryKey: ['my-phases'],
+    queryFn: async () => (await api.get<{ data: MyPhaseRow[] }>('/phases/mine')).data.data,
+  });
+
+/** The named partner lead marks their side of a phase complete. */
+export function usePartnerComplete() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (phaseId: string) =>
+      (await api.post(`/phases/${phaseId}/partner-complete`)).data,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['my-phases'] });
+      void qc.invalidateQueries({ queryKey: ['session'] });
+      void qc.invalidateQueries({ queryKey: ['sessions'] });
+    },
+  });
+}
 
 export const useMyEnrollments = () =>
   useQuery({

@@ -197,8 +197,25 @@ export class EventsBrowseService {
       [eventId],
     );
 
+    // The session's phases, with what the CALLER may do about each: only the
+    // named partner lead can mark the partner side (client decision Q1).
+    const phases = await this.dataSource.query(
+      `SELECT ph.id, ph.name, ph.description, ph.responsibility, ph.status,
+              ph.start_date, ph.end_date,
+              ph.parinaam_marked_at IS NOT NULL AS parinaam_marked,
+              ph.partner_marked_at IS NOT NULL AS partner_marked,
+              lv.first_name AS lead_first_name, lv.last_name AS lead_last_name,
+              ph.partner_lead_volunteer_id = $2 AS i_am_lead
+       FROM event_phases ph
+       LEFT JOIN volunteers lv ON lv.id = ph.partner_lead_volunteer_id
+       WHERE ph.event_id = $1
+       ORDER BY ph.sort_order, ph.start_date`,
+      [eventId, volunteerId],
+    );
+
     return {
       ...event,
+      phases,
       trainings: trainings.map((t: { code: string; [k: string]: unknown }) => ({
         ...t,
         held: !missingCodes.has(t.code),

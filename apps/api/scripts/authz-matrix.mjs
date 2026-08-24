@@ -46,6 +46,8 @@ const MATRIX = [
   ['GET',    '/feedback/eligible-events',               'D', 'A', 'D'],
   ['POST',   '/feedback',                               'D', 'A', 'D'],
   ['GET',    '/feedback/options',                       'D', 'A', 'A'],
+  ['GET',    '/phases/mine',                            'D', 'A', 'D'],
+  ['POST',   `/phases/${UUID}/partner-complete`,        'D', 'A', 'D'],
   // ── admin only ──────────────────────────────────────────────────────
   ['GET',    '/analytics/dashboard',                    'D', 'D', 'A'],
   ['GET',    '/analytics/summary',                      'D', 'D', 'A'],

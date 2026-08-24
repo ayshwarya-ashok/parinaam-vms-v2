@@ -231,6 +231,72 @@ export class PhasesService {
   }
 
   /**
+   * The partner side, marked by the named lead and nobody else (client
+   * decision Q1). Collab phases complete when Parinaam's mark is already in;
+   * partner-owned phases complete on this mark alone.
+   */
+  async completePartnerSide(principal: AuthPrincipal, id: string) {
+    const [me] = await this.dataSource.query(
+      'SELECT id FROM volunteers WHERE user_id = $1',
+      [principal.sub],
+    );
+    if (!me) throw new NotFoundException('Volunteer profile not found');
+
+    const phase = await this.phaseOf(id);
+    if (phase.responsibility === 'parinaam') {
+      throw new BusinessException(
+        'PHASE_NOT_YOURS',
+        'This phase is owned by the Parinaam team.',
+      );
+    }
+    if (phase.partnerLeadVolunteerId !== me.id) {
+      throw new BusinessException(
+        'PHASE_NOT_YOURS',
+        'Only the named partner lead can mark this phase.',
+        403,
+      );
+    }
+    if (phase.partnerMarkedAt) {
+      throw new BusinessException('PHASE_ALREADY_MARKED', 'The partner side is already marked complete.');
+    }
+
+    phase.partnerMarkedAt = new Date();
+    phase.partnerMarkedBy = me.id;
+    const bothSides = phase.responsibility === 'collab';
+    phase.status = bothSides && !phase.parinaamMarkedAt ? 'inprogress' : 'completed';
+    await this.phases.save(phase);
+    const [before, after] = await this.recompute(phase.eventId);
+    await this.audit.record(principal, {
+      action: 'phase.partner_marked',
+      entity: 'event_phase',
+      entityId: id,
+      after: { phaseStatus: phase.status, sessionStatus: after, sessionWas: before },
+    });
+    return this.detail(id);
+  }
+
+  /** The caller's open phase responsibilities — for the volunteer dashboard. */
+  async myResponsibilities(principal: AuthPrincipal) {
+    const rows = await this.dataSource.query(
+      `SELECT ph.id, ph.name, ph.responsibility, ph.status, ph.start_date, ph.end_date,
+              ph.parinaam_marked_at, ph.partner_marked_at,
+              e.id AS event_id, COALESCE(e.name, a.name) AS event_name, e.status AS event_status,
+              p.name AS program_name
+       FROM event_phases ph
+       JOIN volunteers v ON v.id = ph.partner_lead_volunteer_id
+       JOIN events e ON e.id = ph.event_id
+       JOIN activities a ON a.id = e.activity_id
+       JOIN programs p ON p.id = a.program_id
+       WHERE v.user_id = $1
+         AND ph.status <> 'completed'
+         AND e.status NOT IN ('draft', 'cancelled')
+       ORDER BY ph.start_date`,
+      [principal.sub],
+    );
+    return { data: rows };
+  }
+
+  /**
    * Admin override — authoritative over the marks. Overriding back to
    * upcoming clears both completion marks so the phase restarts clean.
    */

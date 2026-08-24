@@ -293,6 +293,20 @@ export class ProgramsController {
     return this.phases.completeParinaamSide(user, id);
   }
 
+  @Get('phases/mine')
+  @Roles('volunteer')
+  @ApiOperation({ summary: "The caller's open phase-lead responsibilities" })
+  myPhases(@CurrentUser() user: AuthPrincipal) {
+    return this.phases.myResponsibilities(user);
+  }
+
+  @Post('phases/:id/partner-complete')
+  @Roles('volunteer')
+  @ApiOperation({ summary: 'Named partner lead marks their side complete (client decision Q1)' })
+  partnerComplete(@CurrentUser() user: AuthPrincipal, @Param('id', UuidPipe) id: string) {
+    return this.phases.completePartnerSide(user, id);
+  }
+
   @Post('phases/:id/override')
   @Roles('admin')
   @ApiOperation({ summary: 'Force a phase status with a reason — audited; may revert a completed session' })

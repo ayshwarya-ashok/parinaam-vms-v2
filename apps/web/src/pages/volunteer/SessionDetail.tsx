@@ -7,10 +7,25 @@ import {
   Typography,
 } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useSession } from '@/api/volunteer';
-import { PageShell, StatTile } from '@/components';
+import { usePartnerComplete, useSession } from '@/api/volunteer';
+import { asApiError } from '@/api/client';
+import { useToast } from '@/app/toast';
+import { PageShell, StatTile, StatusPill } from '@/components';
 import { useEnrollFlow } from '@/components/EnrollFlow';
 import { SessionCard } from '@/components/SessionCard';
+
+const PHASE_OWNER_LABEL: Record<string, string> = {
+  parinaam: 'Parinaam team',
+  partner: 'Partner / volunteer',
+  collab: 'Parinaam + partner',
+};
+
+function fmtShort(iso: string): string {
+  return new Date(`${String(iso).slice(0, 10)}T00:00:00`).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+  });
+}
 
 function fmtDate(iso: string): string {
   return new Date(`${String(iso).slice(0, 10)}T00:00:00`).toLocaleDateString('en-IN', {
@@ -26,6 +41,8 @@ export function SessionDetailPage() {
   const navigate = useNavigate();
   const { data: session, isLoading } = useSession(id);
   const { onEnroll, onWithdraw, onLeaveWaitlist, dialogs } = useEnrollFlow();
+  const toast = useToast();
+  const partnerComplete = usePartnerComplete();
 
   if (isLoading || !session) {
     return (
@@ -63,6 +80,69 @@ export function SessionDetailPage() {
 
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 7 }}>
+          {session.phases.length > 0 && (
+            <>
+              <Typography sx={{ fontWeight: 700, mb: 1 }}>
+                Phases ({session.phases.filter((p) => p.status === 'completed').length}/
+                {session.phases.length} complete)
+              </Typography>
+              <Box sx={{ display: 'grid', gap: 0.75, mb: 3 }}>
+                {session.phases.map((p) => (
+                  <Paper
+                    key={p.id}
+                    variant="outlined"
+                    sx={{ px: 1.5, py: 1, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.7)' }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                      <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', flex: 1 }}>
+                        {p.name}
+                      </Typography>
+                      {p.i_am_lead && (
+                        <Chip label="you lead this" size="small" sx={{ fontSize: '0.68rem' }} />
+                      )}
+                      <StatusPill status={p.status} />
+                    </Box>
+                    <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>
+                      {String(p.start_date).slice(0, 10) === String(p.end_date).slice(0, 10)
+                        ? fmtShort(p.start_date)
+                        : `${fmtShort(p.start_date)} – ${fmtShort(p.end_date)}`}{' '}
+                      · {PHASE_OWNER_LABEL[p.responsibility]}
+                      {p.lead_first_name ? ` · lead: ${p.lead_first_name} ${p.lead_last_name}` : ''}
+                    </Typography>
+                    {p.i_am_lead && p.status !== 'completed' && !p.partner_marked && (
+                      <Button
+                        size="small"
+                        variant="pill"
+                        sx={{ mt: 0.75, px: 1.5, py: 0.25 }}
+                        disabled={partnerComplete.isPending}
+                        onClick={() =>
+                          partnerComplete.mutate(p.id, {
+                            onSuccess: () => toast.success('Your side is marked complete'),
+                            onError: (err) =>
+                              toast.failure(
+                                asApiError(err)?.message ?? 'Could not mark the phase.',
+                              ),
+                          })
+                        }
+                      >
+                        ✓ Mark my side complete
+                      </Button>
+                    )}
+                    {p.i_am_lead &&
+                      p.status !== 'completed' &&
+                      p.partner_marked &&
+                      p.responsibility === 'collab' &&
+                      !p.parinaam_marked && (
+                        <Typography sx={{ mt: 0.5, fontSize: '0.78rem', color: 'text.secondary' }}>
+                          Your side is done — waiting on the Parinaam team.
+                        </Typography>
+                      )}
+                  </Paper>
+                ))}
+              </Box>
+            </>
+          )}
+
           <Typography sx={{ fontWeight: 700, mb: 1 }}>Required trainings</Typography>
           <Box sx={{ display: 'grid', gap: 0.75, mb: 3 }}>
             {session.trainings.length === 0 && (
