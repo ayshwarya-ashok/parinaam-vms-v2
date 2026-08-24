@@ -136,7 +136,9 @@ export function CommunitiesPage() {
                 sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexShrink: 0 }}
               >
                 <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>
-                  {c.upcoming_sessions} upcoming · {c.completed_sessions} completed
+                  {c.upcoming_sessions} upcoming ·{' '}
+                  {c.inprogress_sessions > 0 ? `${c.inprogress_sessions} in progress · ` : ''}
+                  {c.completed_sessions} completed
                   {c.draft_sessions > 0 ? ` · ${c.draft_sessions} draft` : ''}
                 </Typography>
                 <Button size="small" variant="pillOutlined" onClick={() => openEdit(c)}>

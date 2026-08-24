@@ -22,9 +22,10 @@ export class CommunitiesService {
   async list(includeArchived = false) {
     const rows = await this.dataSource.query(
       `SELECT bc.id, bc.name, bc.description, bc.city, bc.status,
-              COUNT(e.id) FILTER (WHERE e.status = 'upcoming')::int  AS upcoming_sessions,
-              COUNT(e.id) FILTER (WHERE e.status = 'completed')::int AS completed_sessions,
-              COUNT(e.id) FILTER (WHERE e.status = 'draft')::int     AS draft_sessions
+              COUNT(e.id) FILTER (WHERE e.status = 'upcoming')::int   AS upcoming_sessions,
+              COUNT(e.id) FILTER (WHERE e.status = 'inprogress')::int AS inprogress_sessions,
+              COUNT(e.id) FILTER (WHERE e.status = 'completed')::int  AS completed_sessions,
+              COUNT(e.id) FILTER (WHERE e.status = 'draft')::int      AS draft_sessions
        FROM beneficiary_communities bc
        LEFT JOIN event_communities ec ON ec.community_id = bc.id
        LEFT JOIN events e ON e.id = ec.event_id

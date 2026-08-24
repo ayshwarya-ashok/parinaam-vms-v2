@@ -152,7 +152,7 @@ export function MetricsDashboard() {
         <StatTile label="Volunteers" value={data?.kpis.total_volunteers ?? '—'} sub={`${data?.kpis.active_volunteers ?? 0} active`} />
         <StatTile label="Hours contributed" value={data ? Number(data.kpis.total_hours) : '—'} />
         <StatTile label="Beneficiaries" value={data?.kpis.total_beneficiaries?.toLocaleString('en-IN') ?? '—'} />
-        <StatTile label="Sessions run" value={data?.kpis.events_conducted ?? '—'} sub={`${data?.kpis.events_upcoming ?? 0} upcoming`} />
+        <StatTile label="Sessions run" value={data?.kpis.events_conducted ?? '—'} sub={`${data?.kpis.events_upcoming ?? 0} upcoming${(data?.kpis.events_inprogress ?? 0) > 0 ? ` · ${data?.kpis.events_inprogress} in progress` : ''}`} />
         <StatTile label="Avg rating" value={data && Number(data.kpis.avg_rating) > 0 ? `${data.kpis.avg_rating} ★` : '—'} />
         <StatTile label="Certificates" value={data?.kpis.certificates_issued ?? '—'} sub={`${data?.kpis.compliant_volunteers ?? 0} compliant`} />
       </Box>

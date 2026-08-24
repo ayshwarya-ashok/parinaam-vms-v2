@@ -91,7 +91,7 @@ export class AttendanceService {
        JOIN coordinators c ON c.id = e.coordinator_id
        JOIN v_event_capacity cap ON cap.event_id = e.id
        LEFT JOIN attendance_dispatches d ON d.event_id = e.id
-       WHERE e.status IN ('upcoming', 'completed')
+       WHERE e.status IN ('upcoming', 'inprogress', 'completed')
          AND ($1::text IS NULL OR COALESCE(e.name, a.name) ILIKE $1 OR p.name ILIKE $1)
          AND ($2::uuid IS NULL OR p.id = $2)
        ORDER BY e.date DESC, e.start_time DESC
@@ -561,12 +561,22 @@ export class AttendanceService {
 
     const { report, photos } = await this.reportOf(eventId);
 
+    const phases = await this.dataSource.query(
+      `SELECT ph.*, v.first_name AS lead_first_name, v.last_name AS lead_last_name
+       FROM event_phases ph
+       LEFT JOIN volunteers v ON v.id = ph.partner_lead_volunteer_id
+       WHERE ph.event_id = $1
+       ORDER BY ph.sort_order, ph.start_date, ph.created_at`,
+      [eventId],
+    );
+
     return {
       event,
       roster,
       waitlist,
       report,
       photos,
+      phases,
       summary: {
         enrolled: roster.filter((r: { enrollment_status: string | null }) => r.enrollment_status !== null).length,
         submitted: roster.filter((r: { record_id: string | null }) => r.record_id !== null).length,

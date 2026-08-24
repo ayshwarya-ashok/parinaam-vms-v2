@@ -62,6 +62,7 @@ export function CommunityDetail() {
             options: [
               { value: 'all', label: 'All' },
               { value: 'upcoming', label: 'Upcoming' },
+              { value: 'inprogress', label: 'In progress' },
               { value: 'completed', label: 'Completed' },
               { value: 'draft', label: 'Draft' },
               { value: 'cancelled', label: 'Cancelled' },

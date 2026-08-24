@@ -22,6 +22,7 @@ export class AnalyticsController {
          (SELECT COUNT(*)::int FROM volunteers v JOIN users u ON u.id = v.user_id
            WHERE v.created_at > now() - interval '7 days') AS volunteers_this_week,
          (SELECT COUNT(*)::int FROM trainings WHERE status = 'active') AS active_trainings,
+         (SELECT COUNT(*)::int FROM events WHERE status = 'inprogress') AS events_inprogress,
          (SELECT COUNT(*)::int FROM email_logs WHERE status IN ('queued','dispatched')) AS mail_in_flight`,
     );
     return { ...kpis, ...extra };

@@ -12,6 +12,7 @@ export interface ProgramRow {
   defaultCoordinator: { id: string; name: string } | null;
   activeActivities: number;
   upcomingEvents: number;
+  inprogressEvents: number;
   completedEvents: number;
   nextEventDate: string | null;
 }
@@ -33,7 +34,7 @@ export interface ActivityRow {
 }
 
 export interface ProgramDetail
-  extends Omit<ProgramRow, 'activeActivities' | 'upcomingEvents' | 'completedEvents' | 'nextEventDate'> {
+  extends Omit<ProgramRow, 'activeActivities' | 'upcomingEvents' | 'inprogressEvents' | 'completedEvents' | 'nextEventDate'> {
   discontinueReason: string | null;
   activities: ActivityRow[];
   trainings: TrainingRef[];
@@ -59,12 +60,14 @@ export interface EventRow {
   location: string | null;
   city: string | null;
   max_slots: number;
-  status: 'draft' | 'upcoming' | 'completed' | 'cancelled';
+  status: 'draft' | 'upcoming' | 'inprogress' | 'completed' | 'cancelled';
   coordinator_name: string;
   enrolled_count: number;
   waitlist_count: number;
   spots_left: number;
   is_enrollable: boolean;
+  phase_total: number;
+  phases_completed: number;
 }
 
 export interface Coordinator {
@@ -81,6 +84,7 @@ export interface Summary {
   active_programs: number;
   active_activities: number;
   events_upcoming: number;
+  events_inprogress: number;
   events_conducted: number;
   total_hours: string;
   total_beneficiaries: string;
@@ -138,6 +142,7 @@ export interface CommunityRow {
   city: string | null;
   status: 'active' | 'archived';
   upcoming_sessions: number;
+  inprogress_sessions: number;
   completed_sessions: number;
   draft_sessions: number;
 }
@@ -150,7 +155,7 @@ export interface CommunitySessionRow {
   start_time: string;
   duration_hours: string;
   location: string | null;
-  status: 'draft' | 'upcoming' | 'completed' | 'cancelled';
+  status: 'draft' | 'upcoming' | 'inprogress' | 'completed' | 'cancelled';
   activity_id: string;
   activity_name: string;
   program_id: string;

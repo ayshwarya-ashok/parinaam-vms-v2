@@ -8,6 +8,7 @@ export interface DashboardKpis {
   sessions_with_attendance: number;
   events_conducted: number;
   events_upcoming: number;
+  events_inprogress: number;
   total_beneficiaries: number;
   avg_rating: string;
   certificates_issued: number;

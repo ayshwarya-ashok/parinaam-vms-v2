@@ -220,6 +220,10 @@ export class AnalyticsService {
            JOIN activities a ON a.id = e.activity_id
            WHERE e.status = 'upcoming'
              AND ($2::uuid IS NULL OR a.program_id = $2))                        AS events_upcoming,
+        (SELECT COUNT(*)::int FROM events e
+           JOIN activities a ON a.id = e.activity_id
+           WHERE e.status = 'inprogress'
+             AND ($2::uuid IS NULL OR a.program_id = $2))                        AS events_inprogress,
         (SELECT COALESCE(SUM(r.beneficiaries_reached), 0)::int FROM event_reports r
            JOIN events e ON e.id = r.event_id
            JOIN activities a ON a.id = e.activity_id

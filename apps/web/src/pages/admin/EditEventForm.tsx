@@ -29,7 +29,7 @@ interface EventAdminDetail {
   city: string | null;
   max_slots: number | null;
   coordinator_id: string;
-  status: 'draft' | 'upcoming' | 'completed' | 'cancelled';
+  status: 'draft' | 'upcoming' | 'inprogress' | 'completed' | 'cancelled';
   activity_id: string;
   activity_name: string;
   program_id: string;

@@ -14,7 +14,7 @@ export interface SessionRow {
   city: string | null;
   type: 'In person' | 'Online';
   skillRequired: string | null;
-  status: 'draft' | 'upcoming' | 'completed' | 'cancelled';
+  status: 'draft' | 'upcoming' | 'inprogress' | 'completed' | 'cancelled';
   program: { id: string; name: string };
   activity: { id: string; name: string };
   coordinatorName: string;

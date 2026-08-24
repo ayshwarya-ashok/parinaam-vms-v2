@@ -33,6 +33,7 @@ import {
   useTableSort,
 } from '@/components';
 import { tokens } from '@/theme';
+import { PhasesPanel, type PhaseRow } from './PhasesPanel';
 
 const ABSENCE_REASONS = [
   'Personal emergency',
@@ -76,7 +77,7 @@ interface SessionRecordPayload {
     duration_hours: string | null;
     location: string | null;
     city: string | null;
-    status: 'draft' | 'upcoming' | 'completed' | 'cancelled';
+    status: 'draft' | 'upcoming' | 'inprogress' | 'completed' | 'cancelled';
     max_slots: number | null;
     cancel_reason: string | null;
     activity_id: string;
@@ -109,6 +110,7 @@ interface SessionRecordPayload {
     submittedAt: string;
   } | null;
   photos: Array<{ id: string; caption: string | null }>;
+  phases: PhaseRow[];
   summary: { enrolled: number; submitted: number; attended: number; totalHours: number };
 }
 
@@ -281,7 +283,7 @@ export function SessionRecord() {
       description={`${event.code} · ${event.activity_name}`}
       actions={
         <>
-          {event.status === 'upcoming' && String(event.date).slice(0, 10) <= todayIsoLocal() && (
+          {event.status === 'upcoming' && (data?.phases?.length ?? 0) === 0 && String(event.date).slice(0, 10) <= todayIsoLocal() && (
             <Button variant="pill" disabled={markCompleted.isPending} onClick={() => markCompleted.mutate()}>
               ✓ Mark completed
             </Button>
@@ -329,6 +331,8 @@ export function SessionRecord() {
           )}
         </Box>
       </Paper>
+
+      <PhasesPanel eventId={event.id} eventStatus={event.status} phases={data?.phases ?? []} />
 
       <Box
         sx={{

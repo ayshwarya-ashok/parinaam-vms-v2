@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
     Patch,
@@ -21,13 +22,17 @@ import {
   CreateActivityDto,
   CreateEventDto,
   CreateEventSeriesDto,
+  CreatePhaseDto,
   CreateProgramDto,
   DiscontinueDto,
+  OverridePhaseDto,
   SetTrainingsDto,
   UpdateActivityDto,
   UpdateEventDto,
+  UpdatePhaseDto,
   UpdateProgramDto,
 } from './programs.dto';
+import { PhasesService } from './phases.service';
 import { ProgramsService } from './programs.service';
 
 @ApiTags('programs')
@@ -36,6 +41,7 @@ export class ProgramsController {
   constructor(
     private readonly programs: ProgramsService,
     private readonly eventsAdmin: EventsAdminService,
+    private readonly phases: PhasesService,
   ) {}
 
   // ── Programs ─────────────────────────────────────────────────────────────
@@ -238,5 +244,63 @@ export class ProgramsController {
   @Roles('admin')
   eventEnrollments(@Param('id', UuidPipe) id: string) {
     return this.eventsAdmin.enrollmentsOf(id);
+  }
+
+  // ── Session phases ───────────────────────────────────────────────────────
+
+  @Get('events/:id/phases')
+  @Roles('admin')
+  @ApiOperation({ summary: "A session's phases with lead names" })
+  eventPhases(@Param('id', UuidPipe) id: string) {
+    return this.phases.listByEvent(id);
+  }
+
+  @Post('events/:id/phases')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Add a phase — the session status becomes phase-derived' })
+  addPhase(
+    @CurrentUser() user: AuthPrincipal,
+    @Param('id', UuidPipe) id: string,
+    @Body() dto: CreatePhaseDto,
+  ) {
+    return this.phases.create(user, id, dto);
+  }
+
+  @Patch('phases/:id')
+  @Roles('admin')
+  updatePhase(@Param('id', UuidPipe) id: string, @Body() dto: UpdatePhaseDto) {
+    return this.phases.update(id, dto);
+  }
+
+  @Delete('phases/:id')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Remove an untouched upcoming phase' })
+  removePhase(@CurrentUser() user: AuthPrincipal, @Param('id', UuidPipe) id: string) {
+    return this.phases.remove(user, id);
+  }
+
+  @Post('phases/:id/start')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Mark work on a phase as started (session goes inprogress)' })
+  startPhase(@CurrentUser() user: AuthPrincipal, @Param('id', UuidPipe) id: string) {
+    return this.phases.start(user, id);
+  }
+
+  @Post('phases/:id/complete')
+  @Roles('admin')
+  @ApiOperation({ summary: "Mark the Parinaam side complete — partner-owned phases need the lead's mark or an override" })
+  completePhase(@CurrentUser() user: AuthPrincipal, @Param('id', UuidPipe) id: string) {
+    return this.phases.completeParinaamSide(user, id);
+  }
+
+  @Post('phases/:id/override')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Force a phase status with a reason — audited; may revert a completed session' })
+  overridePhase(
+    @CurrentUser() user: AuthPrincipal,
+    @Param('id', UuidPipe) id: string,
+    @Body() dto: OverridePhaseDto,
+  ) {
+    return this.phases.override(user, id, dto);
   }
 }

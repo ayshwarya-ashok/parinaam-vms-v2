@@ -216,13 +216,15 @@ export function ActivityDetail() {
                 <TableCell>
                   <StatusPill status={e.status} />
                   <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary', mt: 0.25 }}>
-                    {e.status === 'draft'
-                      ? 'staff only'
-                      : e.status === 'upcoming'
-                        ? 'open to volunteers'
-                        : e.status === 'completed'
-                          ? 'hours logged'
-                          : ''}
+                    {e.phase_total > 0
+                      ? `${e.phases_completed}/${e.phase_total} phases`
+                      : e.status === 'draft'
+                        ? 'staff only'
+                        : e.status === 'upcoming'
+                          ? 'open to volunteers'
+                          : e.status === 'completed'
+                            ? 'hours logged'
+                            : ''}
                   </Typography>
                 </TableCell>
                 <TableCell align="right">
@@ -243,7 +245,7 @@ export function ActivityDetail() {
                         </Button>
                       </Tooltip>
                     )}
-                    {e.status === 'upcoming' && String(e.date).slice(0, 10) <= todayIso && (
+                    {e.status === 'upcoming' && e.phase_total === 0 && String(e.date).slice(0, 10) <= todayIso && (
                       <Button
                         size="small"
                         variant="pill"
@@ -254,7 +256,7 @@ export function ActivityDetail() {
                         ✓ Mark completed
                       </Button>
                     )}
-                    {(e.status === 'draft' || e.status === 'upcoming') && (
+                    {(e.status === 'draft' || e.status === 'upcoming' || e.status === 'inprogress') && (
                       <>
                         <Button
                           size="small"

@@ -62,7 +62,7 @@ export function AdminDashboard() {
           <StatTile
             label="Upcoming sessions"
             value={s?.events_upcoming ?? '—'}
-            sub={s ? `${s.events_conducted} completed` : undefined}
+            sub={s ? `${s.events_inprogress > 0 ? `${s.events_inprogress} in progress · ` : ''}${s.events_conducted} completed` : undefined}
           />
         </Grid>
         <Grid size={{ xs: 6, sm: 4, md: 2 }}>

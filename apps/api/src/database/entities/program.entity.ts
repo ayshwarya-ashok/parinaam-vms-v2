@@ -14,7 +14,7 @@ import { Coordinator } from './people.entity';
 export type ProgramStatus = 'draft' | 'active' | 'discontinued';
 export type ActivityStatus = 'active' | 'discontinued';
 export type ActivityType = 'In person' | 'Online';
-export type EventStatus = 'draft' | 'upcoming' | 'completed' | 'cancelled';
+export type EventStatus = 'draft' | 'upcoming' | 'inprogress' | 'completed' | 'cancelled';
 
 /**
  * A long-running initiative. Has no dates.
@@ -192,7 +192,7 @@ export class EventOccurrence {
   @JoinColumn({ name: 'coordinator_id' })
   coordinator!: Coordinator;
 
-  @Column({ type: 'enum', enumName: 'event_status', enum: ['draft', 'upcoming', 'completed', 'cancelled'], default: 'draft' })
+  @Column({ type: 'enum', enumName: 'event_status', enum: ['draft', 'upcoming', 'inprogress', 'completed', 'cancelled'], default: 'draft' })
   status!: EventStatus;
 
   @Column({ name: 'cancelled_at', type: 'timestamptz', nullable: true })

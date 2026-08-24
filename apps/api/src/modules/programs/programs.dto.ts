@@ -92,6 +92,37 @@ export class UpdateEventDto {
   communityIds?: string[];
 }
 
+export class CreatePhaseDto {
+  @IsString() @MaxLength(255) name!: string;
+  @IsOptional() @IsString() @MaxLength(4000) description?: string;
+  @IsOptional() @IsIn(['parinaam', 'partner', 'collab'])
+  responsibility?: 'parinaam' | 'partner' | 'collab';
+  @IsDateString() startDate!: string;
+  /** Omitted = single-day phase (endDate === startDate). */
+  @IsOptional() @IsDateString() endDate?: string;
+  @IsOptional() @Matches(UUID_PATTERN, { message: 'must be a UUID' })
+  partnerLeadVolunteerId?: string;
+  @IsOptional() @IsInt() @Min(0) sortOrder?: number;
+}
+
+export class UpdatePhaseDto {
+  @IsOptional() @IsString() @MaxLength(255) name?: string;
+  @IsOptional() @IsString() @MaxLength(4000) description?: string;
+  @IsOptional() @IsIn(['parinaam', 'partner', 'collab'])
+  responsibility?: 'parinaam' | 'partner' | 'collab';
+  @IsOptional() @IsDateString() startDate?: string;
+  @IsOptional() @IsDateString() endDate?: string;
+  /** Empty string clears the lead. */
+  @IsOptional() @IsString() partnerLeadVolunteerId?: string;
+  @IsOptional() @IsInt() @Min(0) sortOrder?: number;
+}
+
+export class OverridePhaseDto {
+  @IsIn(['upcoming', 'inprogress', 'completed'])
+  status!: 'upcoming' | 'inprogress' | 'completed';
+  @IsString() @MaxLength(2000) reason!: string;
+}
+
 export class CancelEventDto {
   @IsOptional() @IsString() @MaxLength(2000) reason?: string;
 }

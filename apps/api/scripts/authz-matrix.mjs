@@ -84,6 +84,13 @@ const MATRIX = [
   ['GET',    `/communities/${UUID}`,                    'D', 'D', 'A'],
   ['PATCH',  `/communities/${UUID}`,                    'D', 'D', 'A'],
   ['GET',    `/communities/${UUID}/sessions`,           'D', 'D', 'A'],
+  ['GET',    `/events/${UUID}/phases`,                  'D', 'D', 'A'],
+  ['POST',   `/events/${UUID}/phases`,                  'D', 'D', 'A'],
+  ['PATCH',  `/phases/${UUID}`,                         'D', 'D', 'A'],
+  ['DELETE', `/phases/${UUID}`,                         'D', 'D', 'A'],
+  ['POST',   `/phases/${UUID}/start`,                   'D', 'D', 'A'],
+  ['POST',   `/phases/${UUID}/complete`,                'D', 'D', 'A'],
+  ['POST',   `/phases/${UUID}/override`,                'D', 'D', 'A'],
   // shared-but-authorized-inside (guard admits both roles; ownership decides)
   ['GET',    `/certificates/${UUID}/download`,          'D', 'A', 'A'],
 ];

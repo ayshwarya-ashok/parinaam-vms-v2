@@ -47,6 +47,7 @@ export class ProgramsService {
       `SELECT a.program_id,
               COUNT(DISTINCT a.id) FILTER (WHERE a.status = 'active')::int AS active_activities,
               COUNT(e.id) FILTER (WHERE e.status = 'upcoming')::int       AS upcoming_events,
+              COUNT(e.id) FILTER (WHERE e.status = 'inprogress')::int     AS inprogress_events,
               COUNT(e.id) FILTER (WHERE e.status = 'completed')::int      AS completed_events,
               MIN(e.date) FILTER (WHERE e.status = 'upcoming' AND e.date >= CURRENT_DATE) AS next_event_date
        FROM activities a
@@ -71,6 +72,7 @@ export class ProgramsService {
           : null,
         activeActivities: Number(byProgram.get(p.id)?.active_activities ?? 0),
         upcomingEvents: Number(byProgram.get(p.id)?.upcoming_events ?? 0),
+        inprogressEvents: Number(byProgram.get(p.id)?.inprogress_events ?? 0),
         completedEvents: Number(byProgram.get(p.id)?.completed_events ?? 0),
         nextEventDate: byProgram.get(p.id)?.next_event_date ?? null,
         createdAt: p.createdAt,
@@ -89,8 +91,9 @@ export class ProgramsService {
       `SELECT a.id, a.code, a.name, a.description, a.type, a.skill_required,
               a.default_duration_hours, a.default_max_slots, a.default_location,
               a.status, a.sort_order, a.discontinue_reason,
-              COUNT(e.id) FILTER (WHERE e.status = 'upcoming')::int  AS upcoming_events,
-              COUNT(e.id) FILTER (WHERE e.status = 'completed')::int AS completed_events
+              COUNT(e.id) FILTER (WHERE e.status = 'upcoming')::int   AS upcoming_events,
+              COUNT(e.id) FILTER (WHERE e.status = 'inprogress')::int AS inprogress_events,
+              COUNT(e.id) FILTER (WHERE e.status = 'completed')::int  AS completed_events
        FROM activities a
        LEFT JOIN events e ON e.activity_id = a.id
        WHERE a.program_id = $1
@@ -273,7 +276,10 @@ export class ProgramsService {
     const events = await this.dataSource.query(
       `SELECT e.id, e.code, e.name, e.date, e.start_time, e.duration_hours, e.location,
               e.city, e.max_slots, e.status, c.name AS coordinator_name,
-              cap.enrolled_count, cap.waitlist_count, cap.spots_left, cap.is_enrollable
+              cap.enrolled_count, cap.waitlist_count, cap.spots_left, cap.is_enrollable,
+              (SELECT COUNT(*)::int FROM event_phases ph WHERE ph.event_id = e.id) AS phase_total,
+              (SELECT COUNT(*)::int FROM event_phases ph
+               WHERE ph.event_id = e.id AND ph.status = 'completed') AS phases_completed
        FROM events e
        JOIN coordinators c ON c.id = e.coordinator_id
        JOIN v_event_capacity cap ON cap.event_id = e.id
