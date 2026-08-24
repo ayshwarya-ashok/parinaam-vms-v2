@@ -214,6 +214,7 @@ The supplied `parinaam_logo.svg` became the single source of truth for the mark:
 
 The largest post-MVP change: a client refinement (2026-08-24) reshaping what a "session" can
 be. Delivered as four independently verified increments, one migration each (V013–V015).
+Full design record: `08-phased-sessions-and-communities.md`.
 
 **⚖ Product decisions (client's answers to the five design questions):**
 1. Partner-side phase completion is marked by a **named lead**, never "anyone enrolled".

@@ -340,10 +340,12 @@ Each top-level directory has its own README with the conventions that matter ins
 
 1. **`docs/07-post-mvp-refinements.md`** — what changed after the MVP and why; the product
    decisions and app-wide conventions live here.
-2. `docs/01-design-document.md` — the domain model (§2), business rules (§10), email
+2. `docs/08-phased-sessions-and-communities.md` — the client refinement of Aug 2026: phases,
+   communities, visit-level attendance, and the demo scenarios for all four client programmes.
+3. `docs/01-design-document.md` — the domain model (§2), business rules (§10), email
    architecture (§12).
-3. `docs/04-api-specification.md` — every endpoint; live Swagger at `localhost:3001/api/docs`.
-4. `docs/runbooks/` — deploy, restore (rehearsed and timed), incident response.
+4. `docs/04-api-specification.md` — every endpoint; live Swagger at `localhost:3001/api/docs`.
+5. `docs/runbooks/` — deploy, restore (rehearsed and timed), incident response.
 
 ## Email, in one paragraph
 
