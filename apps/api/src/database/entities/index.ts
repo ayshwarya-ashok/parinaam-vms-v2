@@ -48,6 +48,7 @@ import {
   ScheduledReport,
 } from './ops.entity';
 import { ReferenceValue } from './reference.entity';
+import { BeneficiaryCommunity, EventCommunity } from './community.entity';
 
 export * from './identity.entity';
 export * from './people.entity';
@@ -58,6 +59,7 @@ export * from './field.entity';
 export * from './recognition.entity';
 export * from './ops.entity';
 export * from './reference.entity';
+export * from './community.entity';
 
 /**
  * Every entity, in one array. Registered on the TypeORM data source and
@@ -82,6 +84,8 @@ export const ALL_ENTITIES = [
   Activity,
   EventOccurrence,
   Announcement,
+  BeneficiaryCommunity,
+  EventCommunity,
   // training
   Training,
   TrainingMaterial,

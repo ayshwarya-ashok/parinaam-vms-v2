@@ -131,6 +131,57 @@ export const useCoordinators = () =>
     queryFn: async () => (await api.get<Coordinator[]>('/coordinators')).data,
   });
 
+export interface CommunityRow {
+  id: string;
+  name: string;
+  description: string | null;
+  city: string | null;
+  status: 'active' | 'archived';
+  upcoming_sessions: number;
+  completed_sessions: number;
+  draft_sessions: number;
+}
+
+export interface CommunitySessionRow {
+  id: string;
+  code: string;
+  name: string;
+  date: string;
+  start_time: string;
+  duration_hours: string;
+  location: string | null;
+  status: 'draft' | 'upcoming' | 'completed' | 'cancelled';
+  activity_id: string;
+  activity_name: string;
+  program_id: string;
+  program_name: string;
+  enrolled_count: number;
+  max_slots: number;
+}
+
+export const useCommunities = (includeArchived = false) =>
+  useQuery({
+    queryKey: ['communities', includeArchived],
+    queryFn: async () =>
+      (
+        await api.get<{ data: CommunityRow[] }>('/communities', {
+          params: { includeArchived: includeArchived ? 'true' : undefined },
+        })
+      ).data.data,
+  });
+
+export const useCommunitySessions = (id: string | undefined, status?: string) =>
+  useQuery({
+    queryKey: ['community-sessions', id, status ?? 'all'],
+    queryFn: async () =>
+      (
+        await api.get<{ data: CommunitySessionRow[] }>(`/communities/${id}/sessions`, {
+          params: { status },
+        })
+      ).data.data,
+    enabled: !!id,
+  });
+
 export const useTrainingsCatalog = () =>
   useQuery({
     queryKey: ['trainings', 'catalog'],

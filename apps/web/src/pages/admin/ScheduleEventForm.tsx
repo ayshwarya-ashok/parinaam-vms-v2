@@ -1,5 +1,6 @@
 import {
   Alert,
+  Autocomplete,
   Box,
   Button,
   MenuItem,
@@ -13,7 +14,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useActivity, useCoordinators } from '@/api/admin';
+import { useActivity, useCommunities, useCoordinators, type CommunityRow } from '@/api/admin';
 import { api, asApiError } from '@/api/client';
 import { PageShell } from '@/components';
 
@@ -29,8 +30,10 @@ export function ScheduleEventForm() {
 
   const { data: activity } = useActivity(activityId);
   const { data: coordinators = [] } = useCoordinators();
+  const { data: communities = [] } = useCommunities();
 
   const [mode, setMode] = useState<'single' | 'series'>('single');
+  const [selectedCommunities, setSelectedCommunities] = useState<CommunityRow[]>([]);
   const [form, setForm] = useState({
     name: '',
     date: '',
@@ -66,6 +69,10 @@ export function ScheduleEventForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (mode === 'single' && form.publishNow && selectedCommunities.length === 0) {
+      setError('Pick at least one beneficiary community before publishing — or save as a draft.');
+      return;
+    }
     setBusy(true);
     const common = {
       startTime: form.startTime,
@@ -74,6 +81,8 @@ export function ScheduleEventForm() {
       city: form.city || undefined,
       maxSlots: form.maxSlots ? Number(form.maxSlots) : undefined,
       coordinatorId: form.coordinatorId || undefined,
+      communityIds:
+        selectedCommunities.length > 0 ? selectedCommunities.map((c) => c.id) : undefined,
     };
     try {
       if (mode === 'single') {
@@ -237,6 +246,25 @@ export function ScheduleEventForm() {
           />
           <TextField label="City" value={form.city} onChange={(e) => set('city', e.target.value)} />
         </Box>
+        <Autocomplete
+          multiple
+          options={communities}
+          getOptionLabel={(c) => (c.city ? `${c.name} — ${c.city}` : c.name)}
+          isOptionEqualToValue={(a, b) => a.id === b.id}
+          value={selectedCommunities}
+          onChange={(_, value) => {
+            setError(null);
+            setSelectedCommunities(value);
+          }}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Beneficiary communities"
+              helperText="Every published session must serve at least one community. Drafts can be linked later."
+            />
+          )}
+        />
+
         <TextField
           select
           label="Coordinator"

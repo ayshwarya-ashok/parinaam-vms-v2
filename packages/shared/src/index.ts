@@ -33,8 +33,11 @@ export const BUSINESS_ERROR_CODES = [
   'ALREADY_SIGNED',
   'CONSENT_INCOMPLETE',
   'CONSENT_REQUIRED',
-  // programmes / activities / sessions
+  // programmes / activities / sessions / communities
+  'COMMUNITY_INVALID',
+  'COMMUNITY_REQUIRED',
   'COORDINATOR_REQUIRED',
+  'NAME_TAKEN',
   'EMPTY_SERIES',
   'EVENT_CANCELLED',
   'NOT_DRAFT',

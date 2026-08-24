@@ -39,10 +39,63 @@ export class EventsAdminService {
     private readonly templates: TemplateService,
   ) {}
 
+  // ── Beneficiary communities ────────────────────────────────────────────────
+
+  /**
+   * Every published session serves at least one beneficiary community. The
+   * rule is enforced here (create-as-upcoming, publish, and edits that would
+   * empty the links) because a cross-table CHECK cannot express it.
+   */
+  private async setCommunities(eventId: string, communityIds: string[]): Promise<void> {
+    if (communityIds.length > 0) {
+      const found: Array<{ id: string }> = await this.dataSource.query(
+        `SELECT id FROM beneficiary_communities WHERE id = ANY($1) AND status = 'active'`,
+        [communityIds],
+      );
+      if (found.length !== communityIds.length) {
+        throw new BusinessException(
+          'COMMUNITY_INVALID',
+          'One or more beneficiary communities are unknown or archived.',
+          400,
+        );
+      }
+    }
+    await this.dataSource.transaction(async (mgr) => {
+      await mgr.query('DELETE FROM event_communities WHERE event_id = $1', [eventId]);
+      for (const cid of communityIds) {
+        await mgr.query(
+          'INSERT INTO event_communities (event_id, community_id) VALUES ($1, $2)',
+          [eventId, cid],
+        );
+      }
+    });
+  }
+
+  private async assertHasCommunity(eventId: string): Promise<void> {
+    const [{ count }] = await this.dataSource.query(
+      'SELECT COUNT(*)::int AS count FROM event_communities WHERE event_id = $1',
+      [eventId],
+    );
+    if (Number(count) === 0) {
+      throw new BusinessException(
+        'COMMUNITY_REQUIRED',
+        'Link at least one beneficiary community before this session goes live.',
+        400,
+      );
+    }
+  }
+
   // ── Scheduling ─────────────────────────────────────────────────────────────
 
   /** Unspecified fields fall back to the activity's defaults. */
   async create(principal: AuthPrincipal, activityId: string, dto: CreateEventDto) {
+    if (dto.status === 'upcoming' && !dto.communityIds?.length) {
+      throw new BusinessException(
+        'COMMUNITY_REQUIRED',
+        'Link at least one beneficiary community before this session goes live.',
+        400,
+      );
+    }
     const activity = await this.activities.findOne({
       where: { id: activityId },
       relations: { program: true },
@@ -76,6 +129,7 @@ export class EventsAdminService {
         createdBy: principal.sub,
       }),
     );
+    if (dto.communityIds?.length) await this.setCommunities(event.id, dto.communityIds);
     return this.adminDetail(event.id);
   }
 
@@ -109,6 +163,7 @@ export class EventsAdminService {
           maxSlots: dto.maxSlots,
           coordinatorId: dto.coordinatorId,
           status: 'draft',
+          communityIds: dto.communityIds,
         }),
       );
     }
@@ -132,6 +187,13 @@ export class EventsAdminService {
     );
     if (!row) throw new NotFoundException('Event not found');
     delete row.time_range;
+    row.communities = await this.dataSource.query(
+      `SELECT bc.id, bc.name, bc.status
+       FROM event_communities ec
+       JOIN beneficiary_communities bc ON bc.id = ec.community_id
+       WHERE ec.event_id = $1 ORDER BY bc.name`,
+      [id],
+    );
     return row;
   }
 
@@ -155,6 +217,17 @@ export class EventsAdminService {
       ...(dto.coordinatorId !== undefined && { coordinatorId: dto.coordinatorId }),
     });
     await this.events.save(event);
+
+    if (dto.communityIds !== undefined) {
+      if (event.status === 'upcoming' && dto.communityIds.length === 0) {
+        throw new BusinessException(
+          'COMMUNITY_REQUIRED',
+          'A live session must keep at least one beneficiary community.',
+          400,
+        );
+      }
+      await this.setCommunities(id, dto.communityIds);
+    }
 
     /*
      * New seats go to the queue, not to whoever refreshes fastest.
@@ -253,6 +326,7 @@ export class EventsAdminService {
     if (event.status !== 'draft') {
       throw new BusinessException('NOT_DRAFT', 'Only a draft occurrence can be published.');
     }
+    await this.assertHasCommunity(id);
     event.status = 'upcoming';
     await this.events.save(event);
     return this.adminDetail(id);

@@ -13,6 +13,8 @@ import { ProgramDetail } from '@/pages/admin/ProgramDetail';
 import { ProgramForm } from '@/pages/admin/ProgramForm';
 import { ActivityForm } from '@/pages/admin/ActivityForm';
 import { ActivityDetail } from '@/pages/admin/ActivityDetail';
+import { CommunitiesPage } from '@/pages/admin/CommunitiesPage';
+import { CommunityDetail } from '@/pages/admin/CommunityDetail';
 import { ScheduleEventForm } from '@/pages/admin/ScheduleEventForm';
 import { EditEventForm } from '@/pages/admin/EditEventForm';
 import { VolunteerDirectory } from '@/pages/admin/VolunteerDirectory';
@@ -56,6 +58,7 @@ const volunteerNav = [
 const adminNav = [
   { label: 'Dashboard', to: '/admin/dashboard' },
   { label: 'Programs', to: '/admin/programs' },
+  { label: 'Communities', to: '/admin/communities' },
   { label: 'Calendar', to: '/admin/calendar' },
   { label: 'Trainings', to: '/admin/trainings' },
   { label: 'Volunteers', to: '/admin/volunteers' },
@@ -142,6 +145,14 @@ export const router = createBrowserRouter([
       },
       { path: 'activities/:id', element: <ActivityDetail />, handle: { crumb: 'Activity' } },
       { path: 'activities/:id/edit', element: <ActivityForm />, handle: { crumb: 'Edit Activity' } },
+      {
+        path: 'communities',
+        handle: { crumb: 'Communities' },
+        children: [
+          { index: true, element: <CommunitiesPage /> },
+          { path: ':id', element: <CommunityDetail />, handle: { crumb: 'Community' } },
+        ],
+      },
       { path: 'activities/:activityId/events/new', element: <ScheduleEventForm />, handle: { crumb: 'Schedule' } },
       { path: 'events/:id/edit', element: <EditEventForm />, handle: { crumb: 'Edit Occurrence' } },
       { path: 'calendar', element: <CalendarPage />, handle: { crumb: 'Calendar' } },

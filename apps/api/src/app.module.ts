@@ -13,6 +13,7 @@ import { AttendanceModule } from './modules/attendance/attendance.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CertificatesModule } from './modules/certificates/certificates.module';
+import { CommunitiesModule } from './modules/communities/communities.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
 import { HealthModule } from './modules/health/health.module';
@@ -74,6 +75,7 @@ const isProduction = process.env.NODE_ENV === 'production';
     EnrollmentsModule,
     AttendanceModule,
     CertificatesModule,
+    CommunitiesModule,
     FeedbackModule,
     AnalyticsModule,
     ReportsModule,

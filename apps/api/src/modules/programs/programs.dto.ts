@@ -58,6 +58,9 @@ export class CreateEventDto {
   @IsOptional() @IsInt() @Min(1) maxSlots?: number;
   @IsOptional() @Matches(UUID_PATTERN, { message: 'must be a UUID' }) coordinatorId?: string;
   @IsOptional() @IsIn(['draft', 'upcoming']) status?: 'draft' | 'upcoming';
+  @IsOptional() @IsArray() @ArrayUnique()
+  @Matches(UUID_PATTERN, { each: true, message: 'each must be a UUID' })
+  communityIds?: string[];
 }
 
 export class CreateEventSeriesDto {
@@ -70,6 +73,9 @@ export class CreateEventSeriesDto {
   @IsOptional() @IsString() @MaxLength(100) city?: string;
   @IsOptional() @IsInt() @Min(1) maxSlots?: number;
   @IsOptional() @Matches(UUID_PATTERN, { message: 'must be a UUID' }) coordinatorId?: string;
+  @IsOptional() @IsArray() @ArrayUnique()
+  @Matches(UUID_PATTERN, { each: true, message: 'each must be a UUID' })
+  communityIds?: string[];
 }
 
 export class UpdateEventDto {
@@ -81,6 +87,9 @@ export class UpdateEventDto {
   @IsOptional() @IsString() @MaxLength(100) city?: string;
   @IsOptional() @IsInt() @Min(1) maxSlots?: number;
   @IsOptional() @Matches(UUID_PATTERN, { message: 'must be a UUID' }) coordinatorId?: string;
+  @IsOptional() @IsArray() @ArrayUnique()
+  @Matches(UUID_PATTERN, { each: true, message: 'each must be a UUID' })
+  communityIds?: string[];
 }
 
 export class CancelEventDto {

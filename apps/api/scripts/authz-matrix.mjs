@@ -79,6 +79,11 @@ const MATRIX = [
   ['POST',   `/reports/scheduled/${UUID}/run-now`,      'D', 'D', 'A'],
   ['GET',    '/attendance/dispatches',                  'D', 'D', 'A'],
   ['GET',    '/audit-logs',                             'D', 'D', 'A'],
+  ['GET',    '/communities',                            'D', 'D', 'A'],
+  ['POST',   '/communities',                            'D', 'D', 'A'],
+  ['GET',    `/communities/${UUID}`,                    'D', 'D', 'A'],
+  ['PATCH',  `/communities/${UUID}`,                    'D', 'D', 'A'],
+  ['GET',    `/communities/${UUID}/sessions`,           'D', 'D', 'A'],
   // shared-but-authorized-inside (guard admits both roles; ownership decides)
   ['GET',    `/certificates/${UUID}/download`,          'D', 'A', 'A'],
 ];

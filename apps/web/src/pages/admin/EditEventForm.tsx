@@ -1,5 +1,6 @@
 import {
   Alert,
+  Autocomplete,
   Box,
   Button,
   MenuItem,
@@ -10,7 +11,7 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
-import { useCoordinators } from '@/api/admin';
+import { useCommunities, useCoordinators } from '@/api/admin';
 import { api, asApiError } from '@/api/client';
 import { useDynamicCrumbs } from '@/app/breadcrumbs';
 import { isUnchanged, useToast } from '@/app/toast';
@@ -35,6 +36,12 @@ interface EventAdminDetail {
   program_name: string;
   enrolled_count: number;
   waitlist_count: number;
+  communities: Array<{ id: string; name: string; status: string }>;
+}
+
+interface CommunityOpt {
+  id: string;
+  name: string;
 }
 
 /**
@@ -83,6 +90,10 @@ export function EditEventForm() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const { data: allCommunities = [] } = useCommunities();
+  const [selectedCommunities, setSelectedCommunities] = useState<CommunityOpt[]>([]);
+  const [originalCommunityIds, setOriginalCommunityIds] = useState<string[]>([]);
+
   useEffect(() => {
     if (!event) return;
     const loaded = {
@@ -97,6 +108,9 @@ export function EditEventForm() {
     };
     setForm(loaded);
     setOriginal(loaded);
+    const linked = (event.communities ?? []).map((c) => ({ id: c.id, name: c.name }));
+    setSelectedCommunities(linked);
+    setOriginalCommunityIds(linked.map((c) => c.id).sort());
   }, [event]);
 
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => {
@@ -154,8 +168,18 @@ export function EditEventForm() {
       return;
     }
 
+    const communityIds = selectedCommunities.map((c) => c.id).sort();
+    const communitiesChanged =
+      communityIds.length !== originalCommunityIds.length ||
+      communityIds.some((v, i) => v !== originalCommunityIds[i]);
+
+    if (event.status === 'upcoming' && communityIds.length === 0) {
+      setError('A live session must keep at least one beneficiary community.');
+      return;
+    }
+
     // Saying "saved" when nothing moved teaches people the message means nothing.
-    if (original && isUnchanged(form, original)) {
+    if (original && isUnchanged(form, original) && !communitiesChanged) {
       toast.noChanges();
       return;
     }
@@ -163,6 +187,7 @@ export function EditEventForm() {
     setBusy(true);
     try {
       await api.patch(`/events/${id}`, {
+        ...(communitiesChanged && { communityIds }),
         name: form.name || undefined,
         date: form.date,
         startTime: form.startTime,
@@ -176,6 +201,8 @@ export function EditEventForm() {
       void queryClient.invalidateQueries({ queryKey: ['event-admin', id] });
       void queryClient.invalidateQueries({ queryKey: ['session-record', id] });
       void queryClient.invalidateQueries({ queryKey: ['dispatches'] });
+      void queryClient.invalidateQueries({ queryKey: ['communities'] });
+      void queryClient.invalidateQueries({ queryKey: ['community-sessions'] });
       toast.success('Session updated');
       navigate(`/admin/activities/${event.activity_id}`);
     } catch (err) {
@@ -271,6 +298,25 @@ export function EditEventForm() {
           />
           <TextField label="City" value={form.city} onChange={(e) => set('city', e.target.value)} />
         </Box>
+
+        <Autocomplete
+          multiple
+          options={allCommunities.map((c) => ({ id: c.id, name: c.city ? `${c.name} — ${c.city}` : c.name }))}
+          getOptionLabel={(c) => c.name}
+          isOptionEqualToValue={(a, b) => a.id === b.id}
+          value={selectedCommunities}
+          onChange={(_, value) => {
+            setError(null);
+            setSelectedCommunities(value);
+          }}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Beneficiary communities"
+              helperText="A live session must serve at least one community."
+            />
+          )}
+        />
 
         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 2 }}>
           <TextField
