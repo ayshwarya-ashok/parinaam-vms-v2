@@ -113,6 +113,8 @@ the partner lead's final mark auto-completing it.
 
 ## 5. Alignment with the client document — and what remains
 
+> The full gap register with per-item status lives in `09-client-doc-impact-analysis.md`.
+
 The refinement closes the two **structural** gaps from the original impact analysis: the
 Chote Kadam phase model (G1) and beneficiary communities (G4). The remaining gaps are
 **workflow/communication** items, unchanged in scope and still tracked:
