@@ -82,6 +82,9 @@ the box** (reference date 2026-08-18):
 - One registration left **pending** (`anita.rao@example.org`) so the approval flow has a subject
 - Two issued certificates (individual + corporate), published testimonials feeding the public page
 - Two sessions on 10 Sep that deliberately **overlap**, for the scheduling-conflict flow
+- **The four client-document scenarios** (S005): AAP Exposure Visit and Read to Rise, the
+  **seven-phase Chote Kadam mentor journey** (in progress, CSR volunteer as named lead, one
+  logged visit), and the Snow City outing — each linked to a beneficiary community
 - Real PDF training materials — run once after first boot:
 
 ```bash

@@ -97,15 +97,15 @@ state other than their own attendance — guarded accordingly and audited as
 
 ## 4. The four client programmes, live in the demo
 
-Each scenario from the client document exists as real data (created through the admin API, so
-every business rule ran):
+Each scenario from the client document ships as seed data (**S005**), so every fresh install
+has them; they were first created through the admin API so every business rule ran:
 
 | Client programme | In the VMS | Demo data |
 |---|---|---|
-| **Exposure Visit** (AAP) | Single-day session; host-org employees volunteer as CSR guides | *Academic Adoption Program (AAP)* → *Exposure Visit* → **EVT-2026-0026** "TechCorp Workplace Exposure Visit" (10 Sept, upcoming, DJ Halli community) |
-| **Read to Rise** (AAP / Goodhearts) | Quarterly sessions per community | *AAP* → *Read to Rise* → **EVT-2026-0027** Q2 (14 Aug, **completed**) and **EVT-2026-0028** Q3 (13 Nov, upcoming), both serving *DJ Halli Learning Community* |
-| **Chote Kadam** (Ujjivan mentors) | One session carrying the **seven-phase mentor journey**, mixed ownership, CSR volunteer as named lead | *Chote Kadam* → *Community Infrastructure Mentorship* → **EVT-2026-0029** "Anganwadi Renovation — Hosur Road": phases 1–7 exactly as the document (Onboarding → … → Recognition), phase 1 complete, phase 2 **in progress** with a logged mentor visit (3h), session **inprogress**, serving *Hosur Road Settlement (Ujjivan)* |
-| **Activity-Based Outing** (Snow City) | Single-day sponsored outing, corporate buddies | *Activity-Based Volunteering* → *Corporate Day Outing* → **EVT-2026-0030** "Snow City Outing — TechCorp" (26 Sept, upcoming) |
+| **Exposure Visit** (AAP) | Single-day session; host-org employees volunteer as CSR guides | *Academic Adoption Program (AAP)* → *Exposure Visit* → **EVT-2026-0201** "TechCorp Workplace Exposure Visit" (10 Sept, upcoming, DJ Halli community) |
+| **Read to Rise** (AAP / Goodhearts) | Quarterly sessions per community | *AAP* → *Read to Rise* → **EVT-2026-0202** Q2 (14 Aug, **completed**) and **EVT-2026-0203** Q3 (13 Nov, upcoming), both serving *DJ Halli Learning Community* |
+| **Chote Kadam** (Ujjivan mentors) | One session carrying the **seven-phase mentor journey**, mixed ownership, CSR volunteer as named lead | *Chote Kadam* → *Community Infrastructure Mentorship* → **EVT-2026-0204** "Anganwadi Renovation — Hosur Road": phases 1–7 exactly as the document (Onboarding → … → Recognition), phase 1 complete, phase 2 **in progress** with a logged mentor visit (3h), session **inprogress**, serving *Hosur Road Settlement (Ujjivan)* |
+| **Activity-Based Outing** (Snow City) | Single-day sponsored outing, corporate buddies | *Activity-Based Volunteering* → *Corporate Day Outing* → **EVT-2026-0205** "Snow City Outing — TechCorp" (26 Sept, upcoming) |
 
 There is also the original walkthrough example **Lakefront Sapling Drive** (Green Bengaluru) —
 a 3-phase session driven through the full lifecycle including overrides, a revert, visits, and
