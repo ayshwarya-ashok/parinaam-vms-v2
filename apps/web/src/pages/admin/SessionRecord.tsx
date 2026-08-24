@@ -170,6 +170,7 @@ export function SessionRecord() {
       ? [
           { label: 'Field Execution', to: '/admin/field-execution' },
           { label: data.event.program_name, to: `/admin/programs/${data.event.program_id}` },
+          { label: data.event.activity_name, to: `/admin/activities/${data.event.activity_id}` },
         ]
       : null,
   );
