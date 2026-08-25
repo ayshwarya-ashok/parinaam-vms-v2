@@ -31,8 +31,8 @@ src/
                           optional memento note at issue time
     feedback/             per-occurrence ratings, tags, testimonial publishing (BR-16),
                           volunteer photo uploads (EXIF-stripped, owner-guarded)
-    analytics/ reports/     dashboard payload; CSV/Excel/PDF exports (incl. the annual calendar);
-                            scheduled reports + dispatcher
+    analytics/ reports/   dashboard payload; CSV/Excel/PDF exports (incl. the annual calendar);
+                          scheduled reports + dispatcher
     notifications/        the transactional outbox, Handlebars templates, n8n client, webhooks
     storage/              local-disk file store + HMAC-signed URLs (/files/signed)
     public/ reference/    unauthenticated impact aggregates; option catalogs for forms
