@@ -17,23 +17,28 @@ src/
   assets/                 parinaam-logo.png (embedded into certificate PDFs)
   modules/
     auth/                 login, atomic register, refresh rotation, argon2id (bcrypt upgrades on login)
-    volunteers/           profiles, admin directory, registration review, erasure
+    volunteers/           profiles, admin directory, registration review, erasure,
+                          welcome-back on reactivation, bulk corporate invites
     programs/             programme → activity → event admin, publish/cancel/complete, coordinators,
                           session phases (ownership, marks, audited overrides), pre-session email sweep
     enrollments/          enroll/waitlist/withdraw — BR-05/06/10/11/17 live here; volunteer browse
     communities/          beneficiary communities — admin CRUD, >=1 per published session
     trainings/            catalog, materials, server-scored quizzes, retake/supersede rules
     attendance/           signed link tokens (BR-13), session record, admin corrections, walk-ins,
-                          visit-level records on phased sessions (one per volunteer/phase/day)
-    certificates/         per-programme certificates, pdf-lib renderer, issue/resend/reissue
-    feedback/             per-occurrence ratings, tags, testimonial publishing (BR-16)
-    analytics/ reports/   dashboard payload; CSV/Excel/PDF exports; scheduled reports + dispatcher
+                          visit-level records on phased sessions (one per volunteer/phase/day),
+                          sponsor thank-you pack on completed sessions
+    certificates/         per-programme certificates, pdf-lib renderer, issue/resend/reissue,
+                          optional memento note at issue time
+    feedback/             per-occurrence ratings, tags, testimonial publishing (BR-16),
+                          volunteer photo uploads (EXIF-stripped, owner-guarded)
+    analytics/ reports/     dashboard payload; CSV/Excel/PDF exports (incl. the annual calendar);
+                            scheduled reports + dispatcher
     notifications/        the transactional outbox, Handlebars templates, n8n client, webhooks
     storage/              local-disk file store + HMAC-signed URLs (/files/signed)
     public/ reference/    unauthenticated impact aggregates; option catalogs for forms
     health/ internal/     liveness/readiness + /metrics (Prometheus); dev-only test endpoints
 scripts/
-  authz-matrix.mjs        70 endpoints × 3 roles (210 checks) asserted against the LIVE api — run after route changes
+  authz-matrix.mjs        74 endpoints × 3 roles (222 checks) asserted against the LIVE api — run after route changes
   migrate.ts              apply pending migrations against a running database
 ```
 

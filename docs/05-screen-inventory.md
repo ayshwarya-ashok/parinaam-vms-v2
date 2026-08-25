@@ -147,9 +147,12 @@ admin does not assume volunteers have been told.
 
 Existing screens grew after the phased-sessions refinement (`08-phased-sessions-and-communities.md`):
 the session record gained the **phases panel** (add/edit/start/complete/override, per-phase
-visit log) and **pre-session email re-send buttons**; the volunteer session detail gained the
-phase board with **partner-lead marking**; the volunteer dashboard lists open phase-lead
-responsibilities; the schedule/edit forms carry a mandatory community multi-select.
+visit log), **pre-session email re-send buttons** and a **sponsor-pack dialog** (completed
+sessions); the volunteer session detail gained the phase board with **partner-lead marking**;
+the volunteer dashboard lists open phase-lead responsibilities; the schedule/edit forms carry
+a mandatory community multi-select; the volunteer directory gained **bulk invites** and a
+**welcome-back re-send**; certificate issue asks for the optional **memento note**; the
+feedback form takes **photos**; the Reports page exports the **annual calendar**.
 
 Navigation conventions changed post-MVP: clickable sticky breadcrumbs replaced "← Back"
 buttons everywhere (the last two stragglers removed in Round 11), the nav folds into a

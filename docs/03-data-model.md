@@ -397,9 +397,9 @@ scheduled_reports ──1:M── report_runs
 
 ---
 
-## Schema changes since v1 (V010–V015)
+## Schema changes since v1 (V010–V016)
 
-The body of this document describes the schema as designed (V001–V009, 36 tables). Six
+The body of this document describes the schema as designed (V001–V009, 36 tables). Seven
 migrations landed afterwards; the live schema is **40 tables**.
 
 **V010 — email attachments live on the outbox row.** `email_logs.attachment_url/-name`:
@@ -441,6 +441,12 @@ unique per (event, volunteer) where `phase_id IS NULL`, visit rows are unique pe
 (volunteer, phase, visit_date) and are presence-only by CHECK. The V012 views were rewritten
 so session counts are DISTINCT while hours stay plain SUMs (certificate totals span all
 phases of a session).
+
+**V016 — item-4 close-out.** `certificates.memento_note` (the tangible-gift record noted at
+issue time and mentioned in the certificate email); `photo_source` gains
+`volunteer_feedback` and `event_photos.feedback_id` links a photo to the feedback
+submission that carried it (volunteers may attach up to two EXIF-stripped photos to their
+own feedback).
 
 **Seeds added:** S003 (a fully-worked activity: completed sessions with mixed attendance
 sources, a full upcoming session with a real waitlist, a draft), S004 (completes volunteer

@@ -317,6 +317,14 @@ window — `VISIT_INVALID`; unenrolled volunteers need the explicit `walkIn` fla
 automated T-7/T-1 sends run as a daily worker sweep, idempotent through `email_logs`.
 Refuses completed/cancelled sessions (`NOT_UPCOMING`).
 
+**Item-4 close-out (Round 12)** — *(admin)* `POST /volunteers/invite`
+(`{emails ≤50, organizationId?, note?}` — registered addresses skipped and reported),
+`POST /volunteers/:id/welcome-back` (re-send; the automatic send fires on the
+inactive → active transition), `POST /events/:id/sponsor-pack` (`{email,
+organizationName?}`, completed sessions only), certificate issue accepts `mementoNote`,
+and report type `calendar` (`filters.year`) joins the export registry. *(volunteer)* —
+`POST /feedback/:id/photos` (multipart, ≤2 images, owner-only, EXIF stripped).
+
 New stable error codes: `COMMUNITY_REQUIRED`, `COMMUNITY_INVALID`, `NAME_TAKEN`,
 `PHASED_SESSION`, `PHASE_NOT_YOURS`, `PHASE_ALREADY_MARKED`, `PHASE_LOCKED`,
-`VISIT_INVALID`. Authorization matrix: **70 endpoints × 3 roles = 210 checks**.
+`VISIT_INVALID`. Authorization matrix: **74 endpoints × 3 roles = 222 checks**.

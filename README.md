@@ -210,6 +210,13 @@ its own nav: Dashboard, Events, Calendar, Trainings, Certificates, Feedback, Pro
 - Onboarding proper: the volunteer signs the POCSO/POSH/NDA consent, which moves them
   Onboarding → In Training; passing all mandatory trainings moves them → Active.
 
+- **Bulk corporate invites**: Volunteers → **＋ Invite volunteers** — up to 50 addresses with
+  an optional sponsoring organization and note; already-registered addresses are skipped and
+  reported back.
+- **Welcome-Back**: reactivating an inactive volunteer automatically emails them their
+  previous community's upcoming sessions; every active row has a **✉ Welcome-back** re-send
+  button.
+
 ## 2.4 Activity & scheduling
 
 Admin → **Programs**. The hierarchy is programme → activity → session (dated occurrence):
@@ -266,6 +273,10 @@ Admin → **Field Execution** — one row per session:
 - On **phased** sessions, attendance is logged per **visit** (volunteer + day + hours) under
   each phase; hours add up across phases for certificates. The admin can add any active
   volunteer to a phase mid-session.
+- On a **completed** session, **✉ Send sponsor pack** emails the corporate sponsor the
+  session's outcomes plus 7-day links to its photos.
+- Volunteers can attach up to two **photos to their feedback** (EXIF-stripped, private until
+  an admin publishes them) — they surface on the session record alongside the other evidence.
 
 ## 2.7 Recognition & retention
 
@@ -282,6 +293,9 @@ Admin → **Recognition**:
 - Volunteer side: **Certificates** (wallet + download) and **Feedback** (rate attended
   sessions once each; invitations arrive by email after attendance is recorded).
 
+> Issuing a certificate now asks for an optional **tangible-gift note** (memento, sapling…) —
+> recorded on the certificate and mentioned in the email; the handover itself stays offline.
+
 ## 2.8 Dashboard & reporting
 
 - Admin → **Metrics** — ten live charts and six KPI tiles, all one query, filtered by period
@@ -293,6 +307,10 @@ Admin → **Recognition**:
   without touching the clock. Watch the attachment arrive in Mailpit.
 - Public: **http://localhost:5174/** — the impact page every visitor sees, entirely live-data:
   headline stats, impact numbers, field photos, published testimonials.
+
+> Reports also export the year's annual **volunteering calendar** (every session with its
+> programme, communities and enrolment) as one-click Excel — the Goodhearts planning sheet
+> shared with corporate partners.
 
 ## 2.9 Key workflows to try
 
