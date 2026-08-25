@@ -278,6 +278,34 @@ The client answered the remaining open items from the gap register (`09-client-d
 
 ---
 
+## Round 12 — Item-4 close-out  (`68906ee`, 2026-08-25)
+
+The last of the gap register, built per the client's direction (all emails via the outbox →
+n8n pipeline, all admin re-triggerable from the UI):
+
+- **⚖ decision — Welcome-Back trigger.** Fires on the **inactive → active transition**
+  (event-driven, not quarterly). The email re-allots the returning volunteer by showing their
+  previous community's upcoming sessions; the directory row has a re-send button. (G12)
+- **Bulk corporate invites** — "Invite volunteers" on the directory: up to 50 addresses,
+  optional sponsoring organization and note; already-registered addresses are skipped and
+  reported back; audited. (G6's open half)
+- **Feedback photos** (V016) — volunteers attach up to two session photos to their own
+  feedback; EXIF stripped like attendance evidence, private until published,
+  `source = volunteer_feedback`, ownership guarded. (G7)
+- **Sponsor pack** — "Send sponsor pack" on a completed session record: one email with the
+  session's outcomes and 7-day signed links to up to six photos; refuses non-completed
+  sessions. (G10)
+- **Annual calendar export** — report type `calendar`: every non-cancelled session of the
+  year with programme, activity, communities and enrolment; one-click Excel on the Reports
+  page. (G11)
+- **Memento note** (V016) — optional tangible-gift note at certificate issue, stored on the
+  row and mentioned in the certificate email. (G9)
+
+Authz matrix: **74 endpoints × 3 roles = 222 checks**. With this round the client-document
+gap register (`09`) is fully dispositioned: every item delivered or explicitly out of scope.
+
+---
+
 ## Conventions the refinements established
 
 These emerged during the rounds and now apply app-wide; new code should follow them.

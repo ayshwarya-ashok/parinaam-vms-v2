@@ -4,7 +4,7 @@
 |---|---|
 | **Subject** | *Parinaam_Volunteering_Activity_Attributes.docx* (JPMC requirements reference: Exposure Visits, Read to Rise, Chote Kadam, Activity-Based Outings) checked against the VMS implementation |
 | **First analysis** | 2026-08-22 (gaps G1–G12) |
-| **Status update** | 2026-08-24 after the phased-sessions build (V013–V015, `docs/08`); 2026-08-25 after the client dispositioned G2/G3/G5 (`docs/07` Round 11) |
+| **Status update** | 2026-08-24 phased-sessions build (V013–V015, `docs/08`) · 2026-08-25 client dispositions (Round 11) · 2026-08-25 item-4 close-out (Round 12, V016) — **register fully dispositioned** |
 | **Shareable version** | Published as a Claude artifact ("Four Programs, One VMS") — same content |
 
 **Verdict as of 25 Aug 2026 — aligned.** With the client scope decisions applied, the implementation is **in line with the document**: every item is either built or explicitly dispositioned, nothing is silently missing, and the remaining backlog is polish beyond strict compliance. the two **structural** gaps are closed — beneficiary
@@ -53,13 +53,13 @@ four programmes ship as seeded demo data (S005, sessions `EVT-2026-0201…0205`)
 | G3 | WhatsApp channel | ❌ **Out of scope (client, 25 Aug)** | Email remains the only channel; revisit only if the client reopens it |
 | G4 | Community master + session links | ✅ **Delivered** | V013. Returning-volunteer *re-allotment* rides on G12 |
 | G5 | Pre-session emails (T-7 details + T-1 reminder) | ✅ **Delivered (25 Aug)** | `session_details`/`session_reminder` templates + daily worker sweep via the outbox → n8n pipeline, idempotent through email_logs; admin re-send buttons on the session record |
-| G6 | Corporate/bulk onboarding & mid-session adds | 🟡 **Half delivered** | Phase-level adds via the walk-in gate ✓; batch company invites open |
-| G7 | Volunteer photo upload with feedback | Open | Storage + signed URLs exist; form lacks upload |
-| G8 | Activity taxonomy | Open — partly mooted | The shapes are now expressible via phases/series |
-| G9 | Tangible-gift recognition note | Open (trivial) | |
-| G10 | Sponsor pack (photos + thank-you) | Open | |
-| G11 | Goodhearts annual calendar export | Open | |
-| G12 | Welcome-Back + community re-allotment | Open — now unblocked | Communities exist to re-allot into |
+| G6 | Corporate/bulk onboarding & mid-session adds | ✅ **Delivered** | Phase-level adds ✓; bulk invites via the directory's "Invite volunteers" (≤50 addresses, registered ones skipped, audited) |
+| G7 | Volunteer photo upload with feedback | ✅ **Delivered (V016)** | Up to 2 photos on own feedback; EXIF stripped, private until published, ownership guarded |
+| G8 | Activity taxonomy | ◽ **Mooted** | The document's shapes (visit / series / mentorship / outing) are all expressible via phases + series; no separate field needed |
+| G9 | Tangible-gift recognition note | ✅ **Delivered (V016)** | Optional memento note at issue time — on the row and in the certificate email |
+| G10 | Sponsor pack (photos + thank-you) | ✅ **Delivered** | One email from the completed session record: outcomes + 7-day photo links |
+| G11 | Goodhearts annual calendar export | ✅ **Delivered** | Report type `calendar` — the year's sessions with communities; one-click Excel |
+| G12 | Welcome-Back + community re-allotment | ✅ **Delivered** | Fires on inactive → active (client decision); email shows the previous community's upcoming sessions; admin re-send on the directory |
 
 ## 4. Decisions
 
@@ -73,10 +73,8 @@ four programmes ship as seeded demo data (S005, sessions `EVT-2026-0201…0205`)
 
 ## 5. What's next
 
-No item now awaits a client decision. The remaining backlog, all unblocked:
-G12 Welcome-Back + community re-allotment, G6's open half (bulk corporate invites),
-G7 feedback photo upload, G10 sponsor pack, G11 calendar export, G9 memento note,
-G8 taxonomy if still wanted.
+**Nothing.** Every register item is delivered, mooted, or explicitly out of scope by the
+client's own decision. G1–G12: ten delivered, one mooted (G8), one out of scope (G3 WhatsApp).
 
 ---
 

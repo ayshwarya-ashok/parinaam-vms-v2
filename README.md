@@ -64,7 +64,7 @@ The defaults run out of the box. The ones worth knowing:
 
 ## 1.5 Database setup
 
-Automatic. On the database container's **first** boot it applies migrations `V001–V015` in
+Automatic. On the database container's **first** boot it applies migrations `V001–V016` in
 order (recording a SHA-256 checksum per file in `schema_migrations`), creates n8n's own
 database, and loads seeds. Nothing to run by hand.
 
@@ -345,7 +345,7 @@ apps/api/          NestJS API + worker (one image, ROLE-gated)
 apps/web/          React 18 + MUI SPA
 packages/shared/   contract types + BUSINESS_ERROR_CODES (reference; unused by the apps yet)
 database/
-  migrations/      V001–V015 — schema source of truth (forward-only, checksummed)
+  migrations/      V001–V016 — schema source of truth (forward-only, checksummed)
   seeds/           S001 reference · S002 demo · S003 worked activity · S004 identity backfill
   docker-init/     first-boot bootstrap
 n8n/               version-controlled workflow + credential exports, contract, smoke test
