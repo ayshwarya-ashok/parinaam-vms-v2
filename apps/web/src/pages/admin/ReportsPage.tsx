@@ -61,6 +61,19 @@ export function ReportsPage() {
     source: (r) => Boolean(r.scheduledReportId),
   });
 
+  const doCalendarExport = async () => {
+    setExporting('Calendar');
+    try {
+      await exportAndDownload('calendar', 'Excel', { year: new Date().getFullYear() });
+      void refetchRuns();
+      enqueueSnackbar('Annual calendar downloaded', { variant: 'success' });
+    } catch (err) {
+      enqueueSnackbar(asApiError(err)?.message ?? 'Calendar export failed', { variant: 'error' });
+    } finally {
+      setExporting(null);
+    }
+  };
+
   const doExport = async (format: 'CSV' | 'Excel' | 'PDF') => {
     setExporting(format);
     try {
@@ -94,6 +107,13 @@ export function ReportsPage() {
               {exporting === format ? 'Exporting…' : `⬇ ${format}`}
             </Button>
           ))}
+          <Button
+            variant="pillOutlined"
+            disabled={exporting !== null}
+            onClick={() => void doCalendarExport()}
+          >
+            {exporting === 'Calendar' ? 'Exporting…' : `📅 ${new Date().getFullYear()} calendar`}
+          </Button>
           <Button variant="pill" component={RouterLink} to="/admin/reports/scheduled">
             🕐 Automated reports
           </Button>

@@ -231,6 +231,31 @@ export function SessionRecord() {
     onError: (err) => enqueueSnackbar(asApiError(err)?.message ?? 'Could not record the walk-in', { variant: 'error' }),
   });
 
+  const [sponsorOpen, setSponsorOpen] = useState(false);
+  const [sponsorEmail, setSponsorEmail] = useState('');
+  const [sponsorOrg, setSponsorOrg] = useState('');
+
+  const sponsorPack = useMutation({
+    mutationFn: async () =>
+      (
+        await api.post<{ queued: number; photos: number }>(`/events/${id}/sponsor-pack`, {
+          email: sponsorEmail.trim(),
+          organizationName: sponsorOrg.trim() || undefined,
+        })
+      ).data,
+    onSuccess: (res) => {
+      setSponsorOpen(false);
+      setSponsorEmail('');
+      setSponsorOrg('');
+      enqueueSnackbar(
+        `Sponsor pack queued (${res.photos} photo link${res.photos === 1 ? '' : 's'} included)`,
+        { variant: 'success' },
+      );
+    },
+    onError: (err) =>
+      enqueueSnackbar(asApiError(err)?.message ?? 'Could not send the sponsor pack', { variant: 'error' }),
+  });
+
   const preSessionSend = useMutation({
     mutationFn: async (type: 'details' | 'reminder') =>
       (await api.post<{ queued: number }>(`/events/${id}/pre-session-email`, { type })).data,
@@ -310,6 +335,11 @@ export function SessionRecord() {
               ✓ Mark completed
             </Button>
           )}
+          {event.status === 'completed' && (
+            <Button variant="pillOutlined" onClick={() => setSponsorOpen(true)}>
+              ✉ Send sponsor pack
+            </Button>
+          )}
           <StatusPill status={event.status} />
         </>
       }
@@ -319,6 +349,40 @@ export function SessionRecord() {
           This session was cancelled{event.cancel_reason ? `: ${event.cancel_reason}` : '.'}
         </Alert>
       )}
+
+      <Dialog open={sponsorOpen} onClose={() => setSponsorOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Send sponsor thank-you pack</DialogTitle>
+        <DialogContent sx={{ display: 'grid', gap: 2, pt: '8px !important' }}>
+          <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>
+            One email with the session's outcomes — volunteers, hours, beneficiaries, community —
+            plus 7-day links to up to six of its photos.
+          </Typography>
+          <TextField
+            label="Recipient email"
+            required
+            type="email"
+            value={sponsorEmail}
+            onChange={(e) => setSponsorEmail(e.target.value)}
+          />
+          <TextField
+            label="Organization name (optional)"
+            value={sponsorOrg}
+            onChange={(e) => setSponsorOrg(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button variant="pillOutlined" onClick={() => setSponsorOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="pill"
+            disabled={sponsorPack.isPending || !/.+@.+\..+/.test(sponsorEmail.trim())}
+            onClick={() => sponsorPack.mutate()}
+          >
+            Send pack
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* ── The occurrence itself ───────────────────────────────────────────── */}
       <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3, mb: 2 }}>

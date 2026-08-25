@@ -29,6 +29,10 @@ export class Certificate {
   @Column({ name: 'certificate_number', type: 'varchar', length: 30, nullable: true })
   certificateNumber!: string | null;
 
+  /** Tangible-gift note recorded at issue time (memento, sapling, ...). */
+  @Column({ name: 'memento_note', type: 'varchar', length: 255, nullable: true })
+  mementoNote!: string | null;
+
   @Column({ name: 'volunteer_id', type: 'uuid' })
   volunteerId!: string;
 

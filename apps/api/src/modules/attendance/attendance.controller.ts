@@ -1,6 +1,7 @@
 import {
   IsBoolean,
   IsDateString,
+  IsEmail,
   IsIn,
   IsInt,
   IsMilitaryTime,
@@ -83,6 +84,11 @@ class AdminRecordDto extends OverrideDto {
   @Matches(UUID_PATTERN, { message: 'must be a UUID' }) volunteerId!: string;
   // Optional on the base DTO, required here — there is nothing to infer from.
   @IsBoolean() declare attended: boolean;
+}
+
+class SponsorPackDto {
+  @IsEmail() email!: string;
+  @IsOptional() @IsString() @MaxLength(255) organizationName?: string;
 }
 
 /** One visit under a phase: who, which day, how long. Always presence. */
@@ -177,6 +183,17 @@ export class AttendanceController {
   @ApiOperation({ summary: 'Remove a mis-logged visit' })
   deleteVisit(@CurrentUser() user: AuthPrincipal, @Param('recordId', UuidPipe) recordId: string) {
     return this.service.deleteVisit(user, recordId);
+  }
+
+  @Post('events/:id/sponsor-pack')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Email the sponsor thank-you pack: outcomes + 7-day photo links (completed sessions only)' })
+  sponsorPack(
+    @CurrentUser() user: AuthPrincipal,
+    @Param('id', UuidPipe) id: string,
+    @Body() dto: SponsorPackDto,
+  ) {
+    return this.service.sendSponsorPack(user, id, dto);
   }
 
   @Get('events/:id/report')

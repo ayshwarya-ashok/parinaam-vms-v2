@@ -15,6 +15,7 @@ import { AuditService } from '../audit/audit.service';
 import { AppConfig } from '../../config';
 import { NotificationsService, TemplateService } from '../notifications';
 import { StorageService } from '../storage/storage.service';
+import { SignedUrlService } from '../storage/signed-url.service';
 import { LinkTokenService } from './link-token.service';
 
 const MAX_EVIDENCE_IMAGES = 2;
@@ -67,6 +68,7 @@ export class AttendanceService {
     private readonly notifications: NotificationsService,
     private readonly templates: TemplateService,
     private readonly storage: StorageService,
+    private readonly signer: SignedUrlService,
     private readonly config: AppConfig,
     private readonly audit: AuditService,
   ) {}
@@ -913,5 +915,80 @@ export class AttendanceService {
       },
     });
     return { ok: true };
+  }
+
+  /**
+   * The sponsor thank-you pack (client doc, Snow City phase 5: "photos are
+   * compiled and shared with the corporate sponsor along with a thank-you
+   * note"). One email through the outbox -> n8n pipeline: the session's
+   * outcomes plus 7-day signed links to up to six of its photos. Admin-sent,
+   * admin re-sendable.
+   */
+  async sendSponsorPack(
+    principal: AuthPrincipal,
+    eventId: string,
+    dto: { email: string; organizationName?: string },
+  ): Promise<{ queued: number; photos: number }> {
+    const [event] = await this.dataSource.query(
+      `SELECT e.id, COALESCE(e.name, a.name) AS display_name, e.date, e.status, a.program_id,
+              COALESCE((SELECT er.beneficiaries_reached FROM event_reports er WHERE er.event_id = e.id), 0) AS beneficiaries,
+              COALESCE(STRING_AGG(DISTINCT bc.name, ', '), '—') AS communities
+       FROM events e
+       JOIN activities a ON a.id = e.activity_id
+       LEFT JOIN event_communities ec ON ec.event_id = e.id
+       LEFT JOIN beneficiary_communities bc ON bc.id = ec.community_id
+       WHERE e.id = $1
+       GROUP BY e.id, a.name, a.program_id`,
+      [eventId],
+    );
+    if (!event) throw new NotFoundException('Session not found');
+    if (event.status !== 'completed') {
+      throw new BusinessException(
+        'NOT_YET_RUN',
+        'The sponsor pack sums up a completed session — mark it completed first.',
+      );
+    }
+
+    const [stats] = await this.dataSource.query(
+      `SELECT COUNT(DISTINCT volunteer_id) FILTER (WHERE attended)::int AS volunteers_attended,
+              COALESCE(SUM(hours_contributed) FILTER (WHERE attended), 0) AS total_hours
+       FROM attendance_records WHERE event_id = $1`,
+      [eventId],
+    );
+
+    const photoRows = await this.dataSource.query(
+      `SELECT file_path FROM event_photos WHERE event_id = $1 ORDER BY sort_order, uploaded_at LIMIT 6`,
+      [eventId],
+    );
+    const photoLinks = photoRows.map((r: { file_path: string }, i: number) => ({
+      n: i + 1,
+      url: this.signer.publicUrl(r.file_path, undefined, 7 * 24 * 60),
+    }));
+
+    await this.notifications.queueEmail({
+      templateKey: 'sponsor_thank_you',
+      to: dto.email,
+      recipientType: 'bulk',
+      eventId,
+      programId: event.program_id,
+      context: {
+        eventName: event.display_name,
+        eventDate: fmtDate(event.date),
+        organizationName: dto.organizationName?.trim() || null,
+        volunteersAttended: Number(stats.volunteers_attended),
+        totalHours: Number(stats.total_hours),
+        beneficiariesReached: Number(event.beneficiaries),
+        communityNames: event.communities,
+        photoLinks,
+      },
+    });
+
+    await this.audit.record(principal, {
+      action: 'sponsor_pack.sent',
+      entity: 'events',
+      entityId: eventId,
+      after: { to: dto.email, photos: photoLinks.length },
+    });
+    return { queued: 1, photos: photoLinks.length };
   }
 }

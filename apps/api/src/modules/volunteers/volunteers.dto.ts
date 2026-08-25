@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ArrayMaxSize,
+  ArrayNotEmpty,
   IsArray,
   IsBoolean,
   IsDateString,
@@ -165,4 +166,12 @@ export class SignConsentDto {
 export class AdminUpdateVolunteerDto {
   @IsOptional() @IsIn(['Onboarding', 'In Training', 'Active', 'Inactive']) phase?: string;
   @IsOptional() @IsBoolean() isActive?: boolean;
+}
+
+export class InviteVolunteersDto {
+  @IsArray() @ArrayNotEmpty() @ArrayMaxSize(50)
+  @IsEmail({}, { each: true, message: 'each entry must be an email address' })
+  emails!: string[];
+  @IsOptional() @Matches(UUID_PATTERN, { message: 'must be a UUID' }) organizationId?: string;
+  @IsOptional() @IsString() @MaxLength(1000) note?: string;
 }

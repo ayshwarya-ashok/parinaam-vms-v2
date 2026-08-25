@@ -114,6 +114,53 @@ export function VolunteerDirectory() {
   const [rejecting, setRejecting] = useState<DirectoryRow | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [deactivating, setDeactivating] = useState<DirectoryRow | null>(null);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteEmails, setInviteEmails] = useState('');
+  const [inviteOrg, setInviteOrg] = useState('');
+  const [inviteNote, setInviteNote] = useState('');
+
+  const { data: inviteOrgs = [] } = useQuery({
+    queryKey: ['organizations'],
+    queryFn: async () =>
+      (await api.get<Array<{ id: string; name: string }>>('/organizations')).data,
+    enabled: inviteOpen,
+  });
+
+  const welcomeBack = useMutation({
+    mutationFn: async (volunteerId: string) =>
+      (await api.post(`/volunteers/${volunteerId}/welcome-back`)).data,
+    onSuccess: () => enqueueSnackbar('Welcome-back email queued', { variant: 'success' }),
+    onError: (err) =>
+      enqueueSnackbar(asApiError(err)?.message ?? 'Could not send the welcome-back email', {
+        variant: 'error',
+      }),
+  });
+
+  const invite = useMutation({
+    mutationFn: async () =>
+      (
+        await api.post<{ queued: number; skipped: string[] }>('/volunteers/invite', {
+          emails: inviteEmails
+            .split(/[\s,;]+/)
+            .map((e) => e.trim())
+            .filter(Boolean),
+          organizationId: inviteOrg || undefined,
+          note: inviteNote.trim() || undefined,
+        })
+      ).data,
+    onSuccess: (res) => {
+      setInviteOpen(false);
+      setInviteEmails('');
+      setInviteNote('');
+      enqueueSnackbar(
+        `${res.queued} invite${res.queued === 1 ? '' : 's'} queued` +
+          (res.skipped.length ? ` — ${res.skipped.length} already registered` : ''),
+        { variant: res.queued > 0 ? 'success' : 'info' },
+      );
+    },
+    onError: (err) =>
+      enqueueSnackbar(asApiError(err)?.message ?? 'Could not send the invites', { variant: 'error' }),
+  });
   const limit = 25;
 
   const queryClient = useQueryClient();
@@ -194,17 +241,22 @@ export function VolunteerDirectory() {
       title="Volunteer Directory"
       description="Review new registrations, and activate or inactivate volunteers. Click any row to see everything the volunteer told us when they signed up."
       actions={
-        pending > 0 ? (
-          <Button
-            variant={registrationStatus === 'pending' ? 'pill' : 'pillOutlined'}
-            onClick={() => {
-              setRegistrationStatus(registrationStatus === 'pending' ? 'all' : 'pending');
-              setPage(0);
-            }}
-          >
-            🔔 {pending} awaiting review
+        <>
+          <Button variant="pillOutlined" onClick={() => setInviteOpen(true)}>
+            ＋ Invite volunteers
           </Button>
-        ) : undefined
+          {pending > 0 && (
+            <Button
+              variant={registrationStatus === 'pending' ? 'pill' : 'pillOutlined'}
+              onClick={() => {
+                setRegistrationStatus(registrationStatus === 'pending' ? 'all' : 'pending');
+                setPage(0);
+              }}
+            >
+              🔔 {pending} awaiting review
+            </Button>
+          )}
+        </>
       }
     >
       <FilterBar
@@ -322,6 +374,19 @@ export function VolunteerDirectory() {
                       </Button>
                     </>
                   ) : v.isActive ? (
+                    <>
+                    <Button
+                      size="small"
+                      variant="pillOutlined"
+                      sx={{ px: 1.5, py: 0.3 }}
+                      disabled={welcomeBack.isPending}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        welcomeBack.mutate(v.id);
+                      }}
+                    >
+                      ✉ Welcome-back
+                    </Button>
                     <Button
                       size="small"
                       variant="pillOutlined"
@@ -330,6 +395,7 @@ export function VolunteerDirectory() {
                     >
                       Inactivate
                     </Button>
+                    </>
                   ) : (
                     <Button
                       size="small"
@@ -413,6 +479,58 @@ export function VolunteerDirectory() {
             }
           >
             {review.isPending ? 'Rejecting…' : 'Reject registration'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={inviteOpen} onClose={() => setInviteOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Invite volunteers</DialogTitle>
+        <DialogContent sx={{ display: 'grid', gap: 2, pt: '8px !important' }}>
+          <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>
+            One registration invite per address, sent through the mail pipeline. Addresses that
+            already hold an account are skipped and reported back. Re-sending is just inviting
+            again.
+          </Typography>
+          <TextField
+            label="Email addresses"
+            required
+            multiline
+            minRows={3}
+            placeholder={'one@techcorp.in\ntwo@techcorp.in — commas, spaces or new lines all work'}
+            value={inviteEmails}
+            onChange={(e) => setInviteEmails(e.target.value)}
+          />
+          <TextField
+            select
+            label="Sponsoring organization (optional)"
+            value={inviteOrg}
+            onChange={(e) => setInviteOrg(e.target.value)}
+          >
+            <MenuItem value="">— none —</MenuItem>
+            {inviteOrgs.map((o) => (
+              <MenuItem key={o.id} value={o.id}>
+                {o.name}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            label="Personal note (optional, included in the email)"
+            multiline
+            minRows={2}
+            value={inviteNote}
+            onChange={(e) => setInviteNote(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button variant="pillOutlined" onClick={() => setInviteOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="pill"
+            disabled={invite.isPending || !inviteEmails.trim()}
+            onClick={() => invite.mutate()}
+          >
+            Send invites
           </Button>
         </DialogActions>
       </Dialog>

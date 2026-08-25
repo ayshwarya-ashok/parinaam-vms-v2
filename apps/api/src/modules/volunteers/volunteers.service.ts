@@ -634,7 +634,132 @@ export class VolunteersService {
       after: dto,
     });
 
+    // Welcome-Back fires on the inactive → active transition (client decision,
+    // 2026-08-25) — not on a schedule. Re-allotment content: their previous
+    // community's upcoming sessions.
+    if (dto.isActive === true && before.isActive === false) {
+      await this.sendWelcomeBack(id);
+    }
+
     return this.adminGet(id);
+  }
+
+  /**
+   * Bulk corporate invites (client doc: Exposure Visits / outings onboard a
+   * company's employees as a batch). Sends one registration-invite email per
+   * address through the outbox -> n8n pipeline; addresses that already hold an
+   * account are skipped and reported back. Re-triggering is just sending again.
+   */
+  async invite(
+    principal: AuthPrincipal,
+    dto: { emails: string[]; organizationId?: string; note?: string },
+  ): Promise<{ queued: number; skipped: string[] }> {
+    let organizationName: string | null = null;
+    if (dto.organizationId) {
+      const org = await this.organizations.findOne({
+        where: { id: dto.organizationId, isActive: true },
+      });
+      if (!org) throw new NotFoundException('Organization not found');
+      organizationName = org.name;
+    }
+
+    const emails = [...new Set(dto.emails.map((e) => e.trim().toLowerCase()).filter(Boolean))];
+    const skipped: string[] = [];
+    let queued = 0;
+    for (const email of emails) {
+      const exists = await this.users.findOne({ where: { email } });
+      if (exists) {
+        skipped.push(email);
+        continue;
+      }
+      await this.notifications.queueEmail({
+        templateKey: 'corporate_invite',
+        to: email,
+        recipientType: 'bulk',
+        context: {
+          organizationName,
+          note: dto.note?.trim() || null,
+        },
+      });
+      queued += 1;
+    }
+
+    await this.audit.record(principal, {
+      action: 'volunteer.invited',
+      entity: 'volunteers',
+      after: { organizationName, queued, skipped: skipped.length },
+    });
+    return { queued, skipped };
+  }
+
+  /**
+   * The Welcome-Back email (client doc, Read to Rise phase 2/3): greets a
+   * returning volunteer and re-allots them by showing their previous
+   * community's upcoming sessions. Triggered automatically on reactivation;
+   * also exposed for the admin's manual re-send.
+   */
+  async sendWelcomeBack(id: string): Promise<{ queued: number }> {
+    const [row] = await this.dataSource.query(
+      `SELECT v.id, v.first_name, u.email, u.is_active
+       FROM volunteers v JOIN users u ON u.id = v.user_id WHERE v.id = $1`,
+      [id],
+    );
+    if (!row) throw new NotFoundException('Volunteer not found');
+    if (!row.is_active) {
+      throw new BusinessException(
+        'NOT_ELIGIBLE',
+        'This volunteer is inactive — reactivate them first; the welcome-back email goes out automatically.',
+        400,
+      );
+    }
+
+    // Their previous community: the one behind their most recent enrollment
+    // or attendance. NULL for volunteers with no history — the email adapts.
+    const [prev] = await this.dataSource.query(
+      `SELECT bc.id, bc.name
+       FROM (
+         SELECT en.event_id, en.enrolled_at AS at FROM event_enrollments en WHERE en.volunteer_id = $1
+         UNION ALL
+         SELECT ar.event_id, ar.recorded_at FROM attendance_records ar WHERE ar.volunteer_id = $1
+       ) hist
+       JOIN event_communities ec ON ec.event_id = hist.event_id
+       JOIN beneficiary_communities bc ON bc.id = ec.community_id
+       ORDER BY hist.at DESC LIMIT 1`,
+      [id],
+    );
+
+    const sessions = prev
+      ? await this.dataSource.query(
+          `SELECT COALESCE(e.name, a.name) AS name, e.date
+           FROM event_communities ec
+           JOIN events e ON e.id = ec.event_id
+           JOIN activities a ON a.id = e.activity_id
+           WHERE ec.community_id = $1 AND e.status = 'upcoming' AND e.date >= CURRENT_DATE
+           ORDER BY e.date LIMIT 3`,
+          [prev.id],
+        )
+      : [];
+
+    await this.notifications.queueEmail({
+      templateKey: 'welcome_back',
+      to: row.email,
+      recipientType: 'volunteer',
+      volunteerId: id,
+      context: {
+        firstName: row.first_name,
+        communityName: prev?.name ?? null,
+        upcomingCount: sessions.length,
+        upcomingPlural: sessions.length !== 1,
+        sessions: sessions.map((s: { name: string; date: string }) => ({
+          name: s.name,
+          date: new Date(`${s.date}T00:00:00`).toLocaleDateString('en-IN', {
+            day: 'numeric',
+            month: 'short',
+          }),
+        })),
+      },
+    });
+    return { queued: 1 };
   }
   /**
    * Data-lifecycle erasure: strip everything that identifies the person while

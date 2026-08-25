@@ -137,6 +137,7 @@ function FeedbackForm({ event, onDone }: { event: EligibleEvent; onDone: () => v
   const [improvements, setImprovements] = useState<string[]>([]);
   const [improvementDetail, setImprovementDetail] = useState('');
   const [comments, setComments] = useState('');
+  const [photos, setPhotos] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const toggle = (list: string[], set: (v: string[]) => void, label: string) =>
@@ -156,7 +157,22 @@ function FeedbackForm({ event, onDone }: { event: EligibleEvent; onDone: () => v
         improvementDetail: improvementDetail || undefined,
         comments: comments || undefined,
       };
-      return (await api.post('/feedback', payload)).data;
+      const created = (await api.post<{ id: string }>('/feedback', payload)).data;
+      // Photos ride along but must never sink the feedback itself.
+      if (photos.length > 0) {
+        try {
+          const form = new FormData();
+          photos.slice(0, 2).forEach((f) => form.append('images', f));
+          await api.post(`/feedback/${created.id}/photos`, form, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
+        } catch {
+          enqueueSnackbar('Feedback saved, but the photos could not be uploaded.', {
+            variant: 'warning',
+          });
+        }
+      }
+      return created;
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['feedback'] });
@@ -281,6 +297,36 @@ function FeedbackForm({ event, onDone }: { event: EligibleEvent; onDone: () => v
         placeholder="A closing thought — with your consent, we may ask to feature it."
         value={comments} onChange={(e) => setComments(e.target.value)}
       />
+
+      {/* 8 — session photos (client doc: volunteers share photos with feedback) */}
+      <Typography sx={{ fontWeight: 700, mb: 0.75 }}>Photos from the session (optional)</Typography>
+      <Box sx={{ mb: 3 }}>
+        <Button variant="pillOutlined" component="label" size="small">
+          📷 Add photos (up to 2)
+          <input
+            type="file"
+            hidden
+            multiple
+            accept="image/jpeg,image/png,image/webp"
+            onChange={(e) => setPhotos(Array.from(e.target.files ?? []).slice(0, 2))}
+          />
+        </Button>
+        {photos.length > 0 && (
+          <Typography component="span" sx={{ ml: 1.5, fontSize: '0.85rem', color: 'text.secondary' }}>
+            {photos.map((f) => f.name).join(', ')}{' '}
+            <Box
+              component="span"
+              onClick={() => setPhotos([])}
+              sx={{ cursor: 'pointer', color: '#bc5328', '&:hover': { textDecoration: 'underline' } }}
+            >
+              ✕ clear
+            </Box>
+          </Typography>
+        )}
+        <Typography sx={{ fontSize: '0.78rem', color: 'text.secondary', mt: 0.5 }}>
+          Location data is stripped automatically; photos stay private unless an admin publishes them.
+        </Typography>
+      </Box>
 
       <Box sx={{ display: 'flex', gap: 1.5 }}>
         <Button

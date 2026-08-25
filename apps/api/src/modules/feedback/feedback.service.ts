@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import sharp from 'sharp';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { BusinessErrors, BusinessException } from '../../common';
@@ -8,7 +9,9 @@ import {
   FeedbackOption,
   FeedbackSubmission,
   Volunteer,
+  EventPhoto,
 } from '../../database/entities';
+import { StorageService } from '../storage/storage.service';
 
 export interface SubmitFeedbackInput {
   eventId: string;
@@ -35,6 +38,8 @@ export class FeedbackService {
     @InjectRepository(FeedbackSubmission) private readonly submissions: Repository<FeedbackSubmission>,
     @InjectRepository(FeedbackOption) private readonly options: Repository<FeedbackOption>,
     @InjectRepository(Volunteer) private readonly volunteers: Repository<Volunteer>,
+    @InjectRepository(EventPhoto) private readonly photos: Repository<EventPhoto>,
+    private readonly storage: StorageService,
   ) {}
 
   /** The admin-curated tag vocabulary the form renders from. */
@@ -254,5 +259,52 @@ export class FeedbackService {
   async setPublished(id: string, publish: boolean): Promise<void> {
     const result = await this.submissions.update({ id }, { isPublishedTestimonial: publish });
     if (!result.affected) throw new NotFoundException('Feedback submission not found');
+  }
+
+  /**
+   * Photos attached to a feedback submission (client doc, Read to Rise phase
+   * 6: "volunteers upload session photos via the feedback form"). Owner-only;
+   * EXIF is stripped exactly like attendance evidence — a field photo's GPS
+   * tag is a privacy leak. Photos land in event_photos (source
+   * volunteer_feedback), private until an admin publishes them.
+   */
+  async addPhotos(
+    userId: string,
+    feedbackId: string,
+    images: Array<{ mimetype: string; buffer: Buffer }>,
+  ): Promise<{ stored: number }> {
+    const [own] = await this.dataSource.query(
+      `SELECT f.id, f.event_id FROM feedback_submissions f
+       JOIN volunteers v ON v.id = f.volunteer_id
+       WHERE f.id = $1 AND v.user_id = $2`,
+      [feedbackId, userId],
+    );
+    if (!own) throw new NotFoundException('Feedback submission not found');
+
+    let stored = 0;
+    for (const image of images.slice(0, 2)) {
+      if (!/^image\/(jpeg|png|webp)$/.test(image.mimetype)) {
+        throw new BusinessException('UNSUPPORTED_FILE_TYPE', 'Images must be JPEG, PNG or WebP.', 400);
+      }
+      const cleaned = await sharp(image.buffer).rotate().jpeg({ quality: 85 }).toBuffer();
+      const thumb = await sharp(cleaned).resize({ width: 320 }).jpeg({ quality: 70 }).toBuffer();
+      const path = this.storage.buildPath(`evidence/${own.event_id}`, 'jpg');
+      const saved = await this.storage.put(path, cleaned);
+      const thumbSaved = await this.storage.put(path.replace('.jpg', '.thumb.jpg'), thumb);
+      await this.photos.save(
+        this.photos.create({
+          eventId: own.event_id,
+          feedbackId,
+          filePath: saved.path,
+          thumbnailPath: thumbSaved.path,
+          mimeType: 'image/jpeg',
+          fileSizeBytes: String(saved.sizeBytes),
+          source: 'volunteer_feedback',
+          isPublic: false,
+        }),
+      );
+      stored += 1;
+    }
+    return { stored };
   }
 }

@@ -40,10 +40,13 @@ export class ReportQueryService {
       case 'program':
       case 'program_summary':
         return this.programs();
+      case 'calendar':
+      case 'annual_calendar':
+        return this.calendar(filters as { year?: number | string });
       default:
         throw new BusinessException(
           'UNKNOWN_REPORT_TYPE',
-          `Unknown report type "${reportType}". Available: volunteers, programs.`,
+          `Unknown report type "${reportType}". Available: volunteers, programs, calendar.`,
           400,
         );
     }
@@ -114,6 +117,51 @@ export class ReportQueryService {
         { key: 'attended', label: 'Attended', align: 'right' },
         { key: 'hours', label: 'Hours', align: 'right' },
         { key: 'beneficiaries', label: 'Beneficiaries', align: 'right' },
+      ],
+      rows,
+    };
+  }
+
+  /**
+   * The Goodhearts annual calendar (client doc §1.4): every session of a
+   * calendar year, month by month — the export shared with corporate partners
+   * when planning the year's volunteering.
+   */
+  async calendar(filters: { year?: number | string }): Promise<ReportData> {
+    const year = Number(filters.year) || new Date().getFullYear();
+    const rows = await this.dataSource.query(
+      `SELECT TO_CHAR(e.date, 'Month') AS month,
+              TO_CHAR(e.date, 'YYYY-MM-DD') AS date,
+              p.name AS program,
+              a.name AS activity,
+              COALESCE(e.name, a.name) AS session,
+              e.status::text AS status,
+              COALESCE(STRING_AGG(DISTINCT bc.name, ', '), '—') AS communities,
+              cap.enrolled_count AS enrolled,
+              e.max_slots
+       FROM events e
+       JOIN activities a ON a.id = e.activity_id
+       JOIN programs p ON p.id = a.program_id
+       JOIN v_event_capacity cap ON cap.event_id = e.id
+       LEFT JOIN event_communities ec ON ec.event_id = e.id
+       LEFT JOIN beneficiary_communities bc ON bc.id = ec.community_id
+       WHERE EXTRACT(YEAR FROM e.date) = $1 AND e.status <> 'cancelled'
+       GROUP BY e.id, a.name, p.name, cap.enrolled_count
+       ORDER BY e.date, e.start_time`,
+      [year],
+    );
+    return {
+      title: `Volunteering Calendar ${year}`,
+      columns: [
+        { key: 'month', label: 'Month' },
+        { key: 'date', label: 'Date' },
+        { key: 'program', label: 'Programme' },
+        { key: 'activity', label: 'Activity' },
+        { key: 'session', label: 'Session' },
+        { key: 'status', label: 'Status' },
+        { key: 'communities', label: 'Communities' },
+        { key: 'enrolled', label: 'Enrolled', align: 'right' },
+        { key: 'max_slots', label: 'Capacity', align: 'right' },
       ],
       rows,
     };

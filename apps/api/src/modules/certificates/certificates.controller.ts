@@ -8,7 +8,7 @@ import {
   Res,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { IsIn, IsOptional, IsString, Matches } from 'class-validator';
+import { IsIn, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 import type { Response } from 'express';
 import {
   AuthPrincipal,
@@ -19,6 +19,7 @@ import { UUID_PATTERN, UuidPipe } from '../../common/pipes/uuid.pipe';
 import { CertificatesService } from './certificates.service';
 
 class IssueDto {
+  @IsOptional() @IsString() @MaxLength(255) mementoNote?: string;
   @Matches(UUID_PATTERN) volunteerId!: string;
   @Matches(UUID_PATTERN) programId!: string;
 }
@@ -49,7 +50,9 @@ export class CertificatesController {
   @Roles('admin')
   @ApiOperation({ summary: 'Issue the certificate for one volunteer in one programme (render, store, email)' })
   issue(@Body() dto: IssueDto, @CurrentUser() user: AuthPrincipal) {
-    return this.certificates.issue(dto.volunteerId, dto.programId, user.sub);
+    return this.certificates.issue(dto.volunteerId, dto.programId, user.sub, {
+      mementoNote: dto.mementoNote,
+    });
   }
 
   @Post('issue-bulk')

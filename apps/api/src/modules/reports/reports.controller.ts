@@ -31,7 +31,7 @@ import { ReportQueryService } from './report-query.service';
 import { ReportsService } from './reports.service';
 import { ScheduledReportsService } from './scheduled.service';
 
-const REPORT_TYPES = ['volunteers', 'volunteer_summary', 'programs', 'program', 'program_summary'];
+const REPORT_TYPES = ['volunteers', 'volunteer_summary', 'programs', 'program', 'program_summary', 'calendar', 'annual_calendar'];
 
 class ExportDto {
   @IsIn(REPORT_TYPES) reportType!: string;

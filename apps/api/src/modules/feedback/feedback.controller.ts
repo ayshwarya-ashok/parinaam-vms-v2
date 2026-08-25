@@ -6,8 +6,11 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFiles,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   ArrayMaxSize,
   IsArray,
@@ -70,6 +73,19 @@ export class FeedbackController {
   @ApiOperation({ summary: 'Submit feedback for one attended occurrence (BR-09: once per occurrence)' })
   submit(@Body() dto: SubmitFeedbackDto, @CurrentUser() user: AuthPrincipal) {
     return this.feedback.submit(user.sub, dto);
+  }
+
+  @Post(':id/photos')
+  @Roles('volunteer')
+  @UseInterceptors(FilesInterceptor('images', 2, { limits: { fileSize: 8 * 1024 * 1024, files: 2 } }))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Attach up to two session photos to your own feedback (EXIF stripped, private until published)' })
+  addPhotos(
+    @CurrentUser() user: AuthPrincipal,
+    @Param('id', UuidPipe) id: string,
+    @UploadedFiles() images: Array<{ mimetype: string; buffer: Buffer }> = [],
+  ) {
+    return this.feedback.addPhotos(user.sub, id, images);
   }
 
   @Get('me')

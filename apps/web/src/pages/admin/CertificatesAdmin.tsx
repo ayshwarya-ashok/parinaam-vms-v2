@@ -2,6 +2,10 @@ import {
   Box,
   Button,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Paper,
   Table,
   TableBody,
@@ -9,6 +13,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
   Typography,
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -47,11 +52,22 @@ export function CertificatesAdmin() {
 
   const refresh = () => void queryClient.invalidateQueries({ queryKey: ['certificates'] });
 
+  const [issuing, setIssuing] = useState<CertificateCandidate | null>(null);
+  const [mementoNote, setMementoNote] = useState('');
+
   const issue = useMutation({
     mutationFn: async (c: CertificateCandidate) =>
-      (await api.post('/certificates/issue', { volunteerId: c.volunteerId, programId: c.programId })).data,
+      (
+        await api.post('/certificates/issue', {
+          volunteerId: c.volunteerId,
+          programId: c.programId,
+          mementoNote: mementoNote.trim() || undefined,
+        })
+      ).data,
     onSuccess: (cert: { certificateNumber: string }) => {
       refresh();
+      setIssuing(null);
+      setMementoNote('');
       enqueueSnackbar(`Issued ${cert.certificateNumber} — PDF emailed`, { variant: 'success' });
     },
     onError: (err) => enqueueSnackbar(asApiError(err)?.message ?? 'Issue failed', { variant: 'error' }),
@@ -212,7 +228,7 @@ export function CertificatesAdmin() {
                   ) : (
                     <Button size="small" variant="pill" sx={{ px: 1.5, py: 0.4 }}
                       disabled={issue.isPending}
-                      onClick={() => issue.mutate(c)}>
+                      onClick={() => setIssuing(c)}>
                       🏆 Issue
                     </Button>
                   )}
@@ -229,6 +245,36 @@ export function CertificatesAdmin() {
           </TableBody>
         </Table>
       </TableContainer>
+
+      <Dialog open={issuing !== null} onClose={() => setIssuing(null)} fullWidth maxWidth="xs">
+        <DialogTitle>Issue certificate</DialogTitle>
+        <DialogContent sx={{ display: 'grid', gap: 2, pt: '8px !important' }}>
+          <Typography sx={{ fontSize: '0.9rem' }}>
+            {issuing?.volunteerName} — {issuing?.programName}: the PDF is generated from attended
+            hours and emailed immediately.
+          </Typography>
+          <TextField
+            label="Tangible gift note (optional)"
+            placeholder="e.g. sapling, memento box"
+            helperText="Recorded on the certificate row and mentioned in the email; the handover itself stays offline."
+            value={mementoNote}
+            onChange={(e) => setMementoNote(e.target.value)}
+            inputProps={{ maxLength: 255 }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button variant="pillOutlined" onClick={() => setIssuing(null)}>
+            Cancel
+          </Button>
+          <Button
+            variant="pill"
+            disabled={issue.isPending}
+            onClick={() => issuing && issue.mutate(issuing)}
+          >
+            🏆 Issue
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <ConfirmDialog
         open={bulkOpen}

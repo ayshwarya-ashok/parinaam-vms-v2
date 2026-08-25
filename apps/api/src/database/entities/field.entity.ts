@@ -21,7 +21,7 @@ export type AbsenceReason =
   | 'No longer available'
   | 'Other';
 export type EventReportStatus = 'completed' | 'partial' | 'postponed' | 'cancelled';
-export type PhotoSource = 'admin_upload' | 'coordinator_report' | 'volunteer_attendance';
+export type PhotoSource = 'admin_upload' | 'coordinator_report' | 'volunteer_attendance' | 'volunteer_feedback';
 
 /**
  * Per-occurrence state of the two outbound emails. Answers "has this occurrence
@@ -222,7 +222,10 @@ export class EventPhoto {
   @Column({ type: 'varchar', length: 255, nullable: true })
   caption!: string | null;
 
-  @Column({ type: 'enum', enumName: 'photo_source', enum: ['admin_upload', 'coordinator_report', 'volunteer_attendance'], default: 'admin_upload' })
+  @Column({ name: 'feedback_id', type: 'uuid', nullable: true })
+  feedbackId!: string | null;
+
+  @Column({ type: 'enum', enumName: 'photo_source', enum: ['admin_upload', 'coordinator_report', 'volunteer_attendance', 'volunteer_feedback'], default: 'admin_upload' })
   source!: PhotoSource;
 
   @Column({ name: 'is_public', type: 'boolean', default: false })

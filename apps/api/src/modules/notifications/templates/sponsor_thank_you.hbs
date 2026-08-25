@@ -1,0 +1,13 @@
+<h1 style="margin:0 0 12px;font-size:22px;">Thank you for {{eventName}} 🙏</h1>
+<p style="margin:0 0 16px;">{{#if organizationName}}Dear {{organizationName}} team, thank{{else}}Thank{{/if}} you for making <strong>{{eventName}}</strong> on {{eventDate}} possible. Here is what your support achieved:</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 16px;border-collapse:collapse;font-size:14px;">
+  <tr><td style="padding:4px 16px 4px 0;color:#5e6a62;">Volunteers who took part</td><td style="padding:4px 0;font-weight:700;">{{volunteersAttended}}</td></tr>
+  <tr><td style="padding:4px 16px 4px 0;color:#5e6a62;">Hours contributed</td><td style="padding:4px 0;font-weight:700;">{{totalHours}}</td></tr>
+  <tr><td style="padding:4px 16px 4px 0;color:#5e6a62;">Beneficiaries reached</td><td style="padding:4px 0;font-weight:700;">{{beneficiariesReached}}</td></tr>
+  <tr><td style="padding:4px 16px 4px 0;color:#5e6a62;">Community served</td><td style="padding:4px 0;font-weight:700;">{{communityNames}}</td></tr>
+</table>
+{{#if photoLinks.length}}
+<p style="margin:0 0 8px;font-weight:700;">Moments from the day (links valid for 7 days):</p>
+<p style="margin:0 0 16px;">{{#each photoLinks}}<a href="{{this.url}}" style="color:#bc5328;">📷 Photo {{this.n}}</a>&nbsp;&nbsp;{{/each}}</p>
+{{/if}}
+<p style="margin:0;color:#5e6a62;font-size:13px;">We would love to plan the next one with you — simply reply to this email.</p>

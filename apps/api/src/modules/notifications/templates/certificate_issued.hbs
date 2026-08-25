@@ -9,3 +9,7 @@
 <p style="margin:0 0 16px;">Your certificate of appreciation is attached to this email as a PDF. It is also available any time in your volunteer dashboard.</p>
 <p style="margin:0 0 20px;">{{> button url=walletUrl label="View my certificates"}}</p>
 <p style="margin:0;color:#5e6a62;font-size:13px;">We hope to see you at the next session — communities are built one volunteer at a time.</p>
+
+{{#if mementoNote}}
+<p style="margin:12px 0 0;color:#3d4744;">A small token of appreciation awaits you as well: <strong>{{mementoNote}}</strong> — your coordinator will hand it over at the next session.</p>
+{{/if}}

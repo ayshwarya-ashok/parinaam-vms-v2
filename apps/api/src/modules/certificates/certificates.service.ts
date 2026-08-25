@@ -151,7 +151,7 @@ export class CertificatesService {
     volunteerId: string,
     programId: string,
     issuedBy: string,
-    opts: { reissue?: boolean } = {},
+    opts: { reissue?: boolean; mementoNote?: string } = {},
   ): Promise<Certificate> {
     const participation = await this.participationOf(volunteerId, programId);
     if (!participation || participation.events_attended === 0) {
@@ -213,6 +213,9 @@ export class CertificatesService {
       row.issued = true;
       row.issuedAt = new Date();
       row.issuedBy = issuedBy;
+      // The Exposure Visit "tangible gift" record (client doc): noted at issue
+      // time, mentioned in the email; the handover itself stays offline.
+      if (opts.mementoNote !== undefined) row.mementoNote = opts.mementoNote.trim() || null;
 
       return repo.save(row);
     });
@@ -373,6 +376,7 @@ export class CertificatesService {
         certificateNumber: cert.certificateNumber,
         hours: this.fmtHours(cert.hours),
         eventsAttended: cert.eventsAttended,
+        mementoNote: cert.mementoNote,
       },
       attachmentUrl: this.signer.internalUrl(
         cert.filePath!,

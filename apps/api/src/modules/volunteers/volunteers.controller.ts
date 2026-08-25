@@ -19,6 +19,7 @@ import {
 } from '../../common/decorators/auth.decorators';
 import {
   AdminUpdateVolunteerDto,
+  InviteVolunteersDto,
   RegisterVolunteerDto,
   ReviewRegistrationDto,
   SignConsentDto,
@@ -168,6 +169,20 @@ export class VolunteersController {
     @Body() dto: ReviewRegistrationDto,
   ) {
     return this.service.review(user, id, 'rejected', dto);
+  }
+
+  @Post('volunteers/invite')
+  @Roles('admin')
+  @ApiOperation({ summary: "Bulk-invite a company's employees to register (already-registered addresses are skipped)" })
+  invite(@CurrentUser() user: AuthPrincipal, @Body() dto: InviteVolunteersDto) {
+    return this.service.invite(user, dto);
+  }
+
+  @Post('volunteers/:id/welcome-back')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Re-send the welcome-back email (sent automatically on inactive → active)' })
+  welcomeBack(@Param('id', UuidPipe) id: string) {
+    return this.service.sendWelcomeBack(id);
   }
 
   @Post('volunteers/:id/erase')
