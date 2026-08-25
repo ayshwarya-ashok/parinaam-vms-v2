@@ -217,7 +217,7 @@ export function Register() {
             sx={{
               p: 3,
               borderRadius: 6,
-              bgcolor: 'rgba(255,252,247,0.82)',
+              bgcolor: 'rgba(255,255,255,0.82)',
               backdropFilter: 'blur(18px)',
             }}
           >
@@ -475,7 +475,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
         textTransform: 'uppercase',
         letterSpacing: '0.08em',
         color: tokens.accentStrong,
-        borderBottom: '1px solid rgba(19,35,37,0.10)',
+        borderBottom: '1px solid rgba(31,43,54,0.10)',
         pb: 0.5,
         mt: 0.5,
       }}

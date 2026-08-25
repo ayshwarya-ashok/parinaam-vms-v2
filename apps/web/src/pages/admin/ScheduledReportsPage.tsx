@@ -190,7 +190,7 @@ export function ScheduledReportsPage() {
                         px: 1.25,
                         py: 0.4,
                         borderRadius: 999,
-                        bgcolor: row.isActive ? 'rgba(29,107,77,0.12)' : 'rgba(19,35,37,0.08)',
+                        bgcolor: row.isActive ? 'rgba(30,127,79,0.12)' : 'rgba(31,43,54,0.08)',
                         color: row.isActive ? tokens.success : 'text.secondary',
                       }}
                     >

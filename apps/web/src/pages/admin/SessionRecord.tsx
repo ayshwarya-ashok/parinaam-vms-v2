@@ -587,7 +587,7 @@ export function SessionRecord() {
                       sx={{
                         height: 20,
                         fontSize: '0.7rem',
-                        bgcolor: r.source === 'admin' ? 'rgba(217,108,63,0.14)' : 'rgba(19,35,37,0.07)',
+                        bgcolor: r.source === 'admin' ? 'rgba(30,122,178,0.14)' : 'rgba(31,43,54,0.07)',
                       }}
                     />
                   ) : (

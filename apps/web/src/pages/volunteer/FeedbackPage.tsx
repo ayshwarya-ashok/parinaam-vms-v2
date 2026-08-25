@@ -210,7 +210,7 @@ function FeedbackForm({ event, onDone }: { event: EligibleEvent; onDone: () => v
               cursor: 'pointer',
               fontSize: '2rem',
               px: 0.25,
-              color: n <= rating ? tokens.accent : 'rgba(19,35,37,0.25)',
+              color: n <= rating ? tokens.accent : 'rgba(31,43,54,0.25)',
             }}
           >
             ★
@@ -317,7 +317,7 @@ function FeedbackForm({ event, onDone }: { event: EligibleEvent; onDone: () => v
             <Box
               component="span"
               onClick={() => setPhotos([])}
-              sx={{ cursor: 'pointer', color: '#bc5328', '&:hover': { textDecoration: 'underline' } }}
+              sx={{ cursor: 'pointer', color: '#1B6EA0', '&:hover': { textDecoration: 'underline' } }}
             >
               ✕ clear
             </Box>

@@ -21,7 +21,7 @@ const POLICIES = [
   {
     key: 'pocso' as const,
     tag: 'POCSO',
-    color: '#bc5328',
+    color: '#1B6EA0',
     title: 'POCSO — Protection of Children from Sexual Offences',
     body:
       'As a Parinaam volunteer, you may work with or around children. The POCSO Act 2012 makes it ' +
@@ -34,7 +34,7 @@ const POLICIES = [
   {
     key: 'posh' as const,
     tag: 'POSH',
-    color: '#3a60a0',
+    color: '#1B6EA0',
     title: 'POSH — Prevention of Sexual Harassment at Workplace',
     body:
       'Parinaam maintains a zero-tolerance policy towards sexual harassment. The POSH Act 2013 applies ' +
@@ -47,7 +47,7 @@ const POLICIES = [
   {
     key: 'nda' as const,
     tag: 'NDA',
-    color: '#0f2b2d',
+    color: '#1F2B36',
     title: 'NDA — Non-Disclosure Agreement',
     body:
       'All information you encounter during your volunteering — including beneficiary details, ' +
@@ -131,7 +131,7 @@ export function Consent() {
               p: 2.5,
               borderRadius: 4,
               bgcolor: 'rgba(255,255,255,0.72)',
-              borderColor: agreed[policy.key] ? 'rgba(29,107,77,0.4)' : undefined,
+              borderColor: agreed[policy.key] ? 'rgba(30,127,79,0.4)' : undefined,
             }}
           >
             <Chip

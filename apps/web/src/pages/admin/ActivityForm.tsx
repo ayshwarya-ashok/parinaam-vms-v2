@@ -187,7 +187,7 @@ export function ActivityForm() {
         />
 
         <Typography sx={{ fontWeight: 700, fontSize: '0.92rem', mt: 1 }}>
-          Session defaults <span style={{ fontWeight: 400, color: '#5e6a62' }}>— pre-filled when scheduling; each session can override them</span>
+          Session defaults <span style={{ fontWeight: 400, color: '#5E6E7E' }}>— pre-filled when scheduling; each session can override them</span>
         </Typography>
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 2fr' }, gap: 2 }}>
           <TextField
@@ -228,8 +228,8 @@ export function ActivityForm() {
                   px: 1.5,
                   py: 0.5,
                   borderRadius: 2,
-                  bgcolor: trainingIds.includes(t.id) ? 'rgba(141,184,166,0.1)' : 'rgba(255,255,255,0.6)',
-                  borderColor: trainingIds.includes(t.id) ? 'rgba(141,184,166,0.6)' : undefined,
+                  bgcolor: trainingIds.includes(t.id) ? 'rgba(10,170,186,0.1)' : 'rgba(255,255,255,0.6)',
+                  borderColor: trainingIds.includes(t.id) ? 'rgba(10,170,186,0.6)' : undefined,
                 }}
               >
                 <FormControlLabel
@@ -244,7 +244,7 @@ export function ActivityForm() {
                   label={
                     <Typography sx={{ fontSize: '0.9rem' }}>
                       <strong>{t.name}</strong>
-                      <span style={{ color: '#5e6a62' }}> · {t.duration} · {t.mode}</span>
+                      <span style={{ color: '#5E6E7E' }}> · {t.duration} · {t.mode}</span>
                     </Typography>
                   }
                 />

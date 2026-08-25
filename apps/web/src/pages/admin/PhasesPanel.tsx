@@ -252,8 +252,8 @@ export function PhasesPanel({
                 flexWrap: 'wrap',
                 p: 1.5,
                 borderRadius: 2.5,
-                border: '1px solid rgba(19,35,37,0.1)',
-                bgcolor: 'rgba(255,252,247,0.7)',
+                border: '1px solid rgba(31,43,54,0.1)',
+                bgcolor: 'rgba(255,255,255,0.7)',
               }}
             >
               <Box sx={{ minWidth: 0 }}>

@@ -34,12 +34,12 @@ interface ImpactPayload {
 
 /** The prototype's card gradients, in order. */
 const GRADIENTS = [
-  'linear-gradient(135deg,#d96c3f 0%,#bc5328 100%)',
-  'linear-gradient(135deg,#3a7a68 0%,#1d6b4d 100%)',
-  'linear-gradient(135deg,#3a60a0 0%,#2b4a80 100%)',
-  'linear-gradient(135deg,#8db8a6 0%,#5a9a84 100%)',
+  'linear-gradient(135deg,#1E7AB2 0%,#1B6EA0 100%)',
+  'linear-gradient(135deg,#078894 0%,#1E7F4F 100%)',
+  'linear-gradient(135deg,#1B6EA0 0%,#2b4a80 100%)',
+  'linear-gradient(135deg,#0AAABA 0%,#5a9a84 100%)',
   'linear-gradient(135deg,#5c6bc0 0%,#3949ab 100%)',
-  'linear-gradient(135deg,#0f2b2d 0%,#1a4a4d 100%)',
+  'linear-gradient(135deg,#1F2B36 0%,#1a4a4d 100%)',
 ];
 
 const SECTION_PAD = { py: { xs: 5, md: 8 }, px: { xs: 3, sm: 6, md: 12, lg: 16 } };
@@ -118,7 +118,7 @@ export function ImpactPage() {
   const programmeTiles = (data?.programs ?? []).slice(0, Math.max(0, 6 - photoTiles.length));
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#fbf6ec' }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#F7FAFD' }}>
       {/* ── Join / Admin bar — lifted to the top ─────────────────────────── */}
       <Box
         sx={{
@@ -162,12 +162,12 @@ export function ImpactPage() {
           ...SECTION_PAD,
           position: 'relative',
           overflow: 'hidden',
-          background: 'linear-gradient(135deg,#0f2b2d 0%,#1a4a4d 100%)',
+          background: 'linear-gradient(135deg,#1F2B36 0%,#1a4a4d 100%)',
           '&::before': {
             content: '""',
             position: 'absolute',
             inset: 0,
-            background: 'radial-gradient(ellipse at 70% 30%, rgba(217,108,63,0.22), transparent 55%)',
+            background: 'radial-gradient(ellipse at 70% 30%, rgba(30,122,178,0.22), transparent 55%)',
             pointerEvents: 'none',
           },
         }}
@@ -184,7 +184,7 @@ export function ImpactPage() {
               fontSize: '0.75rem',
               letterSpacing: '0.2em',
               textTransform: 'uppercase',
-              color: 'rgba(217,108,63,0.9)',
+              color: 'rgba(30,122,178,0.9)',
               fontWeight: 700,
               mb: 2,
             }}
@@ -242,7 +242,7 @@ export function ImpactPage() {
       </Box>
 
       {/* ── Our Impact ───────────────────────────────────────────────────── */}
-      <Box sx={{ ...SECTION_PAD, bgcolor: 'rgba(255,252,247,0.9)' }}>
+      <Box sx={{ ...SECTION_PAD, bgcolor: 'rgba(255,255,255,0.9)' }}>
         <SectionLabel>Our Impact</SectionLabel>
         <SectionTitle>What we achieved together</SectionTitle>
         <SectionSub>
@@ -264,7 +264,7 @@ export function ImpactPage() {
                 borderRadius: '1.25rem',
                 textAlign: 'center',
                 bgcolor: 'rgba(255,255,255,0.75)',
-                border: '1px solid rgba(19,35,37,0.08)',
+                border: '1px solid rgba(31,43,54,0.08)',
               }}
             >
               <Typography sx={{ fontFamily: SERIF, fontSize: '2.8rem', lineHeight: 1, mb: 0.5, color: tokens.accentStrong }}>
@@ -392,7 +392,7 @@ export function ImpactPage() {
 
       {/* ── Volunteer Voices (published testimonials only — BR-16) ───────── */}
       {(data?.testimonials.length ?? 0) > 0 && (
-        <Box sx={{ ...SECTION_PAD, bgcolor: 'rgba(255,252,247,0.9)' }}>
+        <Box sx={{ ...SECTION_PAD, bgcolor: 'rgba(255,255,255,0.9)' }}>
           <SectionLabel>Volunteer Voices</SectionLabel>
           <SectionTitle>What our volunteers say</SectionTitle>
           <SectionSub>Real experiences from the people who made it happen.</SectionSub>
@@ -410,7 +410,7 @@ export function ImpactPage() {
                   p: 3,
                   borderRadius: '1.25rem',
                   bgcolor: 'rgba(255,255,255,0.8)',
-                  border: '1px solid rgba(19,35,37,0.08)',
+                  border: '1px solid rgba(31,43,54,0.08)',
                 }}
               >
                 <Typography sx={{ fontSize: '1rem', lineHeight: 1.75, fontStyle: 'italic', mb: 2.5 }}>
@@ -455,19 +455,19 @@ export function ImpactPage() {
           ...SECTION_PAD,
           position: 'relative',
           overflow: 'hidden',
-          background: 'linear-gradient(135deg,#0f2b2d 0%,#1a4a4d 100%)',
+          background: 'linear-gradient(135deg,#1F2B36 0%,#1a4a4d 100%)',
         }}
       >
         <Box
           sx={{
             position: 'absolute',
             inset: 0,
-            background: 'radial-gradient(ellipse at 80% 50%, rgba(217,108,63,0.18), transparent 55%)',
+            background: 'radial-gradient(ellipse at 80% 50%, rgba(30,122,178,0.18), transparent 55%)',
             pointerEvents: 'none',
           }}
         />
         <Box sx={{ position: 'relative', zIndex: 1, maxWidth: 640 }}>
-          <SectionLabel sx={{ color: 'rgba(217,108,63,0.85)' }}>Your Voice Matters</SectionLabel>
+          <SectionLabel sx={{ color: 'rgba(30,122,178,0.85)' }}>Your Voice Matters</SectionLabel>
           <SectionTitle sx={{ color: '#fff', mb: 1 }}>Share your experience</SectionTitle>
           <Typography sx={{ color: 'rgba(255,255,255,0.68)', mb: 4, fontSize: '1rem', lineHeight: 1.75 }}>
             Volunteered with Parinaam recently? Tell us what you loved, what we can improve, and how

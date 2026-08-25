@@ -36,7 +36,7 @@ function Pips({ used, max, passed }: { used: number; max: number | null; passed:
                 ? passed && i === used - 1
                   ? tokens.success
                   : alpha(tokens.accentStrong, 0.55)
-                : 'rgba(19,35,37,0.12)',
+                : 'rgba(31,43,54,0.12)',
           }}
         />
       ))}

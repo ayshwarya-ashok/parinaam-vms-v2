@@ -174,8 +174,8 @@ export function ProgramForm() {
                   px: 1.5,
                   py: 0.5,
                   borderRadius: 2,
-                  bgcolor: trainingIds.includes(t.id) ? 'rgba(141,184,166,0.1)' : 'rgba(255,255,255,0.6)',
-                  borderColor: trainingIds.includes(t.id) ? 'rgba(141,184,166,0.6)' : undefined,
+                  bgcolor: trainingIds.includes(t.id) ? 'rgba(10,170,186,0.1)' : 'rgba(255,255,255,0.6)',
+                  borderColor: trainingIds.includes(t.id) ? 'rgba(10,170,186,0.6)' : undefined,
                 }}
               >
                 <FormControlLabel
@@ -190,7 +190,7 @@ export function ProgramForm() {
                   label={
                     <Typography sx={{ fontSize: '0.9rem' }}>
                       <strong>{t.name}</strong>
-                      <span style={{ color: '#5e6a62' }}>
+                      <span style={{ color: '#5E6E7E' }}>
                         {' '}
                         · {t.duration} · {t.mode}
                         {t.isMandatory ? ' · mandatory compliance' : ''}

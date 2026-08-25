@@ -1,25 +1,27 @@
 import { alpha, createTheme } from '@mui/material/styles';
 
 /**
- * Design tokens lifted verbatim from VMS_prototype_v2.html.
- * See docs/01-design-document.md §8.1 for the mapping table.
+ * Design tokens — the brand palette derived from parinaam-logo.svg.
+ * See docs/10-brand-palette.md; the toast styling is deliberately exempt.
  */
 export const tokens = {
-  ink: '#0f2b2d',
-  accent: '#d96c3f',
-  accentStrong: '#bc5328',
-  mint: '#8db8a6',
-  textMain: '#132325',
-  textMuted: '#5e6a62',
-  panel: 'rgba(255,252,247,0.82)',
-  success: '#1d6b4d',
-  info: '#3a60a0',
+  ink: '#1F2B36',
+  accent: '#1E7AB2',
+  accentStrong: '#1B6EA0',
+  mint: '#0AAABA',
+  textMain: '#445563',
+  textMuted: '#5E6E7E',
+  panel: 'rgba(255,255,255,0.82)',
+  success: '#1E7F4F',
+  info: '#1B6EA0',
+  /** The logo's centre dot — one highlight per screen, never text. */
+  sun: '#FFD036',
   bgGradient:
-    'radial-gradient(circle at top left, rgba(217,108,63,0.32), transparent 28%),' +
-    'radial-gradient(circle at bottom right, rgba(141,184,166,0.34), transparent 24%),' +
-    'linear-gradient(135deg, #fbf6ec 0%, #efe2cf 48%, #f4ede2 100%)',
-  shadow: '0 24px 80px rgba(19,35,37,0.16)',
-  shadowSm: '0 8px 24px rgba(19,35,37,0.10)',
+    'radial-gradient(circle at top left, rgba(30,122,178,0.32), transparent 28%),' +
+    'radial-gradient(circle at bottom right, rgba(10,170,186,0.34), transparent 24%),' +
+    'linear-gradient(135deg, #f7fafd 0%, #e3eef7 48%, #f0f6fb 100%)',
+  shadow: '0 24px 80px rgba(31,43,54,0.16)',
+  shadowSm: '0 8px 24px rgba(31,43,54,0.10)',
 } as const;
 
 declare module '@mui/material/Button' {
@@ -34,12 +36,12 @@ declare module '@mui/material/Button' {
 export const theme = createTheme({
   palette: {
     mode: 'light',
-    primary: { main: tokens.ink, dark: '#0a1e20', contrastText: '#ffffff' },
+    primary: { main: tokens.ink, dark: '#16202A', contrastText: '#ffffff' },
     secondary: { main: tokens.accent, dark: tokens.accentStrong, contrastText: '#ffffff' },
     success: { main: tokens.success, light: tokens.mint },
     info: { main: tokens.info },
     text: { primary: tokens.textMain, secondary: tokens.textMuted },
-    background: { default: '#f4ede2', paper: '#fffcf7' },
+    background: { default: '#F4F7FA', paper: '#FFFFFF' },
     divider: alpha(tokens.textMain, 0.1),
   },
 
@@ -86,11 +88,11 @@ export const theme = createTheme({
             padding: '0.75rem 1.5rem',
             color: '#fff',
             background: `linear-gradient(135deg, ${tokens.accent} 0%, ${tokens.accentStrong} 100%)`,
-            boxShadow: '0 14px 30px rgba(188,83,40,0.25)',
+            boxShadow: '0 14px 30px rgba(27,110,160,0.25)',
             transition: 'transform 160ms ease, box-shadow 160ms ease',
             '&:hover': {
               transform: 'translateY(-2px)',
-              boxShadow: '0 18px 36px rgba(188,83,40,0.34)',
+              boxShadow: '0 18px 36px rgba(27,110,160,0.34)',
               background: `linear-gradient(135deg, ${tokens.accent} 0%, ${tokens.accentStrong} 100%)`,
             },
             '&.Mui-disabled': { opacity: 0.5, color: '#fff' },

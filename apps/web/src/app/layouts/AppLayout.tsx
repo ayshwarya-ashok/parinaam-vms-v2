@@ -210,7 +210,7 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
         anchor="left"
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
-        PaperProps={{ sx: { width: 260, bgcolor: '#0f2b2d', color: '#fff' } }}
+        PaperProps={{ sx: { width: 260, bgcolor: '#1F2B36', color: '#fff' } }}
       >
         <Box sx={{ px: 2.5, pt: 2.5, pb: 1 }}>
           <Box component="img" src="/parinaam-logo-dark.svg" alt="Parinaam" sx={{ height: 40, display: 'block' }} />
@@ -253,7 +253,7 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
             zIndex: (t) => t.zIndex.appBar - 1,
             bgcolor: 'rgba(251,246,236,0.92)',
             backdropFilter: 'blur(8px)',
-            borderBottom: '1px solid rgba(19,35,37,0.08)',
+            borderBottom: '1px solid rgba(31,43,54,0.08)',
           }}
         >
         <Container maxWidth="xl" sx={{ py: 1.25 }}>

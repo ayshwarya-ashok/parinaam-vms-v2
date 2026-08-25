@@ -136,7 +136,7 @@ export function ActivityDetail() {
           <Button
             variant="pillOutlined"
             size="small"
-            sx={activity.status === 'active' ? { color: 'secondary.dark', borderColor: 'rgba(188,83,40,0.4)' } : undefined}
+            sx={activity.status === 'active' ? { color: 'secondary.dark', borderColor: 'rgba(27,110,160,0.4)' } : undefined}
             onClick={() =>
               activity.status === 'active' ? setDiscontinueOpen(true) : toggleActivity.mutate()
             }
@@ -164,7 +164,7 @@ export function ActivityDetail() {
             key={t.id}
             label={`${t.name} required`}
             size="small"
-            sx={{ bgcolor: 'rgba(141,184,166,0.18)', color: '#2d6b56', fontWeight: 600 }}
+            sx={{ bgcolor: 'rgba(10,170,186,0.18)', color: '#2d6b56', fontWeight: 600 }}
           />
         ))}
       </Box>

@@ -155,7 +155,7 @@ export function SessionDetailPage() {
                 variant="outlined"
                 sx={{ px: 1.5, py: 1, borderRadius: 2, display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'rgba(255,255,255,0.7)' }}
               >
-                <Typography sx={{ fontWeight: 700, color: t.held ? '#1d6b4d' : '#bc5328' }}>
+                <Typography sx={{ fontWeight: 700, color: t.held ? '#1E7F4F' : '#1B6EA0' }}>
                   {t.held ? '✓' : '!'}
                 </Typography>
                 <Typography sx={{ fontSize: '0.9rem', flex: 1 }}>

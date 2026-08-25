@@ -114,10 +114,10 @@ export function CommunitiesPage() {
               p: 2,
               borderRadius: 4,
               cursor: 'pointer',
-              bgcolor: 'rgba(255,252,247,0.8)',
+              bgcolor: 'rgba(255,255,255,0.8)',
               opacity: c.status === 'archived' ? 0.65 : 1,
               transition: 'box-shadow 160ms ease',
-              '&:hover': { boxShadow: '0 12px 24px rgba(19,35,37,0.10)' },
+              '&:hover': { boxShadow: '0 12px 24px rgba(31,43,54,0.10)' },
             }}
           >
             <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>

@@ -44,7 +44,7 @@ export function LinkFormShell({
               gap: 1.5,
               px: 3,
               py: 2,
-              bgcolor: 'rgba(141,184,166,0.12)',
+              bgcolor: 'rgba(10,170,186,0.12)',
               borderBottom: '1px solid',
               borderColor: 'divider',
             }}
@@ -130,7 +130,7 @@ export function LinkThankYou({
             placeItems: 'center',
             color: '#fff',
             fontSize: '1.5rem',
-            background: 'linear-gradient(135deg, #2d9e6e, #1d6b4d)',
+            background: 'linear-gradient(135deg, #2d9e6e, #1E7F4F)',
           }}
         >
           ✓

@@ -129,7 +129,7 @@ export function Landing() {
             sx={{
               p: 3,
               borderRadius: 6,
-              bgcolor: 'rgba(255,252,247,0.82)',
+              bgcolor: 'rgba(255,255,255,0.82)',
               backdropFilter: 'blur(18px)',
             }}
           >
@@ -142,7 +142,7 @@ export function Landing() {
               }}
               variant="fullWidth"
               sx={{
-                bgcolor: 'rgba(19,35,37,0.06)',
+                bgcolor: 'rgba(31,43,54,0.06)',
                 borderRadius: 999,
                 minHeight: 0,
                 p: 0.5,

@@ -224,7 +224,7 @@ export function TrainingForm() {
               {(existing?.materials ?? []).map((m) => (
                 <Paper key={m.id} variant="outlined" sx={{ px: 1.5, py: 0.75, borderRadius: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Typography sx={{ flex: 1, fontSize: '0.9rem' }}>
-                    {m.name} <span style={{ color: '#5e6a62' }}>· {m.fileSizeText}</span>
+                    {m.name} <span style={{ color: '#5E6E7E' }}>· {m.fileSizeText}</span>
                   </Typography>
                   <IconButton size="small" onClick={() => removeMaterial.mutate(m.id)}>
                     <DeleteOutlineIcon fontSize="small" />

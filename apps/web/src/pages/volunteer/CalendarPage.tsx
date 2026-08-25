@@ -11,7 +11,7 @@ const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
-const PILL_COLORS = [tokens.accent, tokens.info, tokens.success, '#5c6bc0', '#3a7a68', tokens.accentStrong];
+const PILL_COLORS = [tokens.accent, tokens.info, tokens.success, '#5c6bc0', '#078894', tokens.accentStrong];
 
 /**
  * A Date as the LOCAL yyyy-mm-dd. toISOString() renders UTC, which for anyone
@@ -154,7 +154,7 @@ export function CalendarPage() {
                       fontSize: '0.65rem',
                       fontWeight: 700,
                       color: '#fff',
-                      bgcolor: s.status === 'cancelled' ? 'rgba(19,35,37,0.25)' : programColor(s.program.id),
+                      bgcolor: s.status === 'cancelled' ? 'rgba(31,43,54,0.25)' : programColor(s.program.id),
                       borderRadius: 999,
                       px: 0.75,
                       py: 0.1,
@@ -201,7 +201,7 @@ export function CalendarPage() {
                       {s.startTime} · {s.durationHours}h · {s.location ?? 'TBC'}
                     </Typography>
                   </Box>
-                  <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: s.myState === 'enrolled' ? '#1d6b4d' : s.capacity.spotsLeft === 0 ? tokens.accentStrong : '#1d6b4d' }}>
+                  <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: s.myState === 'enrolled' ? '#1E7F4F' : s.capacity.spotsLeft === 0 ? tokens.accentStrong : '#1E7F4F' }}>
                     {s.myState === 'enrolled'
                       ? '✓ Enrolled'
                       : s.myState === 'waitlisted'

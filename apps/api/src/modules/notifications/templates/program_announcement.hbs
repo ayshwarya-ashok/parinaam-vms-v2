@@ -1,15 +1,15 @@
 <h1 style="margin:0 0 12px;font-size:22px;">New volunteering opportunity</h1>
 <p style="margin:0 0 16px;">Dear {{firstName}}, we're excited to announce sessions under <strong>{{programName}}</strong>!</p>
-{{#if programDescription}}<p style="margin:0 0 16px;color:#5e6a62;">{{programDescription}}</p>{{/if}}
+{{#if programDescription}}<p style="margin:0 0 16px;color:#5E6E7E;">{{programDescription}}</p>{{/if}}
 {{#if sessions.length}}
-<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 16px;border:1px solid rgba(19,35,37,.10);border-radius:12px;">
+<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 16px;border:1px solid rgba(31,43,54,.10);border-radius:12px;">
   {{#each sessions}}
-  <tr><td style="padding:12px 16px;border-bottom:1px solid rgba(19,35,37,.06);">
+  <tr><td style="padding:12px 16px;border-bottom:1px solid rgba(31,43,54,.06);">
     <p style="margin:0;font-weight:700;">{{this.name}}</p>
-    <p style="margin:4px 0 0;font-size:13px;color:#5e6a62;">🗓 {{this.date}} at {{this.time}} ({{this.hours}}h) &middot; 📍 {{this.location}}</p>
+    <p style="margin:4px 0 0;font-size:13px;color:#5E6E7E;">🗓 {{this.date}} at {{this.time}} ({{this.hours}}h) &middot; 📍 {{this.location}}</p>
   </td></tr>
   {{/each}}
 </table>
 {{/if}}
-<p style="margin:0 0 20px;"><a href="{{webUrl}}/app/events" style="display:inline-block;padding:12px 24px;background:linear-gradient(135deg,#d96c3f,#bc5328);color:#fff;border-radius:999px;font-weight:700;text-decoration:none;font-size:14px;">Sign in &amp; enroll now</a></p>
-<p style="margin:0;color:#5e6a62;font-size:12px;">To stop receiving announcements, update your preferences in your profile. Confirmations and attendance mail always arrive.</p>
+<p style="margin:0 0 20px;"><a href="{{webUrl}}/app/events" style="display:inline-block;padding:12px 24px;background:linear-gradient(135deg,#2691D0,#1B6EA0);color:#fff;border-radius:999px;font-weight:700;text-decoration:none;font-size:14px;">Sign in &amp; enroll now</a></p>
+<p style="margin:0;color:#5E6E7E;font-size:12px;">To stop receiving announcements, update your preferences in your profile. Confirmations and attendance mail always arrive.</p>

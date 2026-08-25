@@ -112,13 +112,13 @@ export function SessionCard({ session, onEnroll, onWithdraw, onLeaveWaitlist }: 
       sx={{
         p: 2,
         borderRadius: 4,
-        bgcolor: 'rgba(255,252,247,0.8)',
+        bgcolor: 'rgba(255,255,255,0.8)',
         cursor: 'pointer',
         display: 'flex',
         flexDirection: 'column',
         gap: 1.25,
         transition: 'box-shadow 160ms ease',
-        '&:hover': { boxShadow: '0 12px 24px rgba(19,35,37,0.10)' },
+        '&:hover': { boxShadow: '0 12px 24px rgba(31,43,54,0.10)' },
       }}
     >
       <Box>
@@ -142,7 +142,7 @@ export function SessionCard({ session, onEnroll, onWithdraw, onLeaveWaitlist }: 
           sx={{
             height: 6,
             borderRadius: 999,
-            bgcolor: 'rgba(19,35,37,0.08)',
+            bgcolor: 'rgba(31,43,54,0.08)',
             '& .MuiLinearProgress-bar': { bgcolor: barColor, borderRadius: 999 },
           }}
         />

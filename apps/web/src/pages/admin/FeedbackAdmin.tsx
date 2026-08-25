@@ -143,11 +143,11 @@ function FeedbackCard({
         <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mt: 1.25 }}>
           {row.issues.map((label) => (
             <Chip key={`i-${label}`} label={`⚠ ${label}`} size="small"
-              sx={{ height: 22, fontSize: '0.72rem', bgcolor: 'rgba(188,83,40,0.10)', color: tokens.accentStrong }} />
+              sx={{ height: 22, fontSize: '0.72rem', bgcolor: 'rgba(27,110,160,0.10)', color: tokens.accentStrong }} />
           ))}
           {row.improvements.map((label) => (
             <Chip key={`m-${label}`} label={`↑ ${label}`} size="small"
-              sx={{ height: 22, fontSize: '0.72rem', bgcolor: 'rgba(141,184,166,0.22)' }} />
+              sx={{ height: 22, fontSize: '0.72rem', bgcolor: 'rgba(10,170,186,0.22)' }} />
           ))}
         </Box>
       )}
@@ -160,7 +160,7 @@ function FeedbackCard({
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1, mt: 1.5 }}>
         {row.is_published_testimonial && (
           <Chip label="Published testimonial" size="small"
-            sx={{ height: 22, fontSize: '0.72rem', bgcolor: 'rgba(29,107,77,0.12)', color: tokens.success, fontWeight: 700 }} />
+            sx={{ height: 22, fontSize: '0.72rem', bgcolor: 'rgba(30,127,79,0.12)', color: tokens.success, fontWeight: 700 }} />
         )}
         <Button
           size="small"

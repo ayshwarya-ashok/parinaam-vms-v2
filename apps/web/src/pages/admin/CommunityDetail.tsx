@@ -85,7 +85,7 @@ export function CommunityDetail() {
             sx={{
               p: 2,
               borderRadius: 4,
-              bgcolor: 'rgba(255,252,247,0.8)',
+              bgcolor: 'rgba(255,255,255,0.8)',
               textDecoration: 'none',
               color: 'inherit',
               display: 'flex',
@@ -94,7 +94,7 @@ export function CommunityDetail() {
               gap: 2,
               flexWrap: 'wrap',
               transition: 'box-shadow 160ms ease',
-              '&:hover': { boxShadow: '0 12px 24px rgba(19,35,37,0.10)' },
+              '&:hover': { boxShadow: '0 12px 24px rgba(31,43,54,0.10)' },
             }}
           >
             <Box sx={{ minWidth: 0 }}>

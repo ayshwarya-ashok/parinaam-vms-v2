@@ -29,10 +29,10 @@ ChartJS.register(
   Tooltip,
 );
 
-const PALETTE = ['#d96c3f', '#8db8a6', '#0f2b2d', '#e0a458', '#7d6b91', '#5e8ca7'];
+const PALETTE = ['#1E7AB2', '#0AAABA', '#1F2B36', '#e0a458', '#7d6b91', '#5e8ca7'];
 const FONT = { family: 'Inter, system-ui, sans-serif', size: 11 };
 ChartJS.defaults.font = FONT as never;
-ChartJS.defaults.color = '#5e6a62';
+ChartJS.defaults.color = '#5E6E7E';
 
 function monthLabel(ym: string): string {
   const [y, m] = ym.split('-').map(Number);
@@ -202,7 +202,7 @@ export function MetricsDashboard() {
               datasets: [{
                 data: (c?.volunteerGrowth ?? []).map((r) => r.count),
                 borderColor: PALETTE[0],
-                backgroundColor: 'rgba(217,108,63,0.15)',
+                backgroundColor: 'rgba(30,122,178,0.15)',
                 fill: true,
               }],
             }}
@@ -287,7 +287,7 @@ export function MetricsDashboard() {
               labels: (c?.trainingCompletion ?? []).map((r) => r.label.replace(' Compliance', '')),
               datasets: [
                 { label: 'Passed', data: (c?.trainingCompletion ?? []).map((r) => r.passed), backgroundColor: PALETTE[1] },
-                { label: 'Eligible', data: (c?.trainingCompletion ?? []).map((r) => r.eligible), backgroundColor: 'rgba(19,35,37,0.15)' },
+                { label: 'Eligible', data: (c?.trainingCompletion ?? []).map((r) => r.eligible), backgroundColor: 'rgba(31,43,54,0.15)' },
               ],
             }}
           />

@@ -102,7 +102,7 @@ export function ProgramDetail() {
               <Button
                 variant="pillOutlined"
                 size="small"
-                sx={{ color: 'secondary.dark', borderColor: 'rgba(188,83,40,0.4)' }}
+                sx={{ color: 'secondary.dark', borderColor: 'rgba(27,110,160,0.4)' }}
                 onClick={() => setDiscontinueOpen(true)}
               >
                 ✕ Discontinue
@@ -150,7 +150,7 @@ export function ProgramDetail() {
               key={t.id}
               label={`${t.name} · ${t.duration} · ${t.mode}`}
               size="small"
-              sx={{ bgcolor: 'rgba(141,184,166,0.18)', color: '#2d6b56', fontWeight: 600 }}
+              sx={{ bgcolor: 'rgba(10,170,186,0.18)', color: '#2d6b56', fontWeight: 600 }}
             />
           ))}
         </Box>

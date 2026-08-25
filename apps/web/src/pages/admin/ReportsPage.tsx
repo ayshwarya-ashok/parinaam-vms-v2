@@ -175,7 +175,7 @@ export function ReportsPage() {
                 <TableCell align="right"><strong>{Number(row.total_hours)}</strong></TableCell>
                 <TableCell>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Box sx={{ flex: 1, height: 7, borderRadius: 999, bgcolor: 'rgba(19,35,37,0.08)' }}>
+                    <Box sx={{ flex: 1, height: 7, borderRadius: 999, bgcolor: 'rgba(31,43,54,0.08)' }}>
                       <Box
                         sx={{
                           height: 7,

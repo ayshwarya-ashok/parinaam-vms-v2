@@ -62,7 +62,7 @@ export function ProgramsList() {
               cursor: 'pointer',
               transition: 'box-shadow 160ms ease, transform 160ms ease',
               opacity: p.status === 'discontinued' ? 0.65 : 1,
-              '&:hover': { boxShadow: '0 8px 24px rgba(19,35,37,0.10)', transform: 'translateY(-1px)' },
+              '&:hover': { boxShadow: '0 8px 24px rgba(31,43,54,0.10)', transform: 'translateY(-1px)' },
             }}
           >
             <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>

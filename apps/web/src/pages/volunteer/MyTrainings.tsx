@@ -46,7 +46,7 @@ function TrainingRow({ t, locked }: { t: MyTraining; locked?: boolean }) {
         cursor: locked ? 'default' : 'pointer',
         opacity: locked ? 0.55 : 1,
         bgcolor: 'rgba(255,255,255,0.8)',
-        '&:hover': locked ? undefined : { boxShadow: '0 8px 20px rgba(19,35,37,0.08)' },
+        '&:hover': locked ? undefined : { boxShadow: '0 8px 20px rgba(31,43,54,0.08)' },
       }}
     >
       <Box

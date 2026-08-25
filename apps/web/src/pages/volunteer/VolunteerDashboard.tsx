@@ -32,7 +32,7 @@ export function VolunteerDashboard() {
       actions={
         <Chip
           label={`Phase: ${user?.volunteer?.phase ?? '—'}`}
-          sx={{ fontWeight: 700, bgcolor: 'rgba(29,107,77,0.1)', color: '#1d6b4d' }}
+          sx={{ fontWeight: 700, bgcolor: 'rgba(30,127,79,0.1)', color: '#1E7F4F' }}
         />
       }
     >

@@ -20,11 +20,11 @@ export interface CertificateData {
 const W = 842;
 const H = 595;
 
-const INK = rgb(15 / 255, 43 / 255, 45 / 255);
-const ACCENT = rgb(217 / 255, 108 / 255, 63 / 255);
-const ACCENT_STRONG = rgb(188 / 255, 83 / 255, 40 / 255);
-const MUTED = rgb(94 / 255, 106 / 255, 98 / 255);
-const CREAM = rgb(251 / 255, 246 / 255, 236 / 255);
+const INK = rgb(31 / 255, 43 / 255, 54 / 255);
+const ACCENT = rgb(38 / 255, 145 / 255, 208 / 255);
+const ACCENT_STRONG = rgb(27 / 255, 110 / 255, 160 / 255);
+const MUTED = rgb(94 / 255, 110 / 255, 126 / 255);
+const CREAM = rgb(247 / 255, 250 / 255, 253 / 255);
 
 function fmtDate(iso: string | null): string {
   if (!iso) return '';

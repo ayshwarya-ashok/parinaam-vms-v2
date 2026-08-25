@@ -139,7 +139,7 @@ export function ScheduleEventForm() {
           value={mode}
           onChange={(_, v: 'single' | 'series') => setMode(v)}
           sx={{
-            bgcolor: 'rgba(19,35,37,0.06)',
+            bgcolor: 'rgba(31,43,54,0.06)',
             borderRadius: 999,
             minHeight: 0,
             p: 0.5,

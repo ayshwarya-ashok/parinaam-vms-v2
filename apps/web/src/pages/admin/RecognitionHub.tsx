@@ -94,7 +94,7 @@ function RankedList({
             <span>{row.label}</span>
             <strong>{row.count}</strong>
           </Box>
-          <Box sx={{ height: 6, borderRadius: 999, bgcolor: 'rgba(19,35,37,0.08)' }}>
+          <Box sx={{ height: 6, borderRadius: 999, bgcolor: 'rgba(31,43,54,0.08)' }}>
             <Box
               sx={{
                 height: 6,

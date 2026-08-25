@@ -221,7 +221,7 @@ export function TrainingView() {
           <LinearProgress
             variant="determinate"
             value={(answered / questions.length) * 100}
-            sx={{ height: 8, borderRadius: 999, mb: 2, bgcolor: 'rgba(19,35,37,0.08)', '& .MuiLinearProgress-bar': { bgcolor: tokens.accent, borderRadius: 999 } }}
+            sx={{ height: 8, borderRadius: 999, mb: 2, bgcolor: 'rgba(31,43,54,0.08)', '& .MuiLinearProgress-bar': { bgcolor: tokens.accent, borderRadius: 999 } }}
           />
           <Box sx={{ display: 'grid', gap: 2 }}>
             {questions.map((q, qi) => (

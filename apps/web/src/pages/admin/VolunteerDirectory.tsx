@@ -693,7 +693,7 @@ function VolunteerDetailDrawer({
           {v.registrationStatus === 'pending' && (
             <Paper
               variant="outlined"
-              sx={{ p: 2, borderRadius: 3, mb: 2, bgcolor: 'rgba(217,108,63,0.08)' }}
+              sx={{ p: 2, borderRadius: 3, mb: 2, bgcolor: 'rgba(30,122,178,0.08)' }}
             >
               <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', mb: 1 }}>
                 This registration is awaiting your review

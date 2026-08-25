@@ -57,7 +57,7 @@ export function AdminLogin() {
           p: 4,
           borderRadius: 4,
           width: '100%',
-          bgcolor: 'rgba(255,252,247,0.82)',
+          bgcolor: 'rgba(255,255,255,0.82)',
           backdropFilter: 'blur(18px)',
         }}
       >
