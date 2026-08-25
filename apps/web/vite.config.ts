@@ -12,6 +12,10 @@ export default defineConfig({
     port: 5173,
     // Docker-on-Windows bind mounts miss inotify events without polling.
     watch: { usePolling: true, interval: 800 },
+    // With the relative VITE_API_BASE_URL (/api/v1), direct access on :5174
+    // still works: the dev server forwards /api to the api container, the
+    // same shape Caddy gives every other entry point.
+    proxy: { '/api': { target: 'http://api:3000' } },
   },
   build: {
     sourcemap: true,

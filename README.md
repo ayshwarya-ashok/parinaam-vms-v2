@@ -32,7 +32,7 @@ included); feedback and attendance attach to **occurrences**. A session may carr
 
 - **Docker Desktop** (the whole stack runs in containers — no local Node or Postgres needed)
 - ~4 GB free RAM for the seven containers
-- A free run of ports **3001, 5174, 5679, 8026, 1026, 8082, 5432, 6379**
+- A free run of ports **8080, 3001, 5174, 5679, 8026, 1026, 8082, 5432, 6379**
 
 ## 1.2 Clone the repository
 
@@ -58,7 +58,7 @@ The defaults run out of the box. The ones worth knowing:
 |---|---|---|
 | `SEED_DEMO_DATA` | `true` | Load the demo dataset on first boot (set `false` for a clean DB) |
 | `API_PORT` / `WEB_PORT` | `3001` / `5174` | Host ports for API and web app |
-| `VITE_API_BASE_URL` | `http://localhost:3001/api/v1` | Must match the host you open the app on (`localhost` vs `127.0.0.1` are different sites for the auth cookie) |
+| `VITE_API_BASE_URL` | `/api/v1` | **Relative** — the app works behind any host: Caddy (:8080), the Vite dev server (:5174, which proxies `/api`), a tailnet name, a tunnel, or a production domain |
 | `VMS_WEBHOOK_SECRET` | dev value | HMAC secret shared between API and n8n — change per environment |
 | `*_SECRET` / passwords | dev values | Change every one of them anywhere beyond a laptop |
 
@@ -112,6 +112,12 @@ docker compose exec n8n n8n publish:workflow --id=vmsEmailDispatch1
 
 Health check: `curl localhost:3001/api/v1/health/ready` should report db, redis **and n8n** up.
 
+**Sharing the app with teammates** (no server needed): everything rides one origin through
+Caddy, so exposing **only port 8080** — via Tailscale (share the machine, private) or a
+Cloudflare tunnel (`cloudflared tunnel --url http://localhost:8080`, public link) — gives
+others the web app, the API and the Mailpit UI with zero CORS or cookie changes. For links
+inside emails to work for them, set `PUBLIC_WEB_URL` to the shared URL and restart api+worker.
+
 ## 1.8 Start the frontend
 
 Started by the same `--profile app` command above. Open **http://localhost:5174** — the public
@@ -119,9 +125,10 @@ impact page. Everything you need is reachable from there.
 
 | Service | URL |
 |---|---|
-| **Web app** | **http://localhost:5174** |
+| **Caddy — the single front door (app + API + Mailpit on one origin)** | **http://localhost:8080** |
+| Web app (direct; the Vite dev server proxies `/api` itself) | http://localhost:5174 |
 | API (Swagger at `/api/docs`) | http://localhost:3001 |
-| **Mailpit — every email the system sends lands here** | **http://localhost:8026** |
+| **Mailpit — every email the system sends lands here** | **http://localhost:8026/mailpit/** |
 | n8n editor | http://localhost:5679 |
 | Adminer (DB browser — server `db`, user `parinaam`, db `parinaam_vms`) | http://localhost:8082 |
 
@@ -152,7 +159,7 @@ defaults every teammate gets on a fresh clone. None of them are production secre
 | Adminer | http://localhost:8082 | System **PostgreSQL**, server **`db`** (not localhost — Adminer connects inside the Docker network), then the PostgreSQL credentials above |
 | Redis | `localhost:6379` | No password (`docker compose exec redis redis-cli ping` → PONG) |
 | n8n editor | http://localhost:5679 | No shared account — n8n v1 forces per-install owner setup: the first visit shows a **set-up-owner** screen where you create your own login. If someone else already claimed it, run `docker compose exec n8n n8n user-management:reset` and set yours (workflows and credentials survive) |
-| Mailpit UI | http://localhost:8026 | No login — open it to read every email the system sends |
+| Mailpit UI | http://localhost:8026/mailpit/ | No login — open it to read every email the system sends |
 | Mailpit SMTP | `localhost:1026` (containers use `mailpit:1025`) | No auth |
 
 The application-level secrets (`JWT_*`, `LINK_TOKEN_SECRET`, `VMS_WEBHOOK_SECRET`,
@@ -179,7 +186,7 @@ admin, editing the n8n workflow safely).
 
 # Part 2 — VMS Functional Guide
 
-What the system does and where to click. Keep **Mailpit (http://localhost:8026)** open in a
+What the system does and where to click. Keep **Mailpit (http://localhost:8026/mailpit/)** open in a
 second tab throughout — half the product's behaviour is visible there.
 
 ## 2.1 Admin login

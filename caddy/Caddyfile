@@ -1,0 +1,26 @@
+# The single front door — one origin for the whole stack.
+#
+# Locally this listens on :8080 (CADDY_PORT). The same file works verbatim on
+# a VM: swap ":80" for the site's domain and Caddy adds automatic HTTPS.
+#
+# Why one origin matters: the browser talks to BOTH the web app and the API.
+# Behind one origin there is no CORS, no cross-site cookie problem, and the
+# web app's relative VITE_API_BASE_URL (/api/v1) works on any host — localhost,
+# a tailnet name, a tunnel URL, or the production domain.
+:80 {
+	# The API already namespaces itself under /api/v1 — pass it through as-is.
+	handle /api/* {
+		reverse_proxy api:3000
+	}
+
+	# Mailpit UI under a path prefix (MP_WEBROOT=/mailpit/ in compose).
+	handle /mailpit/* {
+		reverse_proxy mailpit:8025
+	}
+
+	# Everything else is the web app. Caddy proxies websockets automatically,
+	# so Vite's HMR keeps working through this hop in development.
+	handle {
+		reverse_proxy web:5173
+	}
+}

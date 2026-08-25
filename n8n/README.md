@@ -4,7 +4,7 @@ Every outbound email in Parinaam VMS is delivered by n8n. The API never talks to
 
 > **Ports.** Inside the Docker network n8n is `n8n:5678` (that is what the API calls). On the
 > **host** the ports are shifted so the legacy stack can coexist: n8n editor
-> **http://localhost:5679**, Mailpit inbox **http://localhost:8026** (SMTP 1026).
+> **http://localhost:5679**, Mailpit inbox **http://localhost:8026/mailpit/** (SMTP 1026).
 
 ## Why
 
@@ -114,8 +114,8 @@ contract rules you must not break.
 
 Mailpit is the sample mailbox: it accepts everything and delivers nothing onward.
 
-- **Inbox**: http://localhost:8026
-- **API**: `GET http://localhost:8026/api/v1/messages` — assertable JSON, so *"cancelling this
+- **Inbox**: http://localhost:8026/mailpit/
+- **API**: `GET http://localhost:8026/mailpit//api/v1/messages` — assertable JSON, so *"cancelling this
   occurrence produced exactly N messages"* is a real test.
 
 Two smoke tests:
