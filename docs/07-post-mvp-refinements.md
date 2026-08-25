@@ -253,6 +253,31 @@ every guard code, view arithmetic, and a classic-session regression. The authz m
 
 ---
 
+## Round 11 — Pre-session emails, and three gaps dispositioned  (2026-08-25)
+
+The client answered the remaining open items from the gap register (`09-client-doc-impact-analysis.md`):
+
+- **⚖ decision — G2 (student data): resolved by scope.** The VMS tracks only the
+  **beneficiary community** impacted by an activity; individual beneficiary details (parent
+  consent, headcounts, emergency contacts, buddy pairing) are deliberately never stored.
+  The current implementation already does exactly this — closed with no build.
+- **⚖ decision — G3 (WhatsApp): out of scope for now.** Email remains the only channel.
+- **G5 (pre-session emails): built.** Two new templates on the existing outbox → n8n → SMTP
+  pipeline: `session_details` (T-7 — venue, time, coordinator contact, what the session is,
+  "materials are provided by the FC" per the client doc) and `session_reminder` (T-1). A
+  daily worker sweep (09:30 IST) queues them idempotently through `email_logs` — the details
+  window is 1–7 days out so late-scheduled sessions still get one, and late enrollees are
+  caught by the next run. **Admins can re-send either email on demand** from the session
+  record ("✉ Send details / reminder email", with sent counts); manual sends bypass the
+  dedupe on purpose. Verified live end-to-end: 2 queued → n8n → Mailpit → `sent`, dedupe
+  excludes exactly the sent pairs, completed/cancelled sessions refuse (`NOT_UPCOMING`).
+  Authz matrix: **70 endpoints × 3 roles = 210 checks**.
+- Remaining backlog (email machinery now ready for them): Welcome-Back + community
+  re-allotment, bulk corporate invites, feedback photo upload, sponsor pack, calendar
+  export, memento note.
+
+---
+
 ## Conventions the refinements established
 
 These emerged during the rounds and now apply app-wide; new code should follow them.

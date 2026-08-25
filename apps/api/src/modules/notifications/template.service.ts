@@ -38,6 +38,8 @@ export class TemplateService implements OnModuleInit {
     attendance_volunteer: 'Action required: mark your attendance — {{eventName}}',
     attendance_coordinator: 'Action required: submit your report — {{eventName}}',
     attendance_reminder: 'Reminder: mark your attendance — {{eventName}}',
+    session_details: 'Next week: {{eventName}} — everything you need',
+    session_reminder: 'Tomorrow: {{eventName}} at {{eventTime}}',
     program_announcement: '🎉 New volunteering opportunity — {{programName}}',
     certificate_issued: 'Your certificate of appreciation — {{programName}}',
     feedback_request: 'How was {{eventName}}? Two minutes of feedback',

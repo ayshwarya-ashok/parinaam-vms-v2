@@ -61,6 +61,7 @@ const MATRIX = [
   ['GET',    `/events/${UUID}/session-record`,          'D', 'D', 'A'],
   ['POST',   `/events/${UUID}/complete`,                'D', 'D', 'A'],
   ['POST',   `/events/${UUID}/attendance`,              'D', 'D', 'A'],
+  ['POST',   `/events/${UUID}/pre-session-email`,       'D', 'D', 'A'],
   ['GET',    '/coordinators',                           'D', 'D', 'A'],
   ['POST',   '/coordinators',                           'D', 'D', 'A'],
   ['GET',    '/certificates',                           'D', 'D', 'A'],

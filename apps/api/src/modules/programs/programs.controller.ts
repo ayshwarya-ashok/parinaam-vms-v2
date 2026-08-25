@@ -26,6 +26,7 @@ import {
   CreateProgramDto,
   DiscontinueDto,
   OverridePhaseDto,
+  PreSessionEmailDto,
   SetTrainingsDto,
   UpdateActivityDto,
   UpdateEventDto,
@@ -33,6 +34,7 @@ import {
   UpdateProgramDto,
 } from './programs.dto';
 import { PhasesService } from './phases.service';
+import { PreSessionSweeper } from './pre-session.sweeper';
 import { ProgramsService } from './programs.service';
 
 @ApiTags('programs')
@@ -42,6 +44,7 @@ export class ProgramsController {
     private readonly programs: ProgramsService,
     private readonly eventsAdmin: EventsAdminService,
     private readonly phases: PhasesService,
+    private readonly preSession: PreSessionSweeper,
   ) {}
 
   // ── Programs ─────────────────────────────────────────────────────────────
@@ -244,6 +247,16 @@ export class ProgramsController {
   @Roles('admin')
   eventEnrollments(@Param('id', UuidPipe) id: string) {
     return this.eventsAdmin.enrollmentsOf(id);
+  }
+
+  @Post('events/:id/pre-session-email')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Send (or re-send) the T-7 details / T-1 reminder email to every enrolled volunteer now' })
+  preSessionEmail(
+    @Param('id', UuidPipe) id: string,
+    @Body() dto: PreSessionEmailDto,
+  ) {
+    return this.preSession.sendNow(id, dto.type);
   }
 
   // ── Session phases ───────────────────────────────────────────────────────

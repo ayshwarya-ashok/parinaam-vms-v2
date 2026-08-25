@@ -123,6 +123,10 @@ export class OverridePhaseDto {
   @IsString() @MaxLength(2000) reason!: string;
 }
 
+export class PreSessionEmailDto {
+  @IsIn(['details', 'reminder']) type!: 'details' | 'reminder';
+}
+
 export class CancelEventDto {
   @IsOptional() @IsString() @MaxLength(2000) reason?: string;
 }

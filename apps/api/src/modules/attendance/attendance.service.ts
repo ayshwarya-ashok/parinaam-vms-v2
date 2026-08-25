@@ -570,6 +570,16 @@ export class AttendanceService {
       [eventId],
     );
 
+    // Pre-session email history — powers the admin's send/re-send buttons.
+    const [preSession] = await this.dataSource.query(
+      `SELECT COUNT(*) FILTER (WHERE template_key = 'session_details')::int  AS details_sent,
+              MAX(queued_at) FILTER (WHERE template_key = 'session_details')   AS details_last_at,
+              COUNT(*) FILTER (WHERE template_key = 'session_reminder')::int AS reminder_sent,
+              MAX(queued_at) FILTER (WHERE template_key = 'session_reminder')  AS reminder_last_at
+       FROM email_logs WHERE event_id = $1`,
+      [eventId],
+    );
+
     // Visit-level rows (phased sessions): one per volunteer per phase per day.
     const visits = await this.dataSource.query(
       `SELECT ar.id, ar.phase_id, ar.visit_date, ar.hours_contributed, ar.notes,
@@ -589,6 +599,7 @@ export class AttendanceService {
       photos,
       phases,
       visits,
+      preSession,
       summary: {
         enrolled: roster.filter((r: { enrollment_status: string | null }) => r.enrollment_status !== null).length,
         submitted: roster.filter((r: { record_id: string | null }) => r.record_id !== null).length,

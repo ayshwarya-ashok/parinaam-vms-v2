@@ -112,6 +112,12 @@ interface SessionRecordPayload {
   photos: Array<{ id: string; caption: string | null }>;
   phases: PhaseRow[];
   visits: VisitRow[];
+  preSession: {
+    details_sent: number;
+    details_last_at: string | null;
+    reminder_sent: number;
+    reminder_last_at: string | null;
+  };
   summary: { enrolled: number; submitted: number; attended: number; totalHours: number };
 }
 
@@ -225,6 +231,21 @@ export function SessionRecord() {
     onError: (err) => enqueueSnackbar(asApiError(err)?.message ?? 'Could not record the walk-in', { variant: 'error' }),
   });
 
+  const preSessionSend = useMutation({
+    mutationFn: async (type: 'details' | 'reminder') =>
+      (await api.post<{ queued: number }>(`/events/${id}/pre-session-email`, { type })).data,
+    onSuccess: (res, type) => {
+      void queryClient.invalidateQueries({ queryKey: ['session-record', id] });
+      enqueueSnackbar(
+        res.queued === 0
+          ? 'No enrolled volunteers to email'
+          : `${type === 'details' ? 'Programme details' : 'Reminder'} email queued to ${res.queued} volunteer${res.queued === 1 ? '' : 's'}`,
+        { variant: res.queued === 0 ? 'info' : 'success' },
+      );
+    },
+    onError: (err) => enqueueSnackbar(asApiError(err)?.message ?? 'Could not queue the email', { variant: 'error' }),
+  });
+
   const markCompleted = useMutation({
     mutationFn: async () => (await api.post(`/events/${id}/complete`)).data,
     onSuccess: () => {
@@ -331,6 +352,31 @@ export function SessionRecord() {
             <Chip size="small" variant="outlined" label={`Capacity ${summary.enrolled}/${event.max_slots}`} />
           )}
         </Box>
+        {event.status !== 'cancelled' && event.status !== 'completed' && (
+          <Box sx={{ display: 'flex', gap: 1, mt: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+            <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary', mr: 0.5 }}>
+              Pre-session emails (T-7 details / T-1 reminder go out automatically — these re-send now):
+            </Typography>
+            <Button
+              size="small"
+              variant="pillOutlined"
+              sx={{ px: 1.5, py: 0.25 }}
+              disabled={preSessionSend.isPending}
+              onClick={() => preSessionSend.mutate('details')}
+            >
+              ✉ Send details email{data?.preSession?.details_sent ? ` (${data.preSession.details_sent} sent)` : ''}
+            </Button>
+            <Button
+              size="small"
+              variant="pillOutlined"
+              sx={{ px: 1.5, py: 0.25 }}
+              disabled={preSessionSend.isPending}
+              onClick={() => preSessionSend.mutate('reminder')}
+            >
+              ✉ Send reminder email{data?.preSession?.reminder_sent ? ` (${data.preSession.reminder_sent} sent)` : ''}
+            </Button>
+          </Box>
+        )}
       </Paper>
 
       <PhasesPanel
