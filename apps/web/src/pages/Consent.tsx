@@ -185,9 +185,6 @@ export function Consent() {
         </Paper>
 
         <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-          <Button variant="pillOutlined" onClick={() => navigate('/app/dashboard')}>
-            ← Back
-          </Button>
           <Button
             variant="pill"
             disabled={!allAgreed || !signedName.trim() || busy}

@@ -6,7 +6,7 @@ import {
   Paper,
   Typography,
 } from '@mui/material';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { usePartnerComplete, useSession } from '@/api/volunteer';
 import { asApiError } from '@/api/client';
 import { useToast } from '@/app/toast';
@@ -38,7 +38,6 @@ function fmtDate(iso: string): string {
 
 export function SessionDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const { data: session, isLoading } = useSession(id);
   const { onEnroll, onWithdraw, onLeaveWaitlist, dialogs } = useEnrollFlow();
   const toast = useToast();
@@ -196,12 +195,6 @@ export function SessionDetailPage() {
           />
         </Grid>
       </Grid>
-
-      <Box sx={{ mt: 3, textAlign: 'right' }}>
-        <Button variant="pillOutlined" onClick={() => navigate(-1)}>
-          ← Back
-        </Button>
-      </Box>
 
       {dialogs}
     </PageShell>
