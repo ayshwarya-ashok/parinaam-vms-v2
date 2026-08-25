@@ -117,6 +117,8 @@ Caddy, so exposing **only port 8080** — via Tailscale (share the machine, priv
 Cloudflare tunnel (`cloudflared tunnel --url http://localhost:8080`, public link) — gives
 others the web app, the API and the Mailpit UI with zero CORS or cookie changes. For links
 inside emails to work for them, set `PUBLIC_WEB_URL` to the shared URL and restart api+worker.
+The full recipe (and the exact setup currently live on this machine) is
+`docs/runbooks/share-local-stack.md`.
 
 ## 1.8 Start the frontend
 
