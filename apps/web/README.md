@@ -11,7 +11,8 @@ a real screen — the last stub was removed in the post-MVP rounds.
 public/               parinaam-logo(.svg|-dark.svg|.png|-dark.png), favicon.svg — one source mark
 src/
   main.tsx            entry; Providers wrap theme, query client, snackbars, auth, error boundary
-  theme/              the design tokens (ink/accent/mint/cream) lifted from the prototype —
+  theme/              the design tokens — the brand palette derived from parinaam-logo.svg
+                      (docs/10-brand-palette.md); toast styling is exempt by decision —
                       NOTE: sx numeric borderRadius MULTIPLIES shape.borderRadius (3)
   api/                typed hooks per domain (client.ts holds the axios instance +
                       silent-refresh interceptor; link.ts is the bare client for token forms)
@@ -64,6 +65,7 @@ docker compose exec web npx tsc --noEmit     # typecheck (no test runner is wire
 docker compose logs web --tail 20            # vite output / HMR errors
 ```
 
-The visual language (tokens, radii, pill buttons) is the prototype's — see
-`docs/01-design-document.md` §8. UI conventions established post-MVP are listed at the end of
+The layout language (radii, pill buttons, spacing) is the prototype's (`docs/01` §8); the
+**colors are the logo-derived brand palette** (`docs/10-brand-palette.md`, applied app-wide
+with toasts exempt). UI conventions established post-MVP are listed at the end of
 `docs/07-post-mvp-refinements.md`.

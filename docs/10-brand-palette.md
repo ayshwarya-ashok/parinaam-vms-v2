@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Source of truth** | The four colors inside `apps/web/public/parinaam-logo.svg` |
-| **Status** | Reference — **not yet applied**. The current theme (`apps/web/src/theme`) wears the HTML prototype's terracotta/cream, which predates the logo. Adopting this palette is a token swap (§6), not a redesign |
+| **Status** | **Applied across the application** (commit `c556889`, 2026-08-25) — theme tokens, every hardcoded page hex, email templates and the certificate PDF. **Toast styling is deliberately exempt** (user decision): the neutral "No changes to save" grey and the notistack variants keep their pre-palette colors |
 | **Derived** | 2026-08-25, with WCAG contrast checks on every text-bearing pairing |
 
 ## 1. Brand anchors — straight from the SVG
@@ -66,9 +66,10 @@ Warning derives from the sun; danger is a warm red that does not fight the blue.
    mean something.
 4. Every neutral comes from the slate ramp; a grey with no blue in it isn't ours.
 
-## 6. Drop-in mapping to the existing theme tokens
+## 6. The token mapping (as applied)
 
-Adopting the palette is a find-and-replace in `apps/web/src/theme`:
+This is the exact substitution that was made in `apps/web/src/theme` and everywhere the old
+values were hardcoded:
 
 | Existing token | Today (prototype) | Brand-true value | Notes |
 |---|---|---|---|
@@ -84,10 +85,13 @@ Adopting the palette is a find-and-replace in `apps/web/src/theme`:
 | `background.paper` | `#fffcf7` | **`#FFFFFF`** | Cards / tables |
 | *(new)* `sun` | — | **`#FFD036`** | The one-per-screen highlight |
 
-Things to re-check if the swap is ever made: the neutral toast styling, chart series colors
-on the metrics dashboard, the certificate PDF header (it embeds the logo PNG, so it already
-matches the brand), and the email template gradient buttons
-(`linear-gradient(135deg,#d96c3f,#bc5328)` → `linear-gradient(135deg,#2691D0,#1B6EA0)`).
+All follow-ups landed with the swap: the email gradient buttons are now
+`linear-gradient(135deg,#2691D0,#1B6EA0)`, the certificate PDF constants were re-derived
+from the brand ramp, and the page-hardcoded hexes (including rgba shadow/glow composites)
+were substituted app-wide. **Deliberately untouched:** `neutralToastStyles` and the
+notistack toast variants — the toasts keep their pre-palette look by explicit decision.
+This document supersedes the color half of `01-design-document.md` §8 (the prototype's
+visual language); the typography, radii and pill shapes from §8 remain in force.
 
 ## 7. Dark-mode companion values
 

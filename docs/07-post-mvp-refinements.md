@@ -306,6 +306,23 @@ gap register (`09`) is fully dispositioned: every item delivered or explicitly o
 
 ---
 
+## Round 13 — The brand palette applied  (`c556889`, 2026-08-25)
+
+The app's colors had come from the HTML prototype (terracotta/cream); the logo's actual
+brand family is blue/teal/yellow/slate. `10-brand-palette.md` derived the full palette from
+`parinaam-logo.svg` (WCAG-checked shades, slate-tinted neutrals, semantic set), and this
+round applied it everywhere the old values lived — theme tokens, 58 hardcoded page hexes
+(including rgba shadow/glow composites), the email templates' header/footer/gradient
+buttons, and the certificate PDF constants.
+
+- **⚖ decision** — **toast styling is exempt**: the neutral grey "No changes to save" toast
+  and the notistack success/error variants keep their pre-palette colors.
+- Verified: both apps typecheck, zero old hexes remain outside the palette doc, a rendered
+  email preview carries the brand blue with no terracotta, and the stack stayed healthy
+  through Caddy (teammates on the funnel URL saw the rebrand live).
+
+---
+
 ## Conventions the refinements established
 
 These emerged during the rounds and now apply app-wide; new code should follow them.
