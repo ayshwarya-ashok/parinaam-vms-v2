@@ -67,7 +67,7 @@ export * from './phase.entity';
  * Every entity, in one array. Registered on the TypeORM data source and
  * asserted against the SQL schema by the CI drift check.
  *
- * 37 tables — see docs/03-data-model.md.
+ * 40 tables — see docs/03-data-model.md.
  */
 export const ALL_ENTITIES = [
   // identity

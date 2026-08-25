@@ -142,9 +142,11 @@ curl -X POST http://localhost:5679/webhook/vms-email \
 | `vms-smtp.credentials.json` | The `VMS SMTP` credential (Mailpit locally) |
 
 The design doc once sketched separate workflows for bulk announcements, attendance reminders
-and scheduled reports. **They were deliberately not built**: all of those became API-side
-sweeps and dispatchers that feed individual messages through this same workflow, keeping one
-delivery path, one signature contract and one execution log.
+and scheduled reports. **They were deliberately not built**: all of those — and the newer
+pre-session sweep (T-7 `session_details` + T-1 `session_reminder`, daily 09:30 IST, with
+admin re-send buttons on the session record) — became API-side sweeps and dispatchers that
+feed individual messages through this same workflow, keeping one delivery path, one
+signature contract and one execution log.
 
 ## Production notes
 

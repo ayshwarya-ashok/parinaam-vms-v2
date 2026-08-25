@@ -140,9 +140,18 @@ admin does not assume volunteers have been told.
 | Screen | Route | Role | Purpose |
 |---|---|---|---|
 | Session record | `/admin/sessions/:id` | admin | Roster (upcoming) / attendance + coordinator report (completed); corrections, walk-ins, Mark completed |
-| Edit occurrence | `/admin/events/:id/edit` | admin | Was a stub through Phase 7; edits one occurrence, guards capacity and reschedules |
+| Edit occurrence | `/admin/events/:id/edit` | admin | Was a stub through Phase 7; edits one occurrence, guards capacity and reschedules; community multi-select |
+| Communities | `/admin/communities` | admin | Beneficiary-community master list: counts by status, create/edit dialog, archive/restore |
+| Community detail | `/admin/communities/:id` | admin | The community's sessions filtered by upcoming / in progress / completed / draft / cancelled |
+| Completed sessions (view toggle) | `/app/events` | volunteer | Upcoming \| Completed switch; "My sessions" filter; attendance outcome on each card |
+
+Existing screens grew after the phased-sessions refinement (`08-phased-sessions-and-communities.md`):
+the session record gained the **phases panel** (add/edit/start/complete/override, per-phase
+visit log) and **pre-session email re-send buttons**; the volunteer session detail gained the
+phase board with **partner-lead marking**; the volunteer dashboard lists open phase-lead
+responsibilities; the schedule/edit forms carry a mandatory community multi-select.
 
 Navigation conventions changed post-MVP: clickable sticky breadcrumbs replaced "← Back"
-buttons everywhere, the nav folds into a hamburger drawer on narrow screens, and the last
-routed stub was removed — every route in the table is a real screen.
-See `07-post-mvp-refinements.md`.
+buttons everywhere (the last two stragglers removed in Round 11), the nav folds into a
+hamburger drawer on narrow screens, and the last routed stub was removed — every route in
+the table is a real screen. See `07-post-mvp-refinements.md`.

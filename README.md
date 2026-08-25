@@ -2,7 +2,8 @@
 
 Volunteer Management System for Parinaam Foundation — a full rebuild derived from
 `VMS_prototype_v2.html` and `VMS_database_model.md`, delivered in eight phases and refined
-through nine post-MVP review rounds (`docs/07-post-mvp-refinements.md`).
+through eleven post-MVP review rounds (`docs/07-post-mvp-refinements.md`) and the client's
+phased-sessions refinement (`docs/08`, `docs/09`).
 
 **Stack** React 18 + MUI · NestJS 10 · PostgreSQL 16 · Redis · **n8n** (email orchestration) ·
 **Mailpit** (sample mailbox) — all in Docker, all local.
@@ -18,8 +19,10 @@ programs            (no dates)      "Community Health Camp"      ← can be disc
           └── events (DATED)        15 Jul 09:00 · 19 Aug 09:00  ← volunteers enroll HERE
 ```
 
-Certificates attach to **programmes** (hours summed across attended occurrences); feedback and
-attendance attach to **occurrences**. `docs/01-design-document.md` §2 has the full model.
+Certificates attach to **programmes** (hours summed across attended occurrences — visit rows
+included); feedback and attendance attach to **occurrences**. A session may carry **phases**
+(multi-day, owned by Parinaam / a partner lead / both) and must serve at least one
+**beneficiary community**. `docs/01-design-document.md` §2 has the full model.
 
 ---
 
@@ -61,7 +64,7 @@ The defaults run out of the box. The ones worth knowing:
 
 ## 1.5 Database setup
 
-Automatic. On the database container's **first** boot it applies migrations `V001–V012` in
+Automatic. On the database container's **first** boot it applies migrations `V001–V015` in
 order (recording a SHA-256 checksum per file in `schema_migrations`), creates n8n's own
 database, and loads seeds. Nothing to run by hand.
 
@@ -133,7 +136,7 @@ All demo accounts use the password **`Parinaam@123`**.
 | Volunteer | `meera@example.org` | Active; enrolled in the (full) Sept Lake drive; a published testimonial is hers |
 | Volunteer | `ananya@example.org` | Active, all compliance passed |
 | Volunteer | `deepa@example.org` | Onboarding — hasn't signed consent yet; shows the consent gate |
-| CSR volunteer | `csr@techcorp.in` | Holds the **corporate** certificate naming TechCorp |
+| CSR volunteer | `csr@techcorp.in` | Holds the **corporate** certificate naming TechCorp; named **mentor lead** on the Chote Kadam phases (EVT-2026-0204) |
 | Volunteer | `anita.rao@example.org` | **Registration pending** — can log in and train, cannot enroll until approved |
 
 ### Infrastructure service credentials
@@ -257,6 +260,12 @@ Admin → **Field Execution** — one row per session:
   Admins can **correct any row** (audited, attributed), **log attendance for silent
   volunteers**, and record **walk-ins** — picked from active approved volunteers only.
 - Volunteers who never respond get exactly one automatic reminder (daily sweep, 09:00 IST).
+- **Pre-session emails go out automatically**: programme details up to a week before and a
+  reminder the day before (daily sweep, 09:30 IST) — and the session record has **re-send
+  buttons** with sent counts for both.
+- On **phased** sessions, attendance is logged per **visit** (volunteer + day + hours) under
+  each phase; hours add up across phases for certificates. The admin can add any active
+  volunteer to a phase mid-session.
 
 ## 2.7 Recognition & retention
 
@@ -315,6 +324,17 @@ Each of these runs end to end on the seed data, in a few minutes:
 8. **The retake rule.** As `rahul@example.org` open the *Orientation* training: it offers a
    retake with the latest-score warning. Fail it on purpose — the pass is revoked; pass it
    again — restored, with the full attempt history kept.
+9. **Walk the Chote Kadam mentor journey.** Programs → Chote Kadam → open **Anganwadi
+   Renovation — Hosur Road** (EVT-2026-0204): seven phases, phase 1 done, phase 2 running
+   with a logged mentor visit. **Log a visit** under phase 2 (any date in its window), mark
+   the Parinaam side of a collab phase, then **Override** one with a reason and watch the
+   session status follow. As `csr@techcorp.in`, see the same phases on the session detail
+   with **"Mark my side complete"**, and the open responsibilities on the dashboard.
+10. **Communities and pre-session emails.** Admin → **Communities** → open *DJ Halli Learning
+    Community* and filter its sessions by status. Then open any upcoming session's record and
+    hit **✉ Send details email** — the T-7 programme-details mail (normally sent
+    automatically a week out, with a reminder at T-1) lands in Mailpit for every enrolled
+    volunteer, and the button shows the running sent count.
 
 ---
 
@@ -325,7 +345,7 @@ apps/api/          NestJS API + worker (one image, ROLE-gated)
 apps/web/          React 18 + MUI SPA
 packages/shared/   contract types + BUSINESS_ERROR_CODES (reference; unused by the apps yet)
 database/
-  migrations/      V001–V012 — schema source of truth (forward-only, checksummed)
+  migrations/      V001–V015 — schema source of truth (forward-only, checksummed)
   seeds/           S001 reference · S002 demo · S003 worked activity · S004 identity backfill
   docker-init/     first-boot bootstrap
 n8n/               version-controlled workflow + credential exports, contract, smoke test

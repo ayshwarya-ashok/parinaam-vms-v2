@@ -23,9 +23,12 @@ src/
     layouts/          AppLayout: app bar (hamburger below the breakpoint), sticky crumbs
   components/         PageShell, FilterBar, StatusPill, StatTile, SortableTable, ConfirmDialog…
   pages/
-    admin/            directory, programs tree, trainings, field execution, session record,
+    admin/            directory, programs tree, communities, trainings, field execution,
+                      session record (phases panel, visit log, pre-session email re-send),
                       recognition, metrics (lazy-loaded — the only chart.js consumer), reports
-    volunteer/        dashboard, browse/enroll, calendar, trainings, certificates, feedback
+    volunteer/        dashboard (incl. phase-lead responsibilities), browse/enroll with
+                      Upcoming | Completed views, session detail (phase board + partner-lead
+                      marking), calendar, trainings, certificates, feedback
     public/           impact page (the site root), tokenized attendance/report forms
 ```
 

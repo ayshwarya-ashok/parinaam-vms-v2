@@ -288,3 +288,35 @@ is the union of both levels, and the response names only what is actually outsta
 Scheduling conflict (BR-11) and capacity (BR-10) follow the same shape, carrying
 `details.conflictingEvent` and `details.waitlistPosition` respectively; the client re-sends with
 `acknowledgeConflict: true` or `acceptWaitlist: true` after the user confirms in the modal.
+
+
+---
+
+## Post-MVP additions (Rounds 10–11 — see 08-phased-sessions-and-communities.md)
+
+**Beneficiary communities** *(admin)* — `GET/POST /communities`, `GET/PATCH /communities/:id`
+(archive via `status`), `GET /communities/:id/sessions?status=`. Every published session must
+carry ≥1 community: `communityIds[]` on event create/series/update; `COMMUNITY_REQUIRED` /
+`COMMUNITY_INVALID` guard create-as-upcoming, publish, and emptying edits.
+
+**Session phases** *(admin)* — `GET/POST /events/:id/phases`, `PATCH/DELETE /phases/:id`,
+`POST /phases/:id/start`, `POST /phases/:id/complete` (Parinaam side; partner-owned phases
+answer `PHASE_NOT_YOURS`), `POST /phases/:id/override` (`{status, reason}` — audited; may
+revert a completed session, writing `session.reverted`). Manual `POST /events/:id/complete`
+refuses phased sessions (`PHASED_SESSION`). *(volunteer)* — `GET /phases/mine` (open
+phase-lead responsibilities) and `POST /phases/:id/partner-complete` (named lead only).
+
+**Visit-level attendance** *(admin)* — `POST /phases/:id/visits`
+(`{volunteerId, visitDate, hoursContributed, walkIn?}`; date must sit inside the phase
+window — `VISIT_INVALID`; unenrolled volunteers need the explicit `walkIn` flag) and
+`DELETE /attendance/visits/:recordId`. The volunteer browse (`GET /events`) gained
+`scope=completed` plus aggregated `myAttendance`/`myHours` per session.
+
+**Pre-session emails** *(admin)* — `POST /events/:id/pre-session-email`
+(`{type: 'details' | 'reminder'}`): re-sends to every enrolled volunteer on demand; the
+automated T-7/T-1 sends run as a daily worker sweep, idempotent through `email_logs`.
+Refuses completed/cancelled sessions (`NOT_UPCOMING`).
+
+New stable error codes: `COMMUNITY_REQUIRED`, `COMMUNITY_INVALID`, `NAME_TAKEN`,
+`PHASED_SESSION`, `PHASE_NOT_YOURS`, `PHASE_ALREADY_MARKED`, `PHASE_LOCKED`,
+`VISIT_INVALID`. Authorization matrix: **70 endpoints × 3 roles = 210 checks**.

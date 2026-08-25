@@ -397,10 +397,10 @@ scheduled_reports ──1:M── report_runs
 
 ---
 
-## Schema changes since v1 (V010–V012)
+## Schema changes since v1 (V010–V015)
 
-The body of this document describes the schema as designed (V001–V009, 36 tables). Three
-migrations landed afterwards; the live schema is **37 tables**.
+The body of this document describes the schema as designed (V001–V009, 36 tables). Six
+migrations landed afterwards; the live schema is **40 tables**.
 
 **V010 — email attachments live on the outbox row.** `email_logs.attachment_url/-name`:
 attachments used to travel as transient queue-job data, so an outbox-sweep retry re-sent the
@@ -423,10 +423,31 @@ stale hours produced a certificate source reading "2.75 hours across 0 sessions"
 carry the same filter. `v_volunteer_report_summary` additionally excludes erased volunteers
 (`…@erased.invalid`), whose rows are anonymised husks.
 
+**V013 — beneficiary communities.** `beneficiary_communities` (name unique, city,
+active/archived — archive, never delete) and the `event_communities` junction. Every
+published session must serve ≥1 community; the rule lives in the service (a cross-table
+CHECK cannot express it). Pre-V013 events backfilled to a seeded default.
+
+**V014 — session phases and the derived lifecycle.** `event_status` gained `inprogress`;
+new enums `phase_status` and `phase_responsibility`; new table `event_phases` (day or
+date-range, parinaam/partner/collab ownership, a named `partner_lead_volunteer_id`, two
+completion-mark pairs, audited override columns). `fn_recompute_event_phase_status` is the
+only writer of a phased session's status: all phases complete → completed, any started →
+inprogress; sessions with zero phases keep the manual lifecycle untouched.
+
+**V015 — visit-level attendance.** `attendance_records` gained `phase_id` and
+`visit_date`; the one-per-session UNIQUE became two partial indexes — classic rows stay
+unique per (event, volunteer) where `phase_id IS NULL`, visit rows are unique per
+(volunteer, phase, visit_date) and are presence-only by CHECK. The V012 views were rewritten
+so session counts are DISTINCT while hours stay plain SUMs (certificate totals span all
+phases of a session).
+
 **Seeds added:** S003 (a fully-worked activity: completed sessions with mixed attendance
-sources, a full upcoming session with a real waitlist, a draft) and S004 (completes volunteer
+sources, a full upcoming session with a real waitlist, a draft), S004 (completes volunteer
 identity fields the mandatory-field rule requires; normalises phones to bare ten digits;
-never touches erased records).
+never touches erased records) and S005 (the four client-document scenarios — see
+`08-phased-sessions-and-communities.md` §4 — including the seven-phase Chote Kadam mentor
+journey with a logged visit, codes EVT-2026-0201…0205).
 
 **Semantics established post-design:** enrolling requires `registration_status = 'approved'`;
 attendance records for non-enrolled volunteers require an explicit walk-in and an
