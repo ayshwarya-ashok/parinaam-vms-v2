@@ -27,24 +27,24 @@ funnel; Funnel can publish 443/8443/10000 only, which is why the single origin p
 
 | Service | URL |
 |---|---|
-| Web app |  |
-| API (same origin) |  |
-| Mailpit UI |  |
+| Web app | `https://ayshwarya.tail6aca2f.ts.net` |
+| API (same origin) | `https://ayshwarya.tail6aca2f.ts.net/api/v1` |
+| Mailpit UI | `https://ayshwarya.tail6aca2f.ts.net/mailpit/` |
 
 **Tailnet-only — this machine, and any device the node is shared with** (the sensitive
 surfaces stay off the public internet by construction):
 
 | Service | URL | Notes |
 |---|---|---|
-| Caddy front door |  | Same three routes as the funnel |
-| Web app (direct, Vite) |  |  proxied by the dev server |
-| API + Swagger |  | Swagger at  |
-| n8n editor |  | Owner login required |
-| Adminer |  | Server **db**, creds in root README §1.9 |
-| Mailpit UI (direct) |  | Note the  path |
-| PostgreSQL |  | psql/DBeaver — not a browser URL |
-| Redis |  | redis-cli |
-| Mailpit SMTP |  | Point an external app's mail here |
+| Caddy front door | `http://ayshwarya.tail6aca2f.ts.net:8080` | Same three routes as the funnel |
+| Web app (direct, Vite) | `http://ayshwarya.tail6aca2f.ts.net:5174` | `/api` proxied by the dev server |
+| API + Swagger | `http://ayshwarya.tail6aca2f.ts.net:3001` | Swagger at `/api/docs` |
+| n8n editor | `http://ayshwarya.tail6aca2f.ts.net:5679` | Owner login required |
+| Adminer | `http://ayshwarya.tail6aca2f.ts.net:8082` | Server **db**, creds in root README §1.9 |
+| Mailpit UI (direct) | `http://ayshwarya.tail6aca2f.ts.net:8026/mailpit/` | Note the `/mailpit/` path |
+| PostgreSQL | `ayshwarya.tail6aca2f.ts.net:5432` | psql/DBeaver — not a browser URL |
+| Redis | `ayshwarya.tail6aca2f.ts.net:6379` | redis-cli |
+| Mailpit SMTP | `ayshwarya.tail6aca2f.ts.net:1026` | Point an external app's mail here |
 
 The worker container has no port — it only consumes the queue. To give a teammate the
 tailnet-only URLs, use node sharing (admin console → Machines → this machine → Share);
