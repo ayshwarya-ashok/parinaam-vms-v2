@@ -394,10 +394,12 @@ Each top-level directory has its own README with the conventions that matter ins
    communities, visit-level attendance, and the demo scenarios for all four client programmes.
 3. `docs/09-client-doc-impact-analysis.md` — the client requirements document checked against
    the implementation: what fits, the gap register, and the pending decisions.
-4. `docs/01-design-document.md` — the domain model (§2), business rules (§10), email
+4. `docs/10-brand-palette.md` — the logo-derived color palette (reference; the live theme still
+   wears the prototype look) with a drop-in token mapping.
+5. `docs/01-design-document.md` — the domain model (§2), business rules (§10), email
    architecture (§12).
-5. `docs/04-api-specification.md` — every endpoint; live Swagger at `localhost:3001/api/docs`.
-6. `docs/runbooks/` — deploy, restore (rehearsed and timed), incident response.
+6. `docs/04-api-specification.md` — every endpoint; live Swagger at `localhost:3001/api/docs`.
+7. `docs/runbooks/` — deploy, restore (rehearsed and timed), incident response.
 
 ## Email, in one paragraph
 
