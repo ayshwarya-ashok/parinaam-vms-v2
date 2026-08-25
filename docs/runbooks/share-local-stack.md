@@ -20,6 +20,36 @@ HTTPS URL — no server, nothing to install on their side.*
 `PUBLIC_WEB_URL=http://localhost:5174` and `docker compose --profile app up -d --force-recreate api worker`
 (so links inside emails point locally again). That one env line is the entire revert.
 
+## Every service URL, by access layer
+
+**Public — anyone with the link, no Tailscale needed** (only the Caddy front door rides the
+funnel; Funnel can publish 443/8443/10000 only, which is why the single origin pays off):
+
+| Service | URL |
+|---|---|
+| Web app |  |
+| API (same origin) |  |
+| Mailpit UI |  |
+
+**Tailnet-only — this machine, and any device the node is shared with** (the sensitive
+surfaces stay off the public internet by construction):
+
+| Service | URL | Notes |
+|---|---|---|
+| Caddy front door |  | Same three routes as the funnel |
+| Web app (direct, Vite) |  |  proxied by the dev server |
+| API + Swagger |  | Swagger at  |
+| n8n editor |  | Owner login required |
+| Adminer |  | Server **db**, creds in root README §1.9 |
+| Mailpit UI (direct) |  | Note the  path |
+| PostgreSQL |  | psql/DBeaver — not a browser URL |
+| Redis |  | redis-cli |
+| Mailpit SMTP |  | Point an external app's mail here |
+
+The worker container has no port — it only consumes the queue. To give a teammate the
+tailnet-only URLs, use node sharing (admin console → Machines → this machine → Share);
+funnel visitors never see them.
+
 ## How requests flow
 
 ```
