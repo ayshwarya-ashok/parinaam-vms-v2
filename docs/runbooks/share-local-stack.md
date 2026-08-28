@@ -11,10 +11,11 @@ HTTPS URL — no server, nothing to install on their side.*
 | What's on it | Web app at `/`, API at `/api/v1`, Mailpit at `/mailpit/` — one origin via Caddy |
 | Logins | The demo accounts in the root README (`Parinaam@123`) — retained by decision |
 | **Turn OFF** | `tailscale funnel --https=443 off` — the URL dies instantly |
-| **Turn ON again** | `tailscale funnel --bg 8080` — the *same* URL comes back |
+| **Turn ON again** | `tailscale funnel --bg 8090` — the *same* URL comes back |
 | Is it on? | `tailscale funnel status` |
 | Uptime | Only while this laptop is awake with Tailscale running — disable sleep-on-lid-close during client sessions |
 | Tailscale binary | `C:\Program Files\Tailscale\tailscale.exe` (account `ayshwaryashok@gmail.com`) |
+| Why :8090 | The front door moved from 8080 on 2026-08-26: the legacy `parinaam-vms` stack's nocodb container publishes 8080, and that stack is off-limits by standing rule |
 
 **When sharing stops for good:** funnel off, then in `.env` set
 `PUBLIC_WEB_URL=http://localhost:5174` and `docker compose --profile app up -d --force-recreate api worker`
@@ -36,7 +37,7 @@ surfaces stay off the public internet by construction):
 
 | Service | URL | Notes |
 |---|---|---|
-| Caddy front door | `http://ayshwarya.tail6aca2f.ts.net:8080` | Same three routes as the funnel |
+| Caddy front door | `http://ayshwarya.tail6aca2f.ts.net:8090` | Same three routes as the funnel |
 | Web app (direct, Vite) | `http://ayshwarya.tail6aca2f.ts.net:5174` | `/api` proxied by the dev server |
 | API + Swagger | `http://ayshwarya.tail6aca2f.ts.net:3001` | Swagger at `/api/docs` |
 | n8n editor | `http://ayshwarya.tail6aca2f.ts.net:5679` | Owner login required |
@@ -56,7 +57,7 @@ funnel visitors never see them.
 client browser ──HTTPS──▶ Tailscale Funnel edge ──▶ tailscaled on the laptop
                                                         │  plain HTTP
                                                         ▼
-                                              Caddy  :8080  (caddy/Caddyfile)
+                                              Caddy  :8090  (caddy/Caddyfile)
                                               ├─ /api/*      → api:3000
                                               ├─ /mailpit/*  → mailpit:8025
                                               └─ /*          → web:5173
@@ -76,9 +77,9 @@ the same shape a future VM deployment will use (same Caddyfile, domain instead o
 4. **HTTPS certificates enabled** for the tailnet (one-time toggle):
    admin console → **DNS → HTTPS Certificates → Enable HTTPS**.
 5. **Funnel approved** for this node (one-time policy grant): the first
-   `tailscale funnel --bg 8080` printed an approval link
+   `tailscale funnel --bg 8090` printed an approval link
    (`login.tailscale.com/f/funnel?node=…`) which was accepted in the admin console.
-6. **Funnel started**: `tailscale funnel --bg 8080` — persists across reboots while
+6. **Funnel started**: `tailscale funnel --bg 8090` — persists across reboots while
    Tailscale runs.
 7. **Email links pointed at the public URL** (`.env`, local only) and api+worker restarted.
 8. **Verified through the public URL**: web 200, `GET /api/v1/health/ready` 200, Mailpit
@@ -94,13 +95,13 @@ browser. The trade-off is that the URL is on the public internet (see security p
 
 | Change | Where | Why |
 |---|---|---|
-| Caddy service on `${CADDY_PORT:-8080}` | `docker-compose.yml` | The single front door |
+| Caddy service on `${CADDY_PORT:-8090}` | `docker-compose.yml` | The single front door |
 | Route table (`/api/*`, `/mailpit/*`, `/*`) | `caddy/Caddyfile` | Reused verbatim on a VM later |
 | `MP_WEBROOT: /mailpit/` on Mailpit | `docker-compose.yml` | Lets Caddy mount the UI on the shared origin. Side-effect: Mailpit's direct port is now `localhost:8026/mailpit/` |
 | `VITE_API_BASE_URL=/api/v1` (**relative**) | `.env.example` | The web app works behind any host — localhost, funnel, tunnel, VM domain |
 | Dev proxy `/api → api:3000` | `apps/web/vite.config.ts` | Direct `:5174` access keeps working with the relative base URL |
 | `allowedHosts: ['.ts.net', '.trycloudflare.com']` | `apps/web/vite.config.ts` | Vite's DNS-rebinding guard 403s unknown Host headers; these are the hostname families the dev server legitimately serves (commit `971772b`) |
-| `:8080` origins in default `CORS_ORIGINS` | `.env.example` | Belt-and-braces; same-origin traffic doesn't strictly need it |
+| `:8090` origins in default `CORS_ORIGINS` | `.env.example` | Belt-and-braces; same-origin traffic doesn't strictly need it |
 
 **Local-only** (this laptop's gitignored `.env` — a fresh clone is unaffected):
 
@@ -126,8 +127,8 @@ between local and shared needs no web rebuild.
 
 - **Private team access** (installs required, nothing public): Tailscale node sharing —
   admin console → Machines → this machine → Share; recipients reach
-  `http://ayshwarya.tail6aca2f.ts.net:8080` over the tailnet.
-- **Ad-hoc public link without Tailscale**: `cloudflared tunnel --url http://localhost:8080`
+  `http://ayshwarya.tail6aca2f.ts.net:8090` over the tailnet.
+- **Ad-hoc public link without Tailscale**: `cloudflared tunnel --url http://localhost:8090`
   (URL rotates per run; `allowedHosts` already covers `.trycloudflare.com`).
 - **The real fix long-term**: a VM running this same compose file, with this same Caddyfile
   serving the domain — see `deploy.md`.

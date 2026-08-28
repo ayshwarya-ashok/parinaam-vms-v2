@@ -137,7 +137,7 @@ services:
     container_name: pvms-adminer
     restart: unless-stopped
     ports:
-      - "${ADMINER_PORT:-8081}:8080"
+      - "${ADMINER_PORT:-8081}:8090"
     environment:
       ADMINER_DEFAULT_SERVER: db
     depends_on:
@@ -251,7 +251,7 @@ services:
     container_name: pvms-caddy
     restart: unless-stopped
     ports:
-      - "${CADDY_PORT:-8080}:80"
+      - "${CADDY_PORT:-8090}:80"
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
     depends_on:

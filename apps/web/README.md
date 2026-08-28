@@ -1,7 +1,7 @@
 # apps/web — React 18 + MUI SPA
 
 Vite dev server in Docker (`:5174`), hot-reloading from the bind-mounted source; normally
-reached through **Caddy on :8080** (one origin for app + API — `VITE_API_BASE_URL` is the
+reached through **Caddy on :8090** (one origin for app + API — `VITE_API_BASE_URL` is the
 relative `/api/v1`, and the dev server itself proxies `/api` so direct :5174 works too). Every route is
 a real screen — the last stub was removed in the post-MVP rounds.
 

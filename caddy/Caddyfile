@@ -1,6 +1,6 @@
 # The single front door — one origin for the whole stack.
 #
-# Locally this listens on :8080 (CADDY_PORT). The same file works verbatim on
+# Locally this listens on :8090 (CADDY_PORT). The same file works verbatim on
 # a VM: swap ":80" for the site's domain and Caddy adds automatic HTTPS.
 #
 # Why one origin matters: the browser talks to BOTH the web app and the API.

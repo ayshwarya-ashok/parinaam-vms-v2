@@ -32,7 +32,7 @@ included); feedback and attendance attach to **occurrences**. A session may carr
 
 - **Docker Desktop** (the whole stack runs in containers — no local Node or Postgres needed)
 - ~4 GB free RAM for the seven containers
-- A free run of ports **8080, 3001, 5174, 5679, 8026, 1026, 8082, 5432, 6379**
+- A free run of ports **8090, 3001, 5174, 5679, 8026, 1026, 8082, 5432, 6379**
 
 ## 1.2 Clone the repository
 
@@ -58,7 +58,7 @@ The defaults run out of the box. The ones worth knowing:
 |---|---|---|
 | `SEED_DEMO_DATA` | `true` | Load the demo dataset on first boot (set `false` for a clean DB) |
 | `API_PORT` / `WEB_PORT` | `3001` / `5174` | Host ports for API and web app |
-| `VITE_API_BASE_URL` | `/api/v1` | **Relative** — the app works behind any host: Caddy (:8080), the Vite dev server (:5174, which proxies `/api`), a tailnet name, a tunnel, or a production domain |
+| `VITE_API_BASE_URL` | `/api/v1` | **Relative** — the app works behind any host: Caddy (:8090), the Vite dev server (:5174, which proxies `/api`), a tailnet name, a tunnel, or a production domain |
 | `VMS_WEBHOOK_SECRET` | dev value | HMAC secret shared between API and n8n — change per environment |
 | `*_SECRET` / passwords | dev values | Change every one of them anywhere beyond a laptop |
 
@@ -113,8 +113,8 @@ docker compose exec n8n n8n publish:workflow --id=vmsEmailDispatch1
 Health check: `curl localhost:3001/api/v1/health/ready` should report db, redis **and n8n** up.
 
 **Sharing the app with teammates** (no server needed): everything rides one origin through
-Caddy, so exposing **only port 8080** — via Tailscale (share the machine, private) or a
-Cloudflare tunnel (`cloudflared tunnel --url http://localhost:8080`, public link) — gives
+Caddy, so exposing **only port 8090** — via Tailscale (share the machine, private) or a
+Cloudflare tunnel (`cloudflared tunnel --url http://localhost:8090`, public link) — gives
 others the web app, the API and the Mailpit UI with zero CORS or cookie changes. For links
 inside emails to work for them, set `PUBLIC_WEB_URL` to the shared URL and restart api+worker.
 The full recipe (and the exact setup currently live on this machine) is
@@ -127,7 +127,7 @@ impact page. Everything you need is reachable from there.
 
 | Service | URL |
 |---|---|
-| **Caddy — the single front door (app + API + Mailpit on one origin)** | **http://localhost:8080** |
+| **Caddy — the single front door (app + API + Mailpit on one origin)** | **http://localhost:8090** |
 | Web app (direct; the Vite dev server proxies `/api` itself) | http://localhost:5174 |
 | API (Swagger at `/api/docs`) | http://localhost:3001 |
 | **Mailpit — every email the system sends lands here** | **http://localhost:8026/mailpit/** |

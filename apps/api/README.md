@@ -74,6 +74,6 @@ curl localhost:3001/api/v1/health/ready          # db + redis + n8n
 ```
 
 Swagger lives at `http://localhost:3001/api/docs` (the API is also reachable through the
-Caddy front door as `http://localhost:8080/api/v1`). The full endpoint contract is
+Caddy front door as `http://localhost:8090/api/v1`). The full endpoint contract is
 `docs/04-api-specification.md`; the rules the endpoints enforce are `docs/01-design-document.md`
 §10 and the post-MVP deltas in `docs/07-post-mvp-refinements.md`.
