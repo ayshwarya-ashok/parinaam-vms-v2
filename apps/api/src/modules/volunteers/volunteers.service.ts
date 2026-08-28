@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import * as ExcelJS from 'exceljs';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { BusinessException } from '../../common';
@@ -10,8 +11,10 @@ import {
   VolunteerConsent,
 } from '../../database/entities';
 import { AuditService } from '../audit/audit.service';
+import { PasswordService } from '../auth/password.service';
 import { NotificationsService } from '../notifications';
 import {
+  AdminCreateVolunteerDto,
   RegisterAccountDto,
   RegisterVolunteerDto,
   ReviewRegistrationDto,
@@ -43,6 +46,7 @@ export class VolunteersService {
     private readonly dataSource: DataSource,
     private readonly audit: AuditService,
     private readonly notifications: NotificationsService,
+    private readonly passwords: PasswordService,
   ) {}
 
   // ── Registration (account + profile, atomically) ──────────────────────────
@@ -642,6 +646,219 @@ export class VolunteersService {
     }
 
     return this.adminGet(id);
+  }
+
+  // ── Admin-side volunteer creation (single + XLSX bulk import) ──────────────
+
+  private static readonly IMPORT_GENDERS = ['Female', 'Male', 'Non-binary', 'Prefer not to say'];
+  private static readonly IMPORT_DEFAULT_PASSWORD = 'Parinaam@123';
+  private static readonly IMPORT_COLUMNS = [
+    'email*', 'first_name*', 'last_name*', 'gender*', 'date_of_birth* (YYYY-MM-DD)',
+    'city*', 'state*', 'phone* (10 digits)', 'skills', 'occupation', 'password',
+  ];
+
+  /** Bare ten digits, tolerating +91 / 91 / 0 prefixes; null when unusable. */
+  private static tenDigitPhone(raw: string): string | null {
+    let d = raw.replace(/\D/g, '');
+    if (d.length === 12 && d.startsWith('91')) d = d.slice(2);
+    if (d.length === 11 && d.startsWith('0')) d = d.slice(1);
+    return d.length === 10 ? d : null;
+  }
+
+  /**
+   * The reference workbook an admin downloads before importing: the exact
+   * header row the parser expects, two worked sample rows, and a Read-me
+   * sheet spelling out the rules. Only the starred columns are mandatory.
+   */
+  async importTemplate(): Promise<Buffer> {
+    const wb = new ExcelJS.Workbook();
+    const sheet = wb.addWorksheet('Volunteers');
+    sheet.addRow(VolunteersService.IMPORT_COLUMNS);
+    sheet.getRow(1).font = { bold: true };
+    sheet.columns.forEach((c, i) => (c.width = i < 8 ? 22 : 16));
+    sheet.addRow(['asha.k@example.org', 'Asha', 'Krishnan', 'Female', '1996-04-18', 'Bengaluru', 'Karnataka', '9876501234', 'teaching, storytelling', 'Teacher', '']);
+    sheet.addRow(['vikas.m@example.org', 'Vikas', 'Menon', 'Male', '1989-11-02', 'Bengaluru', 'Karnataka', '+91 98765 43210', '', '', 'MyOwnPass#1']);
+
+    const readme = wb.addWorksheet('Read me');
+    readme.getColumn(1).width = 100;
+    [
+      'How this import works',
+      '',
+      '• Columns marked * are mandatory; everything else may be left blank.',
+      '• gender must be one of: Female, Male, Non-binary, Prefer not to say.',
+      '• date_of_birth format: YYYY-MM-DD (a real Excel date cell also works).',
+      '• phone: an Indian mobile number — +91 / 91 / 0 prefixes are accepted and normalised to 10 digits.',
+      '• password is optional; blank rows get the initial password "' + VolunteersService.IMPORT_DEFAULT_PASSWORD + '" (ask volunteers to change it after first login).',
+      '• Rows whose email already has an account are skipped and reported back, never overwritten.',
+      '• Imported volunteers are created APPROVED (you are the reviewer) but must still sign the consent forms on first login before enrolling.',
+      '• Maximum 200 rows per file.',
+    ].forEach((t) => readme.addRow([t]));
+    readme.getRow(1).font = { bold: true, size: 13 };
+
+    return Buffer.from(await wb.xlsx.writeBuffer());
+  }
+
+  /** One row's create — shared by the single add and the bulk import. */
+  private async createApproved(
+    principal: AuthPrincipal,
+    data: {
+      email: string; firstName: string; lastName: string; gender: string;
+      dateOfBirth: string; city: string; state: string; phone: string;
+      skills?: string | null; occupation?: string | null; password?: string | null;
+    },
+  ): Promise<Volunteer> {
+    const passwordHash = await this.passwords.hash(
+      data.password?.trim() || VolunteersService.IMPORT_DEFAULT_PASSWORD,
+    );
+    return this.dataSource.transaction(async (manager) => {
+      const user = await manager.save(
+        manager.create(User, { email: data.email, passwordHash, role: 'volunteer' as const }),
+      );
+      return manager.save(
+        manager.create(Volunteer, {
+          userId: user.id,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          gender: data.gender as Volunteer['gender'],
+          dateOfBirth: data.dateOfBirth,
+          city: data.city,
+          state: data.state,
+          phone: data.phone,
+          skills: data.skills?.trim() || null,
+          occupation: data.occupation?.trim() || null,
+          category: 'Individual' as const,
+          complianceRead: false,
+          registrationStatus: 'approved' as const,
+          reviewedBy: principal.sub,
+          reviewedAt: new Date(),
+        }),
+      );
+    });
+  }
+
+  /** Admin adds one volunteer directly — created approved, consent still gated. */
+  async adminCreate(principal: AuthPrincipal, dto: AdminCreateVolunteerDto) {
+    const email = dto.email.trim().toLowerCase();
+    const exists = await this.users.findOne({ where: { email } });
+    if (exists) {
+      throw new BusinessException('EMAIL_TAKEN', 'An account with this email already exists.', 409);
+    }
+    const phone = VolunteersService.tenDigitPhone(dto.phone);
+    if (!phone) {
+      throw new BusinessException('NOT_ELIGIBLE', 'Enter a 10-digit mobile number.', 400);
+    }
+    const volunteer = await this.createApproved(principal, { ...dto, email, phone });
+    await this.audit.record(principal, {
+      action: 'volunteer.admin_created',
+      entity: 'volunteers',
+      entityId: volunteer.id,
+      after: { email, defaultPassword: !dto.password },
+    });
+    return {
+      id: volunteer.id,
+      email,
+      defaultPasswordUsed: !dto.password?.trim(),
+    };
+  }
+
+  /**
+   * XLSX bulk import. Row-by-row: mandatory fields only (the starred template
+   * columns), per-row validation with reasons reported back, duplicates
+   * skipped — one bad row never sinks the file.
+   */
+  async importFromXlsx(principal: AuthPrincipal, buffer: Buffer) {
+    const wb = new ExcelJS.Workbook();
+    try {
+      await wb.xlsx.load(buffer as unknown as ExcelJS.Buffer);
+    } catch {
+      throw new BusinessException('IMPORT_INVALID', 'Not a readable .xlsx file — download the template and start from it.', 400);
+    }
+    const sheet = wb.worksheets[0];
+    if (!sheet || sheet.rowCount < 2) {
+      throw new BusinessException('IMPORT_INVALID', 'The first sheet has no data rows.', 400);
+    }
+    if (sheet.rowCount > 201) {
+      throw new BusinessException('IMPORT_INVALID', 'Maximum 200 rows per import — split the file.', 400);
+    }
+
+    // Header → column index, tolerant of the template's annotations.
+    const colOf: Record<string, number> = {};
+    sheet.getRow(1).eachCell((cell, col) => {
+      const key = String(cell.text ?? '').toLowerCase().split('(')[0].replace(/[^a-z_]/g, '');
+      if (key) colOf[key] = col;
+    });
+    const required = ['email', 'first_name', 'last_name', 'gender', 'date_of_birth', 'city', 'state', 'phone'];
+    const missing = required.filter((k) => !colOf[k.replace(/[^a-z_]/g, '')]);
+    if (missing.length > 0) {
+      throw new BusinessException('IMPORT_INVALID', 'Missing column(s): ' + missing.join(', ') + '. Download the template for the expected format.', 400);
+    }
+
+    const text = (row: ExcelJS.Row, key: string): string => {
+      const col = colOf[key.replace(/[^a-z_]/g, '')];
+      if (!col) return '';
+      const v = row.getCell(col).value;
+      if (v instanceof Date) return v.toISOString().slice(0, 10);
+      return String(row.getCell(col).text ?? '').trim();
+    };
+
+    let created = 0;
+    let defaultPasswordUsed = false;
+    const skipped: Array<{ row: number; email: string; reason: string }> = [];
+
+    for (let r = 2; r <= sheet.rowCount; r++) {
+      const row = sheet.getRow(r);
+      const email = text(row, 'email').toLowerCase();
+      const skip = (reason: string) => skipped.push({ row: r, email: email || '(blank)', reason });
+
+      if (!email && !text(row, 'first_name')) continue; // fully blank row
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { skip('invalid or missing email'); continue; }
+
+      const firstName = text(row, 'first_name');
+      const lastName = text(row, 'last_name');
+      if (!firstName || !lastName) { skip('first and last name are mandatory'); continue; }
+
+      const genderRaw = text(row, 'gender');
+      const gender = VolunteersService.IMPORT_GENDERS.find(
+        (g) => g.toLowerCase() === genderRaw.toLowerCase(),
+      );
+      if (!gender) { skip('gender must be one of: ' + VolunteersService.IMPORT_GENDERS.join(', ')); continue; }
+
+      const dob = text(row, 'date_of_birth');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dob) || Number.isNaN(Date.parse(dob))) {
+        skip('date_of_birth must be YYYY-MM-DD'); continue;
+      }
+
+      const city = text(row, 'city');
+      const state = text(row, 'state');
+      if (!city || !state) { skip('city and state are mandatory'); continue; }
+
+      const phone = VolunteersService.tenDigitPhone(text(row, 'phone'));
+      if (!phone) { skip('phone must be a 10-digit mobile number'); continue; }
+
+      const exists = await this.users.findOne({ where: { email } });
+      if (exists) { skip('already registered'); continue; }
+
+      const password = text(row, 'password') || null;
+      if (!password) defaultPasswordUsed = true;
+      await this.createApproved(principal, {
+        email, firstName, lastName, gender, dateOfBirth: dob, city, state, phone,
+        skills: text(row, 'skills') || null,
+        occupation: text(row, 'occupation') || null,
+        password,
+      });
+      created += 1;
+    }
+
+    await this.audit.record(principal, {
+      action: 'volunteer.imported',
+      entity: 'volunteers',
+      after: { created, skipped: skipped.length },
+    });
+    return {
+      created,
+      skipped,
+      defaultPassword: defaultPasswordUsed ? VolunteersService.IMPORT_DEFAULT_PASSWORD : null,
+    };
   }
 
   /**

@@ -325,6 +325,13 @@ organizationName?}`, completed sessions only), certificate issue accepts `mement
 and report type `calendar` (`filters.year`) joins the export registry. *(volunteer)* —
 `POST /feedback/:id/photos` (multipart, ≤2 images, owner-only, EXIF stripped).
 
+**Admin volunteer creation (Round 14)** — `GET /volunteers/import-template` (the XLSX
+reference), `POST /volunteers/import` (multipart `file`; per-row results
+`{created, skipped[{row,email,reason}], defaultPassword}`; `IMPORT_INVALID` for unreadable
+files/missing columns/>200 rows) and `POST /volunteers/admin-create` (mandatory identity
+fields; `EMAIL_TAKEN` on duplicates). Both create approved volunteers with the admin as
+reviewer.
+
 New stable error codes: `COMMUNITY_REQUIRED`, `COMMUNITY_INVALID`, `NAME_TAKEN`,
 `PHASED_SESSION`, `PHASE_NOT_YOURS`, `PHASE_ALREADY_MARKED`, `PHASE_LOCKED`,
-`VISIT_INVALID`. Authorization matrix: **74 endpoints × 3 roles = 222 checks**.
+`VISIT_INVALID`. Authorization matrix: **77 endpoints × 3 roles = 231 checks**.

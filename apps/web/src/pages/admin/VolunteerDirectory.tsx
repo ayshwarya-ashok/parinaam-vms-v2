@@ -115,6 +115,19 @@ export function VolunteerDirectory() {
   const [rejectReason, setRejectReason] = useState('');
   const [deactivating, setDeactivating] = useState<DirectoryRow | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importResult, setImportResult] = useState<{
+    created: number;
+    skipped: Array<{ row: number; email: string; reason: string }>;
+    defaultPassword: string | null;
+  } | null>(null);
+  const emptyAdd = {
+    email: '', firstName: '', lastName: '', gender: '', dateOfBirth: '',
+    city: '', state: '', phone: '', skills: '', occupation: '', password: '',
+  };
+  const [addForm, setAddForm] = useState<typeof emptyAdd | null>(null);
+  const [addError, setAddError] = useState<string | null>(null);
   const [inviteEmails, setInviteEmails] = useState('');
   const [inviteOrg, setInviteOrg] = useState('');
   const [inviteNote, setInviteNote] = useState('');
@@ -134,6 +147,77 @@ export function VolunteerDirectory() {
       enqueueSnackbar(asApiError(err)?.message ?? 'Could not send the welcome-back email', {
         variant: 'error',
       }),
+  });
+
+  const downloadTemplate = async () => {
+    try {
+      const res = await api.get('/volunteers/import-template', { responseType: 'blob' });
+      const url = URL.createObjectURL(res.data as Blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'volunteer-import-template.xlsx';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      enqueueSnackbar('Could not download the template', { variant: 'error' });
+    }
+  };
+
+  const importXlsx = useMutation({
+    mutationFn: async () => {
+      const form = new FormData();
+      form.append('file', importFile!);
+      return (
+        await api.post<{
+          created: number;
+          skipped: Array<{ row: number; email: string; reason: string }>;
+          defaultPassword: string | null;
+        }>('/volunteers/import', form, { headers: { 'Content-Type': 'multipart/form-data' } })
+      ).data;
+    },
+    onSuccess: (res) => {
+      setImportResult(res);
+      setImportFile(null);
+      void queryClient.invalidateQueries({ queryKey: ['directory'] });
+      enqueueSnackbar(
+        res.created > 0
+          ? `${res.created} volunteer${res.created === 1 ? '' : 's'} imported`
+          : 'No rows imported — see the report',
+        { variant: res.created > 0 ? 'success' : 'warning' },
+      );
+    },
+    onError: (err) =>
+      enqueueSnackbar(asApiError(err)?.message ?? 'Import failed', { variant: 'error' }),
+  });
+
+  const addVolunteer = useMutation({
+    mutationFn: async (f: typeof emptyAdd) =>
+      (
+        await api.post<{ email: string; defaultPasswordUsed: boolean }>('/volunteers/admin-create', {
+          email: f.email.trim(),
+          firstName: f.firstName.trim(),
+          lastName: f.lastName.trim(),
+          gender: f.gender,
+          dateOfBirth: f.dateOfBirth,
+          city: f.city.trim(),
+          state: f.state.trim(),
+          phone: f.phone.trim(),
+          skills: f.skills.trim() || undefined,
+          occupation: f.occupation.trim() || undefined,
+          password: f.password || undefined,
+        })
+      ).data,
+    onSuccess: (res) => {
+      setAddForm(null);
+      void queryClient.invalidateQueries({ queryKey: ['directory'] });
+      enqueueSnackbar(
+        res.defaultPasswordUsed
+          ? `${res.email} added — initial password Parinaam@123 (ask them to change it)`
+          : `${res.email} added`,
+        { variant: 'success' },
+      );
+    },
+    onError: (err) => setAddError(asApiError(err)?.message ?? 'Could not add the volunteer.'),
   });
 
   const invite = useMutation({
@@ -242,8 +326,14 @@ export function VolunteerDirectory() {
       description="Review new registrations, and activate or inactivate volunteers. Click any row to see everything the volunteer told us when they signed up."
       actions={
         <>
+          <Button variant="pill" onClick={() => { setAddError(null); setAddForm({ ...emptyAdd }); }}>
+            ＋ Add volunteer
+          </Button>
+          <Button variant="pillOutlined" onClick={() => { setImportResult(null); setImportOpen(true); }}>
+            ⬆ Import XLSX
+          </Button>
           <Button variant="pillOutlined" onClick={() => setInviteOpen(true)}>
-            ＋ Invite volunteers
+            ✉ Invite volunteers
           </Button>
           {pending > 0 && (
             <Button
@@ -479,6 +569,133 @@ export function VolunteerDirectory() {
             }
           >
             {review.isPending ? 'Rejecting…' : 'Reject registration'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Bulk XLSX import ─────────────────────────────────────────────── */}
+      <Dialog open={importOpen} onClose={() => setImportOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Import volunteers from XLSX</DialogTitle>
+        <DialogContent sx={{ display: 'grid', gap: 2, pt: '8px !important' }}>
+          <Typography sx={{ fontSize: '0.88rem', color: 'text.secondary' }}>
+            Start from the template — it carries the exact columns, two sample rows and the
+            rules. Only the starred columns are mandatory. Rows already registered are skipped
+            and reported; imported volunteers arrive <strong>approved</strong> but still sign
+            consent on first login. Max 200 rows.
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+            <Button variant="pillOutlined" size="small" onClick={() => void downloadTemplate()}>
+              ⬇ Download template
+            </Button>
+            <Button variant="pillOutlined" size="small" component="label">
+              {importFile ? importFile.name : 'Choose .xlsx file'}
+              <input
+                type="file"
+                hidden
+                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                onChange={(e) => {
+                  setImportResult(null);
+                  setImportFile(e.target.files?.[0] ?? null);
+                }}
+              />
+            </Button>
+          </Box>
+          {importResult && (
+            <Box sx={{ borderRadius: 2, p: 1.5, bgcolor: 'rgba(30,122,178,0.07)' }}>
+              <Typography sx={{ fontWeight: 700, fontSize: '0.9rem' }}>
+                {importResult.created} created · {importResult.skipped.length} skipped
+                {importResult.defaultPassword
+                  ? ` · initial password for new accounts: ${importResult.defaultPassword}`
+                  : ''}
+              </Typography>
+              {importResult.skipped.slice(0, 12).map((r) => (
+                <Typography key={r.row} sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>
+                  row {r.row} ({r.email}) — {r.reason}
+                </Typography>
+              ))}
+              {importResult.skipped.length > 12 && (
+                <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>
+                  …and {importResult.skipped.length - 12} more
+                </Typography>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button variant="pillOutlined" onClick={() => setImportOpen(false)}>
+            {importResult ? 'Done' : 'Cancel'}
+          </Button>
+          <Button
+            variant="pill"
+            disabled={!importFile || importXlsx.isPending}
+            onClick={() => importXlsx.mutate()}
+          >
+            {importXlsx.isPending ? 'Importing…' : 'Import'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Add one volunteer ────────────────────────────────────────────── */}
+      <Dialog open={addForm !== null} onClose={() => setAddForm(null)} fullWidth maxWidth="sm">
+        <DialogTitle>Add volunteer</DialogTitle>
+        <DialogContent sx={{ display: 'grid', gap: 2, pt: '8px !important' }}>
+          {addError && (
+            <Typography sx={{ color: 'error.main', fontSize: '0.88rem' }}>{addError}</Typography>
+          )}
+          <TextField label="Email" required type="email" value={addForm?.email ?? ''}
+            onChange={(e) => { setAddError(null); setAddForm((f) => (f ? { ...f, email: e.target.value } : f)); }} />
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+            <TextField label="First name" required value={addForm?.firstName ?? ''}
+              onChange={(e) => setAddForm((f) => (f ? { ...f, firstName: e.target.value } : f))} />
+            <TextField label="Last name" required value={addForm?.lastName ?? ''}
+              onChange={(e) => setAddForm((f) => (f ? { ...f, lastName: e.target.value } : f))} />
+          </Box>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+            <TextField select label="Gender" required value={addForm?.gender ?? ''}
+              onChange={(e) => setAddForm((f) => (f ? { ...f, gender: e.target.value } : f))}>
+              {['Female', 'Male', 'Non-binary', 'Prefer not to say'].map((g) => (
+                <MenuItem key={g} value={g}>{g}</MenuItem>
+              ))}
+            </TextField>
+            <TextField label="Date of birth" required type="date" InputLabelProps={{ shrink: true }}
+              value={addForm?.dateOfBirth ?? ''}
+              onChange={(e) => setAddForm((f) => (f ? { ...f, dateOfBirth: e.target.value } : f))} />
+          </Box>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
+            <TextField label="City" required value={addForm?.city ?? ''}
+              onChange={(e) => setAddForm((f) => (f ? { ...f, city: e.target.value } : f))} />
+            <TextField label="State" required value={addForm?.state ?? ''}
+              onChange={(e) => setAddForm((f) => (f ? { ...f, state: e.target.value } : f))} />
+            <TextField label="Phone" required value={addForm?.phone ?? ''}
+              onChange={(e) => setAddForm((f) => (f ? { ...f, phone: e.target.value } : f))} />
+          </Box>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+            <TextField label="Skills (optional)" value={addForm?.skills ?? ''}
+              onChange={(e) => setAddForm((f) => (f ? { ...f, skills: e.target.value } : f))} />
+            <TextField label="Occupation (optional)" value={addForm?.occupation ?? ''}
+              onChange={(e) => setAddForm((f) => (f ? { ...f, occupation: e.target.value } : f))} />
+          </Box>
+          <TextField label="Initial password (optional)" value={addForm?.password ?? ''}
+            helperText="Blank uses Parinaam@123 — ask them to change it after first login"
+            onChange={(e) => setAddForm((f) => (f ? { ...f, password: e.target.value } : f))} />
+          <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>
+            Created <strong>approved</strong> (you are the reviewer); consent still gates
+            enrollment on their first login.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button variant="pillOutlined" onClick={() => setAddForm(null)}>Cancel</Button>
+          <Button
+            variant="pill"
+            disabled={
+              addVolunteer.isPending ||
+              !addForm?.email.trim() || !addForm?.firstName.trim() || !addForm?.lastName.trim() ||
+              !addForm?.gender || !addForm?.dateOfBirth || !addForm?.city.trim() ||
+              !addForm?.state.trim() || !addForm?.phone.trim()
+            }
+            onClick={() => addForm && addVolunteer.mutate(addForm)}
+          >
+            Add volunteer
           </Button>
         </DialogActions>
       </Dialog>

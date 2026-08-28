@@ -18,6 +18,7 @@ export const BUSINESS_ERROR_CODES = [
   'ACCOUNT_LOCKED',
   'ACCOUNT_NOT_FOUND',
   'EMAIL_TAKEN',
+  'IMPORT_INVALID',
   'INVALID_PASSWORD',
   'INVALID_SIGNATURE',
   // registration & review

@@ -7,10 +7,15 @@ import {
   Post,
   Query,
   Req,
+  Res,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { UuidPipe } from '../../common/pipes/uuid.pipe';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import type { Request } from 'express';
+import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import type { Request, Response } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { BusinessException } from '../../common';
 import {
   AuthPrincipal,
   CurrentUser,
@@ -18,6 +23,7 @@ import {
   Roles,
 } from '../../common/decorators/auth.decorators';
 import {
+  AdminCreateVolunteerDto,
   AdminUpdateVolunteerDto,
   InviteVolunteersDto,
   RegisterVolunteerDto,
@@ -112,6 +118,17 @@ export class VolunteersController {
     return this.service.directory({ q, phase, category, city, registrationStatus, limit, offset });
   }
 
+  @Get('volunteers/import-template')
+  @Roles('admin')
+  @ApiOperation({ summary: 'The XLSX reference template for the bulk import (mandatory columns starred)' })
+  async importTemplate(@Res() res: Response) {
+    const buffer = await this.service.importTemplate();
+    res
+      .type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+      .setHeader('Content-Disposition', 'attachment; filename="volunteer-import-template.xlsx"')
+      .send(buffer);
+  }
+
   @Get('volunteers/:id')
   @Roles('admin')
   @ApiOperation({ summary: 'Full volunteer profile' })
@@ -169,6 +186,28 @@ export class VolunteersController {
     @Body() dto: ReviewRegistrationDto,
   ) {
     return this.service.review(user, id, 'rejected', dto);
+  }
+
+  @Post('volunteers/import')
+  @Roles('admin')
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 2 * 1024 * 1024, files: 1 } }))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Bulk-create volunteers from the XLSX template — per-row validation, duplicates skipped and reported' })
+  importXlsx(
+    @CurrentUser() user: AuthPrincipal,
+    @UploadedFile() file: { buffer: Buffer } | undefined,
+  ) {
+    if (!file?.buffer) {
+      throw new BusinessException('IMPORT_INVALID', 'Attach the filled-in .xlsx file as "file".', 400);
+    }
+    return this.service.importFromXlsx(user, file.buffer);
+  }
+
+  @Post('volunteers/admin-create')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Admin adds one volunteer directly — created approved; consent still gates enrollment' })
+  adminCreate(@CurrentUser() user: AuthPrincipal, @Body() dto: AdminCreateVolunteerDto) {
+    return this.service.adminCreate(user, dto);
   }
 
   @Post('volunteers/invite')

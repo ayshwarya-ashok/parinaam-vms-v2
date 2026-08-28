@@ -323,6 +323,30 @@ buttons, and the certificate PDF constants.
 
 ---
 
+## Round 14 — Admin-side volunteer creation  (2026-08-26)
+
+Two additions to the Volunteers page:
+
+- **Bulk XLSX import** — "⬆ Import XLSX" with a downloadable reference template
+  (`GET /volunteers/import-template`: the exact header row, two worked sample rows, and a
+  Read-me sheet). **Only the starred columns are mandatory** (email, first/last name, gender,
+  DOB, city, state, 10-digit phone — the app-wide identity rule); skills/occupation/password
+  are optional. Row-by-row validation with reasons reported back (bad gender, bad phone,
+  bad date, already registered) — one bad row never sinks the file; ≤200 rows; +91/0 phone
+  prefixes normalised; gender matched case-insensitively. Blank passwords get the documented
+  initial `Parinaam@123`.
+- **Add one volunteer** — "＋ Add volunteer" dialog with the same mandatory-fields-only rule
+  and optional initial password. `EMAIL_TAKEN` on duplicates.
+
+Both create the volunteer **approved** (the admin is the reviewer — `reviewed_by/at` set,
+satisfying the V011 attributability CHECK), but consent still gates enrollment on first
+login. Audited as `volunteer.imported` / `volunteer.admin_created`. Verified live: mixed
+4-row import → 1 created + 3 skipped with correct reasons, imported volunteer logs in with
+the default password, duplicate add 409s. Authz matrix: **77 endpoints × 3 roles = 231
+checks**.
+
+---
+
 ## Conventions the refinements established
 
 These emerged during the rounds and now apply app-wide; new code should follow them.

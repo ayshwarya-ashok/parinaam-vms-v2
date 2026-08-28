@@ -175,3 +175,19 @@ export class InviteVolunteersDto {
   @IsOptional() @Matches(UUID_PATTERN, { message: 'must be a UUID' }) organizationId?: string;
   @IsOptional() @IsString() @MaxLength(1000) note?: string;
 }
+
+/** Admin adds one volunteer directly: the mandatory identity fields only. */
+export class AdminCreateVolunteerDto {
+  @IsEmail() email!: string;
+  @IsString() @IsNotEmpty() @MaxLength(100) firstName!: string;
+  @IsString() @IsNotEmpty() @MaxLength(100) lastName!: string;
+  @IsIn(['Female', 'Male', 'Non-binary', 'Prefer not to say']) gender!: string;
+  @IsDateString() dateOfBirth!: string;
+  @IsString() @IsNotEmpty() @MaxLength(100) city!: string;
+  @IsString() @IsNotEmpty() @MaxLength(100) state!: string;
+  @Matches(PHONE_PATTERN, { message: 'Enter a 10-digit mobile number' }) phone!: string;
+  @IsOptional() @IsString() @MaxLength(255) skills?: string;
+  @IsOptional() @IsString() @MaxLength(150) occupation?: string;
+  /** Blank = the documented initial password. */
+  @IsOptional() @MinLength(8, { message: 'Password must be at least 8 characters' }) password?: string;
+}

@@ -18,7 +18,8 @@ src/
   modules/
     auth/                 login, atomic register, refresh rotation, argon2id (bcrypt upgrades on login)
     volunteers/           profiles, admin directory, registration review, erasure,
-                          welcome-back on reactivation, bulk corporate invites
+                          welcome-back on reactivation, bulk corporate invites,
+                          XLSX bulk import (+ template) and single admin-create
     programs/             programme → activity → event admin, publish/cancel/complete, coordinators,
                           session phases (ownership, marks, audited overrides), pre-session email sweep
     enrollments/          enroll/waitlist/withdraw — BR-05/06/10/11/17 live here; volunteer browse
@@ -38,7 +39,7 @@ src/
     public/ reference/    unauthenticated impact aggregates; option catalogs for forms
     health/ internal/     liveness/readiness + /metrics (Prometheus); dev-only test endpoints
 scripts/
-  authz-matrix.mjs        74 endpoints × 3 roles (222 checks) asserted against the LIVE api — run after route changes
+  authz-matrix.mjs        77 endpoints × 3 roles (231 checks) asserted against the LIVE api — run after route changes
   migrate.ts              apply pending migrations against a running database
 ```
 

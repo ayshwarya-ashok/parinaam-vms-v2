@@ -225,6 +225,12 @@ its own nav: Dashboard, Events, Calendar, Trainings, Certificates, Feedback, Pro
 - **Welcome-Back**: reactivating an inactive volunteer automatically emails them their
   previous community's upcoming sessions; every active row has a **✉ Welcome-back** re-send
   button.
+- **Bulk XLSX import**: Volunteers → **⬆ Import XLSX** — download the reference template
+  (mandatory columns starred, sample rows included), fill it, upload; per-row validation with
+  reasons, duplicates skipped, ≤200 rows. Imported volunteers arrive **approved** but still
+  sign consent on first login; blank passwords get `Parinaam@123`.
+- **Add one volunteer**: Volunteers → **＋ Add volunteer** — the mandatory identity fields
+  only, optional initial password.
 
 ## 2.4 Activity & scheduling
 
