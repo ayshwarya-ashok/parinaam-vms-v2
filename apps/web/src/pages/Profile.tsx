@@ -58,6 +58,20 @@ export function ProfilePage() {
     }
   }, [profile]);
 
+  const [pw, setPw] = useState({ current: '', next: '', confirm: '' });
+  const changePassword = useMutation({
+    mutationFn: async () =>
+      (await api.post('/auth/change-password', {
+        currentPassword: pw.current,
+        newPassword: pw.next,
+      })).data,
+    onSuccess: () => {
+      setPw({ current: '', next: '', confirm: '' });
+      toast.success('Password changed — other devices must sign in again');
+    },
+    onError: (err) => toast.failure(asApiError(err)?.message ?? 'Could not change the password.'),
+  });
+
   const save = useMutation({
     mutationFn: async () =>
       (
@@ -278,6 +292,36 @@ export function ProfilePage() {
           </Typography>
           <Button variant="pill" onClick={handleSave} disabled={save.isPending}>
             {save.isPending ? 'Saving…' : 'Save changes'}
+          </Button>
+        </Box>
+      </Paper>
+
+      <Paper variant="outlined" sx={{ p: 3, borderRadius: 4, mt: 2, bgcolor: 'rgba(255,255,255,0.8)' }}>
+        <Typography sx={{ fontWeight: 700, mb: 0.5 }}>Change password</Typography>
+        <Typography sx={{ color: 'text.secondary', fontSize: '0.85rem', mb: 2 }}>
+          If your account was created for you (an import or an admin add), your initial password
+          is the shared default — set your own here.
+        </Typography>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 2 }}>
+          <TextField label="Current password" type="password" value={pw.current}
+            onChange={(e) => setPw((v) => ({ ...v, current: e.target.value }))} />
+          <TextField label="New password" type="password" value={pw.next}
+            helperText="At least 8 characters"
+            onChange={(e) => setPw((v) => ({ ...v, next: e.target.value }))} />
+          <TextField label="Confirm new password" type="password" value={pw.confirm}
+            error={pw.confirm !== '' && pw.confirm !== pw.next}
+            helperText={pw.confirm !== '' && pw.confirm !== pw.next ? 'Does not match' : ' '}
+            onChange={(e) => setPw((v) => ({ ...v, confirm: e.target.value }))} />
+        </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1.5 }}>
+          <Button
+            variant="pillOutlined"
+            disabled={
+              changePassword.isPending || !pw.current || pw.next.length < 8 || pw.next !== pw.confirm
+            }
+            onClick={() => changePassword.mutate()}
+          >
+            {changePassword.isPending ? 'Changing…' : 'Change password'}
           </Button>
         </Box>
       </Paper>

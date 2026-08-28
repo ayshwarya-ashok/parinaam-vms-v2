@@ -228,7 +228,8 @@ its own nav: Dashboard, Events, Calendar, Trainings, Certificates, Feedback, Pro
 - **Bulk XLSX import**: Volunteers → **⬆ Import XLSX** — download the reference template
   (mandatory columns starred, sample rows included), fill it, upload; per-row validation with
   reasons, duplicates skipped, ≤200 rows. Imported volunteers arrive **approved** but still
-  sign consent on first login; blank passwords get `Parinaam@123`.
+  sign consent on first login; every import starts with the initial password `Parinaam@123`
+  (no password column in the template) — volunteers change it at **Profile → Change password**.
 - **Add one volunteer**: Volunteers → **＋ Add volunteer** — the mandatory identity fields
   only, optional initial password.
 

@@ -304,4 +304,26 @@ export class AuthService {
   private hashToken(raw: string): string {
     return createHash('sha256').update(raw).digest('hex');
   }
+
+  /**
+   * Self-service password change (any authenticated role). Verifying the
+   * current password first means a stolen access token alone cannot rotate
+   * the credential; every refresh token is revoked afterwards so other
+   * devices must sign in again with the new password.
+   */
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+    // password_hash is select: false on the entity — ask for it explicitly.
+    const user = await this.users
+      .createQueryBuilder('u')
+      .addSelect('u.passwordHash')
+      .where('u.id = :id', { id: userId })
+      .getOne();
+    if (!user) throw new BusinessException('ACCOUNT_NOT_FOUND', 'Account not found.', 404);
+    const ok = await this.passwords.verify(currentPassword, user.passwordHash);
+    if (!ok) {
+      throw new BusinessException('INVALID_PASSWORD', 'The current password is incorrect.', 400);
+    }
+    await this.users.update({ id: userId }, { passwordHash: await this.passwords.hash(newPassword) });
+    await this.revokeAllForUser(userId);
+  }
 }

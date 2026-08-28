@@ -654,7 +654,7 @@ export class VolunteersService {
   private static readonly IMPORT_DEFAULT_PASSWORD = 'Parinaam@123';
   private static readonly IMPORT_COLUMNS = [
     'email*', 'first_name*', 'last_name*', 'gender*', 'date_of_birth* (YYYY-MM-DD)',
-    'city*', 'state*', 'phone* (10 digits)', 'skills', 'occupation', 'password',
+    'city*', 'state*', 'phone* (10 digits)', 'skills', 'occupation',
   ];
 
   /** Bare ten digits, tolerating +91 / 91 / 0 prefixes; null when unusable. */
@@ -676,8 +676,8 @@ export class VolunteersService {
     sheet.addRow(VolunteersService.IMPORT_COLUMNS);
     sheet.getRow(1).font = { bold: true };
     sheet.columns.forEach((c, i) => (c.width = i < 8 ? 22 : 16));
-    sheet.addRow(['asha.k@example.org', 'Asha', 'Krishnan', 'Female', '1996-04-18', 'Bengaluru', 'Karnataka', '9876501234', 'teaching, storytelling', 'Teacher', '']);
-    sheet.addRow(['vikas.m@example.org', 'Vikas', 'Menon', 'Male', '1989-11-02', 'Bengaluru', 'Karnataka', '+91 98765 43210', '', '', 'MyOwnPass#1']);
+    sheet.addRow(['asha.k@example.org', 'Asha', 'Krishnan', 'Female', '1996-04-18', 'Bengaluru', 'Karnataka', '9876501234', 'teaching, storytelling', 'Teacher']);
+    sheet.addRow(['vikas.m@example.org', 'Vikas', 'Menon', 'Male', '1989-11-02', 'Bengaluru', 'Karnataka', '+91 98765 43210', '', '']);
 
     const readme = wb.addWorksheet('Read me');
     readme.getColumn(1).width = 100;
@@ -688,7 +688,7 @@ export class VolunteersService {
       '• gender must be one of: Female, Male, Non-binary, Prefer not to say.',
       '• date_of_birth format: YYYY-MM-DD (a real Excel date cell also works).',
       '• phone: an Indian mobile number — +91 / 91 / 0 prefixes are accepted and normalised to 10 digits.',
-      '• password is optional; blank rows get the initial password "' + VolunteersService.IMPORT_DEFAULT_PASSWORD + '" (ask volunteers to change it after first login).',
+      '• Every imported volunteer starts with the initial password "' + VolunteersService.IMPORT_DEFAULT_PASSWORD + '" — ask them to change it after their first login (Profile → Change password).',
       '• Rows whose email already has an account are skipped and reported back, never overwritten.',
       '• Imported volunteers are created APPROVED (you are the reviewer) but must still sign the consent forms on first login before enrolling.',
       '• Maximum 200 rows per file.',
@@ -802,7 +802,6 @@ export class VolunteersService {
     };
 
     let created = 0;
-    let defaultPasswordUsed = false;
     const skipped: Array<{ row: number; email: string; reason: string }> = [];
 
     for (let r = 2; r <= sheet.rowCount; r++) {
@@ -838,13 +837,13 @@ export class VolunteersService {
       const exists = await this.users.findOne({ where: { email } });
       if (exists) { skip('already registered'); continue; }
 
-      const password = text(row, 'password') || null;
-      if (!password) defaultPasswordUsed = true;
+      // Every import gets the documented initial password — the template
+      // deliberately has no password column (client decision, Round 14).
       await this.createApproved(principal, {
         email, firstName, lastName, gender, dateOfBirth: dob, city, state, phone,
         skills: text(row, 'skills') || null,
         occupation: text(row, 'occupation') || null,
-        password,
+        password: null,
       });
       created += 1;
     }
@@ -857,7 +856,7 @@ export class VolunteersService {
     return {
       created,
       skipped,
-      defaultPassword: defaultPasswordUsed ? VolunteersService.IMPORT_DEFAULT_PASSWORD : null,
+      defaultPassword: created > 0 ? VolunteersService.IMPORT_DEFAULT_PASSWORD : null,
     };
   }
 

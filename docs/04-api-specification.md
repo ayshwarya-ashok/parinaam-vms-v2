@@ -330,8 +330,10 @@ reference), `POST /volunteers/import` (multipart `file`; per-row results
 `{created, skipped[{row,email,reason}], defaultPassword}`; `IMPORT_INVALID` for unreadable
 files/missing columns/>200 rows) and `POST /volunteers/admin-create` (mandatory identity
 fields; `EMAIL_TAKEN` on duplicates). Both create approved volunteers with the admin as
-reviewer.
+reviewer; imports always start on the documented initial password (the template has no
+password column). `POST /auth/change-password` (any authenticated role) lets the volunteer
+rotate it — current password required, all refresh tokens revoked.
 
 New stable error codes: `COMMUNITY_REQUIRED`, `COMMUNITY_INVALID`, `NAME_TAKEN`,
 `PHASED_SESSION`, `PHASE_NOT_YOURS`, `PHASE_ALREADY_MARKED`, `PHASE_LOCKED`,
-`VISIT_INVALID`. Authorization matrix: **77 endpoints × 3 roles = 231 checks**.
+`VISIT_INVALID`. Authorization matrix: **78 endpoints × 3 roles = 234 checks**.

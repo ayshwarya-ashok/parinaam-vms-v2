@@ -21,6 +21,12 @@ import { AppConfig } from '../../config';
 import { RegisterAccountDto } from '../volunteers/volunteers.dto';
 import { AuthService, SessionTokens } from './auth.service';
 
+class ChangePasswordDto {
+  @IsString() @MinLength(1) currentPassword!: string;
+  @MinLength(8, { message: 'Password must be at least 8 characters' })
+  @IsString() newPassword!: string;
+}
+
 class CredentialsDto {
   @IsEmail()
   email!: string;
@@ -137,5 +143,12 @@ export class AuthController {
 
   private meta(req: Request) {
     return { ip: req.ip, userAgent: req.headers['user-agent'] };
+  }
+
+  @Post('change-password')
+  @ApiOperation({ summary: 'Change your own password — current password required; other sessions are signed out' })
+  async changePassword(@CurrentUser() user: AuthPrincipal, @Body() dto: ChangePasswordDto) {
+    await this.auth.changePassword(user.sub, dto.currentPassword, dto.newPassword);
+    return { changed: true };
   }
 }

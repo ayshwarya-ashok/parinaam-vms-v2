@@ -583,6 +583,19 @@ export function VolunteerDirectory() {
             and reported; imported volunteers arrive <strong>approved</strong> but still sign
             consent on first login. Max 200 rows.
           </Typography>
+          <Typography
+            sx={{
+              fontSize: '0.85rem',
+              p: 1.25,
+              borderRadius: 2,
+              bgcolor: 'rgba(255,243,201,0.6)',
+              color: '#B37E00',
+              fontWeight: 600,
+            }}
+          >
+            Every imported volunteer starts with the initial password Parinaam@123 — ask them
+            to change it after their first login.
+          </Typography>
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
             <Button variant="pillOutlined" size="small" onClick={() => void downloadTemplate()}>
               ⬇ Download template

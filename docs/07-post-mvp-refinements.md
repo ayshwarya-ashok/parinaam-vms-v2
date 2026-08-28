@@ -333,8 +333,16 @@ Two additions to the Volunteers page:
   DOB, city, state, 10-digit phone — the app-wide identity rule); skills/occupation/password
   are optional. Row-by-row validation with reasons reported back (bad gender, bad phone,
   bad date, already registered) — one bad row never sinks the file; ≤200 rows; +91/0 phone
-  prefixes normalised; gender matched case-insensitively. Blank passwords get the documented
-  initial `Parinaam@123`.
+  prefixes normalised; gender matched case-insensitively.
+- **⚖ decision** — the template carries **no password column**: every imported volunteer
+  starts with the initial `Parinaam@123`, the import modal says so as a disclaimer, and the
+  Read-me sheet tells admins to have volunteers change it after first login.
+- **Change password shipped** to make that instruction real (none existed):
+  `POST /auth/change-password` (current password required — a stolen access token alone
+  cannot rotate the credential; all refresh tokens revoked so other devices re-login) and a
+  Change-password card on the profile page. `passwordHash` is `select: false` on the entity —
+  the lookup must `addSelect` it, same as login (caught live when the correct current
+  password was rejected).
 - **Add one volunteer** — "＋ Add volunteer" dialog with the same mandatory-fields-only rule
   and optional initial password. `EMAIL_TAKEN` on duplicates.
 

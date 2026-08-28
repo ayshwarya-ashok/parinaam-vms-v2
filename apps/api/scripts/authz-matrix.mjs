@@ -35,6 +35,7 @@ const MATRIX = [
   ['GET',    `/files/signed?path=x&exp=1&sig=x`,        'D', 'D', 'D'],
   // ── authenticated, any role ─────────────────────────────────────────
   ['GET',    '/auth/me',                                'D', 'A', 'A'],
+  ['POST',   '/auth/change-password',                   'D', 'A', 'A'],
   // ── volunteer self-service ──────────────────────────────────────────
   ['GET',    '/volunteers/me',                          'D', 'A', 'D'], // admins have no volunteer profile
   ['GET',    '/volunteers/me/compliance',               'D', 'A', 'D'],
