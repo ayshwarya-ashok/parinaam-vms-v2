@@ -252,7 +252,7 @@ export function ProfilePage() {
                 label={profile.category === 'CSR' ? 'Sponsoring organization' : 'Affiliated organization'}
                 fullWidth
                 value={profile.organization.name}
-                InputProps={{ readOnly: true }}
+                disabled
                 helperText="Linked by Parinaam — contact the admin to change it"
               />
             </Grid>
