@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
-| **Period** | 2026-08-20 → 2026-08-21 |
-| **Driver** | Hands-on testing by the product owner, in nine review rounds, plus one full-codebase audit |
+| **Period** | 2026-08-20 → 2026-09-01 (ongoing) |
+| **Driver** | Hands-on testing by the product owner across fifteen review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -210,6 +210,21 @@ The supplied `parinaam_logo.svg` became the single source of truth for the mark:
 
 ---
 
+## Interlude — Completed sessions, everywhere  (`b31fabf`, `1c9951c`, 2026-08-24)
+
+Three small asks between the brand round and the big client refinement:
+
+- **Program cards count completed sessions** beside upcoming (one `FILTER` added to the
+  existing aggregate — no extra query).
+- **Volunteers got a Completed view**: an Upcoming | Completed toggle on Browse Sessions,
+  newest-first, with a "My sessions" filter; completed cards show the volunteer's own outcome
+  ("✓ You attended — 3h" / absent / enrolled-no-record) instead of enroll buttons. The browse
+  read model gained `scope=completed` plus per-caller attendance aggregates.
+- **The session-record breadcrumb** gained the activity link (Field Execution → Program →
+  Activity → Session record) — the payload already carried the ids; the page wasn't using them.
+- Demo sessions with arrived dates were created under Green Bengaluru so the **"✓ Mark
+  completed"** action is visible without waiting for a real date to pass.
+
 ## Round 10 — Communities, phases and visit-level attendance  (`e4ed32c`, `96ec3ab`, `3431516`, `87b8831`)
 
 The largest post-MVP change: a client refinement (2026-08-24) reshaping what a "session" can
@@ -275,6 +290,8 @@ The client answered the remaining open items from the gap register (`09-client-d
 - Remaining backlog (email machinery now ready for them): Welcome-Back + community
   re-allotment, bulk corporate invites, feedback photo upload, sponsor pack, calendar
   export, memento note.
+- Also in this round: the **last two "← Back" buttons** were removed (volunteer session
+  detail, consent page) — stragglers from the Round 1 breadcrumb convention.
 
 ---
 
@@ -322,6 +339,16 @@ buttons, and the certificate PDF constants.
   through Caddy (teammates on the funnel URL saw the rebrand live).
 
 ---
+
+## Aside — the Caddy front door and sharing  (`b20a7a0`…`1accd0f`, 2026-08-25/26)
+
+Not a product round, but it changed how every environment is reached: **Caddy became the
+single origin** (`caddy/Caddyfile`, one port) for web + `/api/*` + `/mailpit/*`, and
+`VITE_API_BASE_URL` became the relative `/api/v1` — the app now works unchanged behind
+localhost, a tailnet name, a tunnel, or a future VM domain. The stack was then shared with
+the client team via **Tailscale Funnel** (public HTTPS URL, nothing installed on their side).
+The front door later moved from :8080 to **:8090** after the legacy stack's nocodb container
+won a port race following a Docker restart. Full record: `runbooks/share-local-stack.md`.
 
 ## Round 14 — Admin-side volunteer creation  (2026-08-26)
 
