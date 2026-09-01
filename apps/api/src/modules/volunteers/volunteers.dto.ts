@@ -188,6 +188,11 @@ export class AdminCreateVolunteerDto {
   @Matches(PHONE_PATTERN, { message: 'Enter a 10-digit mobile number' }) phone!: string;
   @IsOptional() @IsString() @MaxLength(255) skills?: string;
   @IsOptional() @IsString() @MaxLength(150) occupation?: string;
+  @IsOptional() @IsIn(['Individual', 'CSR']) category?: 'Individual' | 'CSR';
+  /** Pick an existing organization… */
+  @IsOptional() @Matches(UUID_PATTERN, { message: 'must be a UUID' }) organizationId?: string;
+  /** …or name one — unknown names are created (admin-driven catalog growth). */
+  @IsOptional() @IsString() @MaxLength(255) organizationName?: string;
   /** Blank = the documented initial password. */
   @IsOptional() @MinLength(8, { message: 'Password must be at least 8 characters' }) password?: string;
 }

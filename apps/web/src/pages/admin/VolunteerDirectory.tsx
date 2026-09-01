@@ -1,4 +1,5 @@
 import {
+  Autocomplete,
   Box,
   Button,
   Chip,
@@ -125,6 +126,7 @@ export function VolunteerDirectory() {
   const emptyAdd = {
     email: '', firstName: '', lastName: '', gender: '', dateOfBirth: '',
     city: '', state: '', phone: '', skills: '', occupation: '', password: '',
+    category: 'Individual' as 'Individual' | 'CSR', organization: '',
   };
   const [addForm, setAddForm] = useState<typeof emptyAdd | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
@@ -136,7 +138,7 @@ export function VolunteerDirectory() {
     queryKey: ['organizations'],
     queryFn: async () =>
       (await api.get<Array<{ id: string; name: string }>>('/organizations')).data,
-    enabled: inviteOpen,
+    enabled: inviteOpen || addForm !== null,
   });
 
   const welcomeBack = useMutation({
@@ -205,6 +207,17 @@ export function VolunteerDirectory() {
           skills: f.skills.trim() || undefined,
           occupation: f.occupation.trim() || undefined,
           password: f.password || undefined,
+          category: f.category,
+          ...(f.organization.trim()
+            ? (() => {
+                const match = inviteOrgs.find(
+                  (o) => o.name.toLowerCase() === f.organization.trim().toLowerCase(),
+                );
+                return match
+                  ? { organizationId: match.id }
+                  : { organizationName: f.organization.trim() };
+              })()
+            : {}),
         })
       ).data,
     onSuccess: (res) => {
@@ -688,6 +701,29 @@ export function VolunteerDirectory() {
             <TextField label="Occupation (optional)" value={addForm?.occupation ?? ''}
               onChange={(e) => setAddForm((f) => (f ? { ...f, occupation: e.target.value } : f))} />
           </Box>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 2 }}>
+            <TextField select label="Category" value={addForm?.category ?? 'Individual'}
+              onChange={(e) =>
+                setAddForm((f) => (f ? { ...f, category: e.target.value as 'Individual' | 'CSR' } : f))
+              }>
+              <MenuItem value="Individual">Individual</MenuItem>
+              <MenuItem value="CSR">CSR</MenuItem>
+            </TextField>
+            <Autocomplete
+              freeSolo
+              options={inviteOrgs.map((o) => o.name)}
+              inputValue={addForm?.organization ?? ''}
+              onInputChange={(_, v) => setAddForm((f) => (f ? { ...f, organization: v } : f))}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label={addForm?.category === 'CSR' ? 'Organization (required for CSR)' : 'Organization (optional affiliation)'}
+                  required={addForm?.category === 'CSR'}
+                  helperText="Pick an existing organization or type a new name — new ones are created automatically"
+                />
+              )}
+            />
+          </Box>
           <TextField label="Initial password (optional)" value={addForm?.password ?? ''}
             helperText="Blank uses Parinaam@123 — ask them to change it after first login"
             onChange={(e) => setAddForm((f) => (f ? { ...f, password: e.target.value } : f))} />
@@ -704,7 +740,8 @@ export function VolunteerDirectory() {
               addVolunteer.isPending ||
               !addForm?.email.trim() || !addForm?.firstName.trim() || !addForm?.lastName.trim() ||
               !addForm?.gender || !addForm?.dateOfBirth || !addForm?.city.trim() ||
-              !addForm?.state.trim() || !addForm?.phone.trim()
+              !addForm?.state.trim() || !addForm?.phone.trim() ||
+              (addForm?.category === 'CSR' && !addForm?.organization.trim())
             }
             onClick={() => addForm && addVolunteer.mutate(addForm)}
           >

@@ -174,7 +174,14 @@ export class VolunteersService {
     return existing === null;
   }
 
-  /** BR-01: a CSR volunteer must name their sponsoring organization. */
+  /**
+   * BR-01: a CSR volunteer must name their sponsoring organization.
+   * Individuals MAY carry one too (client refinement, 2026-09-01): a person
+   * volunteering on their own initiative while representing their employer.
+   * The category still decides the relationship — CSR is company-driven
+   * (mandatory org, corporate certificates); Individual + org is an
+   * affiliation only.
+   */
   private assertCategoryRules(dto: RegisterVolunteerDto): void {
     if (dto.category === 'CSR' && !dto.organizationId) {
       throw new BusinessException(
@@ -182,9 +189,6 @@ export class VolunteersService {
         'CSR volunteers must select their sponsoring organization.',
         400,
       );
-    }
-    if (dto.category === 'Individual') {
-      dto.organizationId = undefined;
     }
   }
 
@@ -654,8 +658,33 @@ export class VolunteersService {
   private static readonly IMPORT_DEFAULT_PASSWORD = 'Parinaam@123';
   private static readonly IMPORT_COLUMNS = [
     'email*', 'first_name*', 'last_name*', 'gender*', 'date_of_birth* (YYYY-MM-DD)',
-    'city*', 'state*', 'phone* (10 digits)', 'skills', 'occupation',
+    'city*', 'state*', 'phone* (10 digits)', 'category (Individual/CSR)', 'organization',
+    'skills', 'occupation',
   ];
+
+  /**
+   * Find an organization by name (case-insensitive) or create it — there is
+   * no other creation path, so admin-driven imports/adds are where the org
+   * catalog grows. Creation is audited.
+   */
+  private async resolveOrganization(principal: AuthPrincipal, name: string): Promise<string> {
+    const trimmed = name.trim();
+    const existing = await this.organizations
+      .createQueryBuilder('o')
+      .where('LOWER(o.name) = LOWER(:name)', { name: trimmed })
+      .getOne();
+    if (existing) return existing.id;
+    const created = await this.organizations.save(
+      this.organizations.create({ name: trimmed, isActive: true }),
+    );
+    await this.audit.record(principal, {
+      action: 'organization.created',
+      entity: 'organizations',
+      entityId: created.id,
+      after: { name: trimmed, via: 'volunteer import/add' },
+    });
+    return created.id;
+  }
 
   /** Bare ten digits, tolerating +91 / 91 / 0 prefixes; null when unusable. */
   private static tenDigitPhone(raw: string): string | null {
@@ -676,8 +705,9 @@ export class VolunteersService {
     sheet.addRow(VolunteersService.IMPORT_COLUMNS);
     sheet.getRow(1).font = { bold: true };
     sheet.columns.forEach((c, i) => (c.width = i < 8 ? 22 : 16));
-    sheet.addRow(['asha.k@example.org', 'Asha', 'Krishnan', 'Female', '1996-04-18', 'Bengaluru', 'Karnataka', '9876501234', 'teaching, storytelling', 'Teacher']);
-    sheet.addRow(['vikas.m@example.org', 'Vikas', 'Menon', 'Male', '1989-11-02', 'Bengaluru', 'Karnataka', '+91 98765 43210', '', '']);
+    sheet.addRow(['asha.k@example.org', 'Asha', 'Krishnan', 'Female', '1996-04-18', 'Bengaluru', 'Karnataka', '9876501234', '', '', 'teaching, storytelling', 'Teacher']);
+    sheet.addRow(['vikas.m@example.org', 'Vikas', 'Menon', 'Male', '1989-11-02', 'Bengaluru', 'Karnataka', '+91 98765 43210', 'CSR', 'TechCorp Solutions', '', '']);
+    sheet.addRow(['divya.s@example.org', 'Divya', 'Shetty', 'Female', '1993-08-21', 'Bengaluru', 'Karnataka', '9876512345', 'Individual', 'Infosys BPM', '', '']);
 
     const readme = wb.addWorksheet('Read me');
     readme.getColumn(1).width = 100;
@@ -688,6 +718,8 @@ export class VolunteersService {
       '• gender must be one of: Female, Male, Non-binary, Prefer not to say.',
       '• date_of_birth format: YYYY-MM-DD (a real Excel date cell also works).',
       '• phone: an Indian mobile number — +91 / 91 / 0 prefixes are accepted and normalised to 10 digits.',
+      '• category: Individual (default when blank) or CSR. CSR rows MUST name an organization.',
+      '• organization: the company name. Mandatory for CSR; optional for Individuals who volunteer representing their employer. Unknown names are created automatically.',
       '• Every imported volunteer starts with the initial password "' + VolunteersService.IMPORT_DEFAULT_PASSWORD + '" — ask them to change it after their first login (Profile → Change password).',
       '• Rows whose email already has an account are skipped and reported back, never overwritten.',
       '• Imported volunteers are created APPROVED (you are the reviewer) but must still sign the consent forms on first login before enrolling.',
@@ -705,6 +737,7 @@ export class VolunteersService {
       email: string; firstName: string; lastName: string; gender: string;
       dateOfBirth: string; city: string; state: string; phone: string;
       skills?: string | null; occupation?: string | null; password?: string | null;
+      category?: 'Individual' | 'CSR'; organizationId?: string | null;
     },
   ): Promise<Volunteer> {
     const passwordHash = await this.passwords.hash(
@@ -726,7 +759,8 @@ export class VolunteersService {
           phone: data.phone,
           skills: data.skills?.trim() || null,
           occupation: data.occupation?.trim() || null,
-          category: 'Individual' as const,
+          category: data.category ?? ('Individual' as const),
+          organizationId: data.organizationId ?? null,
           complianceRead: false,
           registrationStatus: 'approved' as const,
           reviewedBy: principal.sub,
@@ -747,7 +781,25 @@ export class VolunteersService {
     if (!phone) {
       throw new BusinessException('NOT_ELIGIBLE', 'Enter a 10-digit mobile number.', 400);
     }
-    const volunteer = await this.createApproved(principal, { ...dto, email, phone });
+    const category = dto.category ?? 'Individual';
+    let organizationId: string | null = dto.organizationId ?? null;
+    if (!organizationId && dto.organizationName?.trim()) {
+      organizationId = await this.resolveOrganization(principal, dto.organizationName);
+    }
+    if (category === 'CSR' && !organizationId) {
+      throw new BusinessException(
+        'ORGANIZATION_REQUIRED',
+        'CSR volunteers must have a sponsoring organization — pick one or type its name.',
+        400,
+      );
+    }
+    if (organizationId && dto.organizationId) {
+      const org = await this.organizations.findOne({ where: { id: organizationId, isActive: true } });
+      if (!org) throw new NotFoundException('Organization not found');
+    }
+    const volunteer = await this.createApproved(principal, {
+      ...dto, email, phone, category, organizationId,
+    });
     await this.audit.record(principal, {
       action: 'volunteer.admin_created',
       entity: 'volunteers',
@@ -837,10 +889,27 @@ export class VolunteersService {
       const exists = await this.users.findOne({ where: { email } });
       if (exists) { skip('already registered'); continue; }
 
+      const categoryRaw = text(row, 'category');
+      const category = !categoryRaw
+        ? ('Individual' as const)
+        : categoryRaw.toLowerCase() === 'csr'
+          ? ('CSR' as const)
+          : categoryRaw.toLowerCase() === 'individual'
+            ? ('Individual' as const)
+            : null;
+      if (!category) { skip('category must be Individual or CSR'); continue; }
+
+      const orgName = text(row, 'organization');
+      if (category === 'CSR' && !orgName) { skip('CSR rows must name an organization'); continue; }
+      const organizationId = orgName
+        ? await this.resolveOrganization(principal, orgName)
+        : null;
+
       // Every import gets the documented initial password — the template
       // deliberately has no password column (client decision, Round 14).
       await this.createApproved(principal, {
         email, firstName, lastName, gender, dateOfBirth: dob, city, state, phone,
+        category, organizationId,
         skills: text(row, 'skills') || null,
         occupation: text(row, 'occupation') || null,
         password: null,

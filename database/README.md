@@ -8,7 +8,7 @@ mirror these files and a drift between them is a bug in the entity, not the SQL.
 ```
 docker-init/01_bootstrap.sh   first-boot: create n8n's DB, apply every migration (checksummed
                               into schema_migrations), load S001, then S002+ if SEED_DEMO_DATA
-migrations/  V001–V016        forward-only, additive, never edited after applying
+migrations/  V001–V017        forward-only, additive, never edited after applying
 seeds/       S001–S005        idempotent — safe to re-run
 ```
 
@@ -24,6 +24,7 @@ seeds/       S001–S005        idempotent — safe to re-run
 | V014 | **Session phases**: `inprogress` event status, `event_phases` (ownership, completion marks, audited override), `fn_recompute_event_phase_status` — the only writer of a phased session's status |
 | V015 | **Visit-level attendance**: `phase_id`/`visit_date` on `attendance_records`, two partial unique indexes replacing the one-per-session UNIQUE, views rewritten (DISTINCT session counts, hours stay SUMs) |
 | V016 | Item-4 close-out: `certificates.memento_note`, `photo_source` gains `volunteer_feedback`, `event_photos.feedback_id` |
+| V017 | BR-01 revised: `volunteers_csr_org_chk` keeps CSR→organization mandatory but lets an Individual carry one as an optional affiliation |
 
 **Adding one:** create `V0NN__short_description.sql`; never edit an applied file (the bootstrap
 records a SHA-256 per file); long index builds use `CREATE INDEX CONCURRENTLY` in their own

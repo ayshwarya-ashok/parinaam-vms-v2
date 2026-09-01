@@ -173,7 +173,7 @@ export function Register() {
     state: form.state || undefined,
     phone: phoneForApi(form.phone),
     category: form.category,
-    organizationId: form.category === 'CSR' ? form.organizationId : undefined,
+    organizationId: form.organizationId || undefined,
     occupation: form.occupation || undefined,
     skills: form.skills || undefined,
     languages: form.languages.length ? form.languages : undefined,
@@ -470,22 +470,33 @@ export function Register() {
                 </RadioGroup>
               </Box>
 
-              {form.category === 'CSR' && (
-                <TextField
+              <TextField
                   select
-                  required
-                  label="Sponsoring organization"
+                  required={form.category === 'CSR'}
+                  label={
+                    form.category === 'CSR'
+                      ? 'Sponsoring organization'
+                      : 'Affiliated organization (optional)'
+                  }
                   value={form.organizationId}
                   onChange={(e) => set('organizationId', e.target.value)}
-                  helperText="CSR volunteers must name their organization"
+                  helperText={
+                    form.category === 'CSR'
+                      ? 'CSR volunteers must name their organization'
+                      : 'Volunteering as an individual but representing your employer? Pick it here'
+                  }
                 >
+                  {form.category !== 'CSR' && (
+                    <MenuItem value="">
+                      <em>Not affiliated</em>
+                    </MenuItem>
+                  )}
                   {organizations.map((org) => (
                     <MenuItem key={org.id} value={org.id}>
                       {org.name}
                     </MenuItem>
                   ))}
                 </TextField>
-              )}
 
               <Paper
                 variant="outlined"

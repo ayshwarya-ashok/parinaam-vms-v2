@@ -535,7 +535,7 @@ overlap is an index-backed `&&` rather than the prototype's O(n²) minute arithm
 
 | ID | Rule | Enforced by |
 |---|---|---|
-| **BR-01** | A CSR volunteer must reference an organization; an Individual must not. | `volunteers_csr_org_chk` |
+| **BR-01** | A CSR volunteer must reference an organization; an Individual may optionally reference one as an affiliation (revised 2026-09-01, V017). | `volunteers_csr_org_chk` |
 | **BR-02** | No training content is served until consent is complete. | `v_volunteer_compliance`, service guard |
 | **BR-03** | Mandatory compliance trainings are capped at 3 attempts and expire after 12 months. | `trainings_mandatory_chk`, `TrainingsService` |
 | **BR-04** | Activity trainings stay locked until all three compliance trainings show a current pass. | `v_volunteer_compliance`, UI lock bar |

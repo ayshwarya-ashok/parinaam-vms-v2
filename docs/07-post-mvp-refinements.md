@@ -394,6 +394,41 @@ are unchanged. Share `https://<host>/register` — no login, no prior step.
 
 ---
 
+## Round 16 — Category everywhere, and Individuals with an employer  (2026-09-01)
+
+Three asks: the Add-volunteer dialog should ask for the category (Individual/CSR), the
+import template should carry it, and a **new scenario** — a person volunteering on their
+own initiative while representing their company (Individual category, affiliated to an
+organization).
+
+That last one was *forbidden*, twice over: `assertCategoryRules` silently stripped the
+organization from every Individual, and the schema's `volunteers_csr_org_chk` rejected the
+row even when the service didn't (**V017** relaxes it — the constraint keeps its name, BR-01
+is now one-sided: CSR **must** reference an organization, Individual **may**).
+
+- **Add volunteer** — Category select + a free-solo organization field: pick an existing
+  organization or type a new name. Required for CSR (submit stays disabled without it),
+  optional affiliation for Individuals.
+- **Import template** — new `category (Individual/CSR)` and `organization` columns with
+  Read-me rules and three sample rows (blank → Individual; CSR + org; Individual + org).
+  Blank category defaults to Individual; a CSR row without an organization is skipped with
+  the reason reported; anything else in the column is skipped too.
+- **Organizations resolve-or-create by name** (case-insensitive) in both admin paths —
+  until now `GET /organizations` was the *only* organization endpoint and the catalog could
+  grow solely by seed. Creation is audited as `organization.created`. The public /register
+  page still offers a picker of existing organizations only — now shown to Individuals as
+  well ("Affiliated organization (optional)", with a *Not affiliated* choice), while CSR
+  keeps it mandatory.
+
+Verified live: template columns + Read-me lines; a 5-row mixed import → 3 created
+(`individual`/`csr` matched case-insensitively, `testcorp` resolved onto the just-created
+`TestCorp` — created exactly once), CSR-without-org and bad-category rows skipped with
+reasons; admin-create CSR without org → `ORGANIZATION_REQUIRED`; public register rejected
+CSR-without-org and accepted Individual-with-org. All test rows and organizations removed
+after.
+
+---
+
 ## Conventions the refinements established
 
 These emerged during the rounds and now apply app-wide; new code should follow them.

@@ -79,7 +79,8 @@ actually happens. Backs BR-13.
 
 ### `volunteers`
 One-to-one with `users`. `volunteers_csr_org_chk` enforces BR-01 in the schema: a CSR volunteer
-must reference an organization and an Individual must not. `phase` is **derived** — owned by
+must reference an organization; an Individual may optionally reference one as an affiliation
+(V017 — originally Individuals could not). `phase` is **derived** — owned by
 `fn_recompute_volunteer_phase()`, with `Inactive` the one value the function will not overwrite.
 `email_opt_in` governs announcements only; transactional mail ignores it.
 

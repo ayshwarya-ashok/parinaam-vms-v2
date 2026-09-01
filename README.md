@@ -230,8 +230,12 @@ its own nav: Dashboard, Events, Calendar, Trainings, Certificates, Feedback, Pro
   reasons, duplicates skipped, ≤200 rows. Imported volunteers arrive **approved** but still
   sign consent on first login; every import starts with the initial password `Parinaam@123`
   (no password column in the template) — volunteers change it at **Profile → Change password**.
+  The template carries **category** (blank → Individual) and **organization** columns:
+  mandatory for CSR rows, optional affiliation for Individuals; unknown organization names
+  are created automatically (audited).
 - **Add one volunteer**: Volunteers → **＋ Add volunteer** — the mandatory identity fields
-  only, optional initial password.
+  only, plus category and organization (pick an existing one or type a new name; required
+  for CSR) and an optional initial password.
 
 ## 2.4 Activity & scheduling
 
