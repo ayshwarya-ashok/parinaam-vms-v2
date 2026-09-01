@@ -445,7 +445,9 @@ indicator on the bar's bottom edge — **brand yellow** when active, a faint whi
 slides in (`scaleX` 0→1, 180ms, disabled under `prefers-reduced-motion`) on hover. On
 review, the active state grew from the underline alone to the **whole section**: a soft
 white wash over the full-height tab, brightest at its base so it reads as one piece with
-the full-width yellow indicator. The
+the full-width yellow indicator — and the **mobile drawer** speaks the same language,
+rotated: flat edge-to-edge rows, a 3px yellow indicator on the active row's left edge, the
+wash brightest beside it. The
 small-screen drawer, the wordmark button and the Logout pill are unchanged — Logout is an
 action, not navigation, and keeps its outline-pill shape on purpose.
 

@@ -243,7 +243,7 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
         <Box sx={{ px: 2.5, pt: 2.5, pb: 1 }}>
           <Box component="img" src="/parinaam-logo-dark.svg" alt="Parinaam" sx={{ height: 40, display: 'block' }} />
         </Box>
-        <List sx={{ px: 1 }}>
+        <List sx={{ px: 0 }}>
           {nav.map((item) => {
             const active = isActive(item.to);
             return (
@@ -254,11 +254,31 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
                 onClick={() => setMenuOpen(false)}
                 aria-current={active ? 'page' : undefined}
                 sx={{
-                  borderRadius: 2,
+                  // Same active language as the app-bar tabs, rotated for a
+                  // vertical list: flat item, a 3px yellow indicator on the
+                  // left edge, and a wash brightest beside it.
+                  borderRadius: 0,
                   mb: 0.25,
+                  px: 2.5, // aligns the labels with the wordmark above
                   color: active ? '#fff' : 'rgba(255,255,255,0.72)',
-                  bgcolor: active ? 'rgba(255,255,255,0.14)' : 'transparent',
-                  '&:hover': { bgcolor: 'rgba(255,255,255,0.10)' },
+                  position: 'relative',
+                  background: active
+                    ? 'linear-gradient(to right, rgba(255,255,255,0.14), rgba(255,255,255,0.06))'
+                    : 'transparent',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: 3,
+                    bgcolor: active ? 'secondary.main' : 'transparent',
+                  },
+                  '&:hover': {
+                    background: active
+                      ? 'linear-gradient(to right, rgba(255,255,255,0.14), rgba(255,255,255,0.06))'
+                      : 'rgba(255,255,255,0.05)',
+                  },
                 }}
               >
                 <ListItemText
