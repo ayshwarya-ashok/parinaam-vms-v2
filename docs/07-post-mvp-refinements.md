@@ -363,7 +363,7 @@ Parinaam team sharing the link with volunteers directly. Now a visitor with no s
 hand-over gets a self-contained form: an inline **Your account** section (email, password,
 confirm) on top of the profile fields, submitted as the same one atomic registration that
 lands **pending review**. The landing-page hand-over and the legacy orphan-completion paths
-are unchanged. Share:  — no login, no prior step.
+are unchanged. Share `https://<host>/register` — no login, no prior step.
 
 ---
 
