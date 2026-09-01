@@ -83,6 +83,9 @@ export function Register() {
     availabilityNotes: '',
     complianceRead: false,
   });
+  // The shared-link flow: no session, no hand-over from the landing page —
+  // the page carries its own account fields and registers in one step.
+  const [account, setAccount] = useState({ email: '', password: '', confirm: '' });
   const [error, setError] = useState<string | null>(null);
   const [problems, setProblems] = useState<ProfileErrors>({});
   const [busy, setBusy] = useState(false);
@@ -104,11 +107,11 @@ export function Register() {
   if (status === 'authenticated' && user?.profileComplete) {
     return <Navigate to="/app/dashboard" replace />;
   }
-  // Arriving without credentials and without a session means a refresh or a
-  // deep link. Nothing was created, so send them back to the start.
-  if (status !== 'authenticated' && !credentials) {
-    return <Navigate to="/login" replace />;
-  }
+  // Arriving without credentials and without a session is the SHARED LINK:
+  // the Parinaam team hands /register to volunteers directly, so the page is
+  // self-contained — it asks for email + password itself and registers in one
+  // atomic step. (It used to redirect to /login here, which defeated the link.)
+  const standalone = status !== 'authenticated' && !credentials;
 
   // Signed in but no profile: an account orphaned by the old two-step signup.
   // We hold no password for them, so finish via the authenticated endpoint.
@@ -130,6 +133,20 @@ export function Register() {
     e.preventDefault();
     setError(null);
 
+    if (standalone) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(account.email.trim())) {
+        setError('Enter a valid email address.');
+        return;
+      }
+      if (account.password.length < 8) {
+        setError('Password must be at least 8 characters.');
+        return;
+      }
+      if (account.password !== account.confirm) {
+        setError('The passwords do not match.');
+        return;
+      }
+    }
     if (!form.complianceRead) {
       setError('Please confirm you have read the compliance report.');
       return;
@@ -170,8 +187,14 @@ export function Register() {
       if (finishingOrphan) {
         await api.post('/volunteers', profile);
         await refresh();
+      } else if (credentials) {
+        await register({ ...profile, email: credentials.email, password: credentials.password });
       } else {
-        await register({ ...profile, email: credentials!.email, password: credentials!.password });
+        await register({
+          ...profile,
+          email: account.email.trim().toLowerCase(),
+          password: account.password,
+        });
       }
       navigate('/app/dashboard', { replace: true });
     } catch (err) {
@@ -238,6 +261,55 @@ export function Register() {
               sx={{ display: 'grid', gap: 2.5, maxHeight: '64vh', overflowY: 'auto', pr: 1 }}
             >
               {/* ── About you ─────────────────────────────────────────────── */}
+              {standalone && (
+                <>
+                  <SectionTitle>Your account</SectionTitle>
+                  <Grid container spacing={2} sx={{ mb: 2.5 }}>
+                    <Grid size={{ xs: 12 }}>
+                      <TextField
+                        fullWidth
+                        required
+                        type="email"
+                        label="Email"
+                        value={account.email}
+                        onChange={(e) => {
+                          setError(null);
+                          setAccount((a) => ({ ...a, email: e.target.value }));
+                        }}
+                        helperText="We send your approval (and everything after) here"
+                      />
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField
+                        fullWidth
+                        required
+                        type="password"
+                        label="Password"
+                        value={account.password}
+                        onChange={(e) => setAccount((a) => ({ ...a, password: e.target.value }))}
+                        helperText="At least 8 characters"
+                      />
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField
+                        fullWidth
+                        required
+                        type="password"
+                        label="Confirm password"
+                        value={account.confirm}
+                        error={account.confirm !== '' && account.confirm !== account.password}
+                        helperText={
+                          account.confirm !== '' && account.confirm !== account.password
+                            ? 'Does not match'
+                            : ' '
+                        }
+                        onChange={(e) => setAccount((a) => ({ ...a, confirm: e.target.value }))}
+                      />
+                    </Grid>
+                  </Grid>
+                </>
+              )}
+
               <SectionTitle>About you</SectionTitle>
 
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>

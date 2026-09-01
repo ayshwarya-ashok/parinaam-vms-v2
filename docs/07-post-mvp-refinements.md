@@ -355,6 +355,18 @@ checks**.
 
 ---
 
+## Round 15 — /register became a shareable standalone page  (2026-09-01)
+
+The registration page was built as step 2 of the landing flow: it expected email+password
+handed over via router state, and a cold deep link redirected to /login — which defeated the
+Parinaam team sharing the link with volunteers directly. Now a visitor with no session and no
+hand-over gets a self-contained form: an inline **Your account** section (email, password,
+confirm) on top of the profile fields, submitted as the same one atomic registration that
+lands **pending review**. The landing-page hand-over and the legacy orphan-completion paths
+are unchanged. Share:  — no login, no prior step.
+
+---
+
 ## Conventions the refinements established
 
 These emerged during the rounds and now apply app-wide; new code should follow them.
