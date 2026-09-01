@@ -442,7 +442,10 @@ The large-screen nav items were rounded pill buttons (translucent white capsule 
 active item). Modernised to **full-height flat tabs**: each item now spans the bar's
 height with no background and no rounded corners, and the state lives entirely in a 3px
 indicator on the bar's bottom edge — **brand yellow** when active, a faint white hint that
-slides in (`scaleX` 0→1, 180ms, disabled under `prefers-reduced-motion`) on hover. The
+slides in (`scaleX` 0→1, 180ms, disabled under `prefers-reduced-motion`) on hover. On
+review, the active state grew from the underline alone to the **whole section**: a soft
+white wash over the full-height tab, brightest at its base so it reads as one piece with
+the full-width yellow indicator. The
 small-screen drawer, the wordmark button and the Logout pill are unchanged — Logout is an
 action, not navigation, and keeps its outline-pill shape on purpose.
 

@@ -173,23 +173,33 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
                     letterSpacing: '0.01em',
                     color: active ? '#fff' : 'rgba(255,255,255,0.68)',
                     fontWeight: active ? 700 : 500,
+                    // The whole section lights up when active — a soft white
+                    // wash over the full-height tab, brightest at the base so
+                    // it reads as one piece with the yellow indicator.
                     bgcolor: 'transparent',
+                    background: active
+                      ? 'linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(255,255,255,0.14))'
+                      : 'transparent',
                     position: 'relative',
-                    transition: 'color 160ms ease',
+                    transition: 'color 160ms ease, background 160ms ease',
                     '&::after': {
                       content: '""',
                       position: 'absolute',
-                      left: 10,
-                      right: 10,
+                      left: 0,
+                      right: 0,
                       bottom: 0,
                       height: 3,
-                      borderRadius: '3px 3px 0 0',
                       bgcolor: active ? 'secondary.main' : 'rgba(255,255,255,0.45)',
                       transform: active ? 'scaleX(1)' : 'scaleX(0)',
                       transformOrigin: 'center',
                       transition: 'transform 180ms ease',
                     },
-                    '&:hover': { color: '#fff', bgcolor: 'transparent' },
+                    '&:hover': {
+                      color: '#fff',
+                      background: active
+                        ? 'linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(255,255,255,0.14))'
+                        : 'rgba(255,255,255,0.05)',
+                    },
                     '&:hover::after': { transform: 'scaleX(1)' },
                     '@media (prefers-reduced-motion: reduce)': {
                       transition: 'none',
