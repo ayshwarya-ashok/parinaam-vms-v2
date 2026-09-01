@@ -9,7 +9,7 @@ mirror these files and a drift between them is a bug in the entity, not the SQL.
 docker-init/01_bootstrap.sh   first-boot: create n8n's DB, apply every migration (checksummed
                               into schema_migrations), load S001, then S002+ if SEED_DEMO_DATA
 migrations/  V001–V017        forward-only, additive, never edited after applying
-seeds/       S001–S005        idempotent — safe to re-run
+seeds/       S001–S006        idempotent — safe to re-run
 ```
 
 ## Migrations
@@ -55,6 +55,7 @@ parinaam_vms -v ON_ERROR_STOP=1 -f /database/migrations/V0NN__…sql`, then inse
 | S003 | One fully-worked activity (*Lake Clean-up Drive*): completed sessions with mixed attendance sources, an upcoming session full with a live waitlist, a draft |
 | S004 | Completes volunteer identity fields the mandatory-field rule requires; normalises phones to bare ten digits; **never touches erased records** |
 | S005 | The four client-document scenarios (docs/08 §4): AAP Exposure Visit + Read to Rise, the 7-phase Chote Kadam mentor journey (inprogress, CSR lead, one visit), Snow City outing, two beneficiary communities |
+| S006 | Four **Individual volunteers affiliated to an organization** (the V017 scenario): Kavya @ TechCorp (same company as the CSR volunteer — the contrast case), Manish + Shruti @ Infosys BPM, Farhan @ Wipro Cares. Organizations resolved **by name**, never by fixed id — the app's resolve-or-create path may have made them first |
 
 Training-material PDFs are generated, not shipped — run `scripts/generate-seed-materials.mjs`
 once after first boot (see the root README §1.6).

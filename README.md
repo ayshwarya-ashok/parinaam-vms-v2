@@ -146,6 +146,7 @@ All demo accounts use the password **`Parinaam@123`**.
 | Volunteer | `ananya@example.org` | Active, all compliance passed |
 | Volunteer | `deepa@example.org` | Onboarding — hasn't signed consent yet; shows the consent gate |
 | CSR volunteer | `csr@techcorp.in` | Holds the **corporate** certificate naming TechCorp; named **mentor lead** on the Chote Kadam phases (EVT-2026-0204) |
+| Volunteer | `kavya@techcorp.in` | **Individual affiliated to TechCorp** (V017 scenario) — same company as the CSR volunteer above, different category |
 | Volunteer | `anita.rao@example.org` | **Registration pending** — can log in and train, cannot enroll until approved |
 
 ### Infrastructure service credentials
