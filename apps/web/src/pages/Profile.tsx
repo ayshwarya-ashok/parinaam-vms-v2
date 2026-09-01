@@ -246,6 +246,17 @@ export function ProfilePage() {
               placeholder="e.g. First aid, Teaching"
             />
           </Grid>
+          {profile.organization && (
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label={profile.category === 'CSR' ? 'Sponsoring organization' : 'Affiliated organization'}
+                fullWidth
+                value={profile.organization.name}
+                InputProps={{ readOnly: true }}
+                helperText="Linked by Parinaam — contact the admin to change it"
+              />
+            </Grid>
+          )}
           <Grid size={12}>
             <Paper
               variant="outlined"
@@ -287,7 +298,9 @@ export function ProfilePage() {
           <Typography sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>
             {profile.category === 'CSR'
               ? `CSR volunteer · ${profile.organization?.name ?? 'organization'}`
-              : 'Individual volunteer'}
+              : profile.organization
+                ? `Individual volunteer · affiliated to ${profile.organization.name}`
+                : 'Individual volunteer'}
             {' · '}joined {new Date(profile.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
           </Typography>
           <Button variant="pill" onClick={handleSave} disabled={save.isPending}>

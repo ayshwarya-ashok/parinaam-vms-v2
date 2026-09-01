@@ -419,6 +419,13 @@ is now one-sided: CSR **must** reference an organization, Individual **may**).
   page still offers a picker of existing organizations only — now shown to Individuals as
   well ("Affiliated organization (optional)", with a *Not affiliated* choice), while CSR
   keeps it mandatory.
+- **Volunteers see their organization, read-only** — My Profile shows a "Sponsoring
+  organization" (CSR) / "Affiliated organization" (Individual) field with *"Linked by
+  Parinaam — contact the admin to change it"*, and the footer line reads "Individual
+  volunteer · affiliated to …". Not editable anywhere by the volunteer: the field is
+  read-only, the save never sends it, and `UpdateProfileDto` doesn't accept it —
+  `forbidNonWhitelisted` turns a hand-crafted `organizationId` PATCH into a 400 (verified
+  live).
 
 Verified live: template columns + Read-me lines; a 5-row mixed import → 3 created
 (`individual`/`csr` matched case-insensitively, `testcorp` resolved onto the just-created
