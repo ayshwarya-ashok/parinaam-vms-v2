@@ -436,6 +436,18 @@ after.
 
 ---
 
+## Round 17 — App-bar navigation went flat  (2026-09-01)
+
+The large-screen nav items were rounded pill buttons (translucent white capsule on the
+active item). Modernised to **full-height flat tabs**: each item now spans the bar's
+height with no background and no rounded corners, and the state lives entirely in a 3px
+indicator on the bar's bottom edge — **brand yellow** when active, a faint white hint that
+slides in (`scaleX` 0→1, 180ms, disabled under `prefers-reduced-motion`) on hover. The
+small-screen drawer, the wordmark button and the Logout pill are unchanged — Logout is an
+action, not navigation, and keeps its outline-pill shape on purpose.
+
+---
+
 ## Conventions the refinements established
 
 These emerged during the rounds and now apply app-wide; new code should follow them.

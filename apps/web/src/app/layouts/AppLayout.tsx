@@ -137,10 +137,19 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
             />
           </Button>
 
+          {/*
+            Large-screen nav: full-height flat tabs, not pills. Each item spans
+            the bar's height and carries a 3px indicator on the bar's bottom
+            edge — brand yellow when active, a faint white hint sliding in on
+            hover. No backgrounds, no rounded corners: the underline IS the
+            state.
+          */}
           <Box
             sx={{
               display: { xs: 'none', [navBreakpoint]: 'flex' },
-              gap: 0.5,
+              alignSelf: 'stretch',
+              alignItems: 'stretch',
+              gap: 0.25,
               flexWrap: 'nowrap',
               flex: 1,
               minWidth: 0,
@@ -158,25 +167,34 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
                   sx={{
                     flexShrink: 0,
                     whiteSpace: 'nowrap',
-                    color: active ? '#fff' : 'rgba(255,255,255,0.72)',
+                    height: '100%',
+                    borderRadius: 0,
+                    px: 1.75,
+                    letterSpacing: '0.01em',
+                    color: active ? '#fff' : 'rgba(255,255,255,0.68)',
                     fontWeight: active ? 700 : 500,
-                    bgcolor: active ? 'rgba(255,255,255,0.16)' : 'transparent',
-                    borderRadius: 999,
-                    px: 1.5,
+                    bgcolor: 'transparent',
                     position: 'relative',
-                    '&::after': active
-                      ? {
-                          content: '""',
-                          position: 'absolute',
-                          left: '28%',
-                          right: '28%',
-                          bottom: 2,
-                          height: 2,
-                          borderRadius: 2,
-                          bgcolor: 'secondary.main',
-                        }
-                      : undefined,
-                    '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.12)' },
+                    transition: 'color 160ms ease',
+                    '&::after': {
+                      content: '""',
+                      position: 'absolute',
+                      left: 10,
+                      right: 10,
+                      bottom: 0,
+                      height: 3,
+                      borderRadius: '3px 3px 0 0',
+                      bgcolor: active ? 'secondary.main' : 'rgba(255,255,255,0.45)',
+                      transform: active ? 'scaleX(1)' : 'scaleX(0)',
+                      transformOrigin: 'center',
+                      transition: 'transform 180ms ease',
+                    },
+                    '&:hover': { color: '#fff', bgcolor: 'transparent' },
+                    '&:hover::after': { transform: 'scaleX(1)' },
+                    '@media (prefers-reduced-motion: reduce)': {
+                      transition: 'none',
+                      '&::after': { transition: 'none' },
+                    },
                   }}
                 >
                   {item.label}
