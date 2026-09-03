@@ -447,7 +447,9 @@ review, the active state grew from the underline alone to the **whole section**:
 white wash over the full-height tab, brightest at its base so it reads as one piece with
 the full-width yellow indicator — and the **mobile drawer** speaks the same language,
 rotated: flat edge-to-edge rows, a 3px yellow indicator on the active row's left edge, the
-wash brightest beside it. The
+wash brightest beside it. The **breadcrumb's current page** carries it too, translated to
+the light strip: a soft ink wash over the crumb, a 2px yellow bar at its base, bold label.
+The
 small-screen drawer, the wordmark button and the Logout pill are unchanged — Logout is an
 action, not navigation, and keeps its outline-pill shape on purpose.
 

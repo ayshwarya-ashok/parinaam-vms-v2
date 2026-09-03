@@ -325,7 +325,27 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
                 <Typography
                   key={`${crumb.label}-${index}`}
                   aria-current="page"
-                  sx={{ fontSize: 'inherit', color: 'text.primary' }}
+                  sx={{
+                    // The nav tabs' active language on a light ground: a soft
+                    // ink wash brightest at the base, under a yellow bar.
+                    fontSize: 'inherit',
+                    color: 'text.primary',
+                    fontWeight: 700,
+                    px: 1,
+                    py: 0.25,
+                    position: 'relative',
+                    background:
+                      'linear-gradient(to bottom, rgba(31,43,54,0.03), rgba(31,43,54,0.08))',
+                    '&::after': {
+                      content: '""',
+                      position: 'absolute',
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      height: 2,
+                      bgcolor: 'secondary.main',
+                    },
+                  }}
                 >
                   {crumb.label}
                 </Typography>
