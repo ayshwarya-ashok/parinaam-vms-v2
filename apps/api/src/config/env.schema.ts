@@ -58,7 +58,7 @@ export const envSchema = z.object({
   MAX_UPLOAD_MB: z.coerce.number().int().positive().default(25),
 
   // ── Web ────────────────────────────────────────────────────────────────────
-  PUBLIC_WEB_URL: z.string().url().default('http://localhost:5173'),
+  PUBLIC_WEB_URL: z.string().url().default('http://localhost:8090'),
   CORS_ORIGINS: z.string().default('http://localhost:5174'),
 });
 

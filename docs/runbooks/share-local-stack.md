@@ -18,8 +18,10 @@ HTTPS URL — no server, nothing to install on their side.*
 | Why :8090 | The front door moved from 8080 on 2026-08-26: the legacy `parinaam-vms` stack's nocodb container publishes 8080, and that stack is off-limits by standing rule |
 
 **When sharing stops for good:** funnel off, then in `.env` set
-`PUBLIC_WEB_URL=http://localhost:5174` and `docker compose --profile app up -d --force-recreate api worker`
-(so links inside emails point locally again). That one env line is the entire revert.
+`PUBLIC_WEB_URL=http://localhost:8090` and `docker compose --profile app up -d --force-recreate api worker`
+(so links inside emails point locally again). That one env line is the entire revert —
+and forgetting it is exactly how "the certificate link in Mailpit goes to the dead
+funnel URL" happens (found the hard way, 2026-09-04).
 
 ## Every service URL, by access layer
 
@@ -107,7 +109,7 @@ browser. The trade-off is that the URL is on the public internet (see security p
 
 | Variable | Sharing value | Local-only value |
 |---|---|---|
-| `PUBLIC_WEB_URL` | `https://ayshwarya.tail6aca2f.ts.net` | `http://localhost:5174` |
+| `PUBLIC_WEB_URL` | `https://ayshwarya.tail6aca2f.ts.net` | `http://localhost:8090` |
 | `CORS_ORIGINS` | defaults + the funnel origin | defaults |
 
 Nothing else differs. `VITE_API_BASE_URL` stays `/api/v1` everywhere, which is why switching

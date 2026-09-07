@@ -173,7 +173,7 @@ services:
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev_refresh_secret_change_me}
       LINK_TOKEN_SECRET: ${LINK_TOKEN_SECRET:-dev_link_secret_change_me}
       UPLOAD_DIR: /app/uploads
-      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:5174}
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:8090}
       INTERNAL_API_URL: ${INTERNAL_API_URL:-http://api:3000/api/v1}
       PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:3001/api/v1}
       # Both loopback spellings: Docker Desktop's IPv6 forwarding is not always
@@ -209,6 +209,9 @@ services:
       N8N_WEBHOOK_URL: http://n8n:5678/webhook/vms-email
       N8N_CALLBACK_URL: http://api:3000/api/v1/webhooks/n8n/email-status
       VMS_WEBHOOK_SECRET: ${VMS_WEBHOOK_SECRET:-dev_n8n_shared_secret_change_me}
+      # The worker renders the sweep emails (pre-session, reminders, feedback),
+      # so it needs the same link base as the api or its links point nowhere.
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:8090}
       UPLOAD_DIR: /app/uploads
     volumes:
       - ./apps/api:/app
