@@ -16,6 +16,7 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { API_BASE_URL, api } from '@/api/client';
 import { authErrorMessage, isMissingAccount, useAuth, type SessionUser } from '@/app/auth';
+import { PasswordField } from '@/components/PasswordField';
 
 interface PublicStats {
   stats: { volunteers: number; active_programs: number; attendance_pct: string; hours: string };
@@ -196,9 +197,8 @@ export function Landing() {
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
                 />
-                <TextField
+                <PasswordField
                   label="Password"
-                  type="password"
                   required
                   fullWidth
                   value={password}

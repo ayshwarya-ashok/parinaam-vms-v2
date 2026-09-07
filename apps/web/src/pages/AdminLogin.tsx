@@ -10,6 +10,7 @@ import {
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { authErrorMessage, useAuth } from '@/app/auth';
+import { PasswordField } from '@/components/PasswordField';
 
 /**
  * Administrator sign-in. Same credentials endpoint as the landing page; the
@@ -85,9 +86,8 @@ export function AdminLogin() {
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"
           />
-          <TextField
+          <PasswordField
             label="Password"
-            type="password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
