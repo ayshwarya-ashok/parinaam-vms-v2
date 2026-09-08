@@ -43,10 +43,16 @@ export class ReportQueryService {
       case 'calendar':
       case 'annual_calendar':
         return this.calendar(filters as { year?: number | string });
+      case 'activities':
+        return this.activities();
+      case 'volunteer_directory':
+        return this.volunteerDirectory();
+      case 'volunteer_activities':
+        return this.volunteerActivities();
       default:
         throw new BusinessException(
           'UNKNOWN_REPORT_TYPE',
-          `Unknown report type "${reportType}". Available: volunteers, programs, calendar.`,
+          `Unknown report type "${reportType}". Available: volunteers, programs, activities, volunteer_directory, volunteer_activities, calendar.`,
           400,
         );
     }
@@ -117,6 +123,132 @@ export class ReportQueryService {
         { key: 'attended', label: 'Attended', align: 'right' },
         { key: 'hours', label: 'Hours', align: 'right' },
         { key: 'beneficiaries', label: 'Beneficiaries', align: 'right' },
+      ],
+      rows,
+    };
+  }
+
+  /** Every activity with its programme, status and session tallies. */
+  async activities(): Promise<ReportData> {
+    const rows = await this.dataSource.query(
+      `SELECT p.name AS program, a.name AS activity, a.type::text AS type,
+              a.status::text AS status,
+              COALESCE(a.default_location, '') AS location,
+              a.default_duration_hours AS duration_hours,
+              a.default_max_slots AS capacity,
+              COUNT(e.id)::int AS sessions_total,
+              COUNT(e.id) FILTER (WHERE e.status = 'completed')::int AS sessions_completed,
+              COUNT(e.id) FILTER (WHERE e.status = 'upcoming')::int AS sessions_upcoming
+       FROM activities a
+       JOIN programs p ON p.id = a.program_id
+       LEFT JOIN events e ON e.activity_id = a.id
+       GROUP BY p.name, a.id
+       ORDER BY p.name, a.sort_order, a.name`,
+    );
+    return {
+      title: 'Activities',
+      columns: [
+        { key: 'program', label: 'Programme' },
+        { key: 'activity', label: 'Activity' },
+        { key: 'type', label: 'Type' },
+        { key: 'status', label: 'Status' },
+        { key: 'location', label: 'Default location' },
+        { key: 'duration_hours', label: 'Duration (h)', align: 'right' },
+        { key: 'capacity', label: 'Capacity', align: 'right' },
+        { key: 'sessions_total', label: 'Sessions', align: 'right' },
+        { key: 'sessions_completed', label: 'Completed', align: 'right' },
+        { key: 'sessions_upcoming', label: 'Upcoming', align: 'right' },
+      ],
+      rows,
+    };
+  }
+
+  /**
+   * The volunteer DIRECTORY — who they are, not what they did (that is the
+   * volunteer summary's job). Erased volunteers stay out, per the standing
+   * reports rule.
+   */
+  async volunteerDirectory(): Promise<ReportData> {
+    const rows = await this.dataSource.query(
+      `SELECT v.first_name || ' ' || v.last_name AS volunteer,
+              u.email::text AS email,
+              COALESCE(v.phone, '') AS phone,
+              COALESCE(v.city, '') AS city,
+              COALESCE(v.state, '') AS state,
+              v.category::text AS category,
+              COALESCE(v.sub_category, '') AS sub_category,
+              COALESCE(v.institution, '') AS institution,
+              COALESCE(o.name, '') AS organization,
+              v.phase::text AS phase,
+              v.registration_status::text AS registration,
+              CASE WHEN u.is_active THEN 'active' ELSE 'deactivated' END AS account,
+              TO_CHAR(v.created_at, 'YYYY-MM-DD') AS registered_on
+       FROM volunteers v
+       JOIN users u ON u.id = v.user_id
+       LEFT JOIN organizations o ON o.id = v.organization_id
+       WHERE u.email::text NOT LIKE '%@erased.invalid'
+       ORDER BY volunteer`,
+    );
+    return {
+      title: 'Volunteer Directory',
+      columns: [
+        { key: 'volunteer', label: 'Volunteer' },
+        { key: 'email', label: 'Email' },
+        { key: 'phone', label: 'Phone' },
+        { key: 'city', label: 'City' },
+        { key: 'state', label: 'State' },
+        { key: 'category', label: 'Category' },
+        { key: 'sub_category', label: 'Sub-category' },
+        { key: 'institution', label: 'Institution' },
+        { key: 'organization', label: 'Organization' },
+        { key: 'phase', label: 'Phase' },
+        { key: 'registration', label: 'Registration' },
+        { key: 'account', label: 'Account' },
+        { key: 'registered_on', label: 'Registered on' },
+      ],
+      rows,
+    };
+  }
+
+  /**
+   * One row per volunteer per ACTIVITY they enrolled in, carrying the
+   * activity's own status — the "who is attached to what, and is that thing
+   * still running" view. Hours count attended records only (V012).
+   */
+  async volunteerActivities(): Promise<ReportData> {
+    const rows = await this.dataSource.query(
+      `SELECT v.first_name || ' ' || v.last_name AS volunteer,
+              u.email::text AS email,
+              p.name AS program,
+              a.name AS activity,
+              a.status::text AS activity_status,
+              COUNT(DISTINCT en.event_id)::int AS sessions_enrolled,
+              COUNT(DISTINCT ar.event_id) FILTER (WHERE ar.attended)::int AS sessions_attended,
+              COALESCE(SUM(ar.hours_contributed) FILTER (WHERE ar.attended), 0) AS hours
+       FROM event_enrollments en
+       JOIN events e ON e.id = en.event_id
+       JOIN activities a ON a.id = e.activity_id
+       JOIN programs p ON p.id = a.program_id
+       JOIN volunteers v ON v.id = en.volunteer_id
+       JOIN users u ON u.id = v.user_id
+       LEFT JOIN attendance_records ar
+         ON ar.event_id = en.event_id AND ar.volunteer_id = en.volunteer_id
+       WHERE en.status = 'enrolled'
+         AND u.email::text NOT LIKE '%@erased.invalid'
+       GROUP BY v.id, u.email, p.name, a.id
+       ORDER BY volunteer, p.name, a.name`,
+    );
+    return {
+      title: 'Volunteer Activities',
+      columns: [
+        { key: 'volunteer', label: 'Volunteer' },
+        { key: 'email', label: 'Email' },
+        { key: 'program', label: 'Programme' },
+        { key: 'activity', label: 'Activity' },
+        { key: 'activity_status', label: 'Activity status' },
+        { key: 'sessions_enrolled', label: 'Enrolled', align: 'right' },
+        { key: 'sessions_attended', label: 'Attended', align: 'right' },
+        { key: 'hours', label: 'Hours', align: 'right' },
       ],
       rows,
     };

@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-09-08 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across nineteen review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across twenty review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -504,6 +504,25 @@ Two asks:
   was mandatory in the form and in `validateProfile` — but the API's DTO accepted an
   **empty string** (`@IsString` without `@IsNotEmpty`). Closed on both name fields;
   verified live (`lastName: ""` → 400).
+
+---
+
+## Round 20 — A sub-category column, and the list exports  (2026-09-08)
+
+- **Sub-category in the directory.** Its own sortable column beside Category: "Student"
+  for as-a-student registrations, blank for everyone else (the Round 19 chip suffix moved
+  here — a column can be scanned and sorted; a chip suffix cannot).
+- **List exports, admin-only** — four one-click Excel downloads on the Reports page:
+  **Programmes** (the existing summary), **Activities** (programme, type, status, defaults,
+  session tallies), **Volunteers** (the directory: identity, category, sub-category,
+  institution, organization, phase, registration, account state — erased volunteers
+  excluded, per the standing reports rule), and **Volunteer–activity** (one row per
+  volunteer per enrolled activity, carrying the ACTIVITY's status plus enrolled/attended
+  counts and attended-only hours, V012 rule). All three new types joined the report
+  registry, so the scheduler can email them on a cadence too, and every run lands in the
+  run history. Verified live: all four download with the right columns; a volunteer token
+  gets 403. (Found en route: the enrollments table is `event_enrollments` — the first cut
+  of the volunteer–activity query 500d.)
 
 ---
 

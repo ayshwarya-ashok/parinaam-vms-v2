@@ -328,6 +328,7 @@ export function VolunteerDirectory() {
     name: (r) => `${r.firstName} ${r.lastName}`,
     email: (r) => r.email,
     category: (r) => r.category,
+    subCategory: (r) => r.subCategory ?? '',
     registration: (r) => r.registrationStatus,
     account: (r) => r.isActive,
     registered: (r) => r.createdAt,
@@ -402,6 +403,7 @@ export function VolunteerDirectory() {
               <SortableCell sortKey="name" sort={sort} onSort={toggle}>Volunteer</SortableCell>
               <SortableCell sortKey="email" sort={sort} onSort={toggle}>Contact</SortableCell>
               <SortableCell sortKey="category" sort={sort} onSort={toggle}>Category</SortableCell>
+              <SortableCell sortKey="subCategory" sort={sort} onSort={toggle}>Sub-category</SortableCell>
               <SortableCell sortKey="registration" sort={sort} onSort={toggle}>Registration</SortableCell>
               <SortableCell sortKey="account" sort={sort} onSort={toggle}>Account</SortableCell>
               <TableCell align="right">Actions</TableCell>
@@ -432,11 +434,11 @@ export function VolunteerDirectory() {
                   )}
                 </TableCell>
                 <TableCell>
-                  <Chip
-                    label={v.subCategory ? `${v.category} · ${v.subCategory}` : v.category}
-                    size="small"
-                    variant="outlined"
-                  />
+                  <Chip label={v.category} size="small" variant="outlined" />
+                </TableCell>
+                <TableCell>
+                  {/* "Student" for as-a-student registrations; blank for everyone else. */}
+                  {v.subCategory ?? ''}
                 </TableCell>
                 <TableCell>
                   <StatusPill status={statusPill[v.registrationStatus]} />
@@ -521,7 +523,7 @@ export function VolunteerDirectory() {
             ))}
             {data && data.data.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                <TableCell colSpan={7} sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
                   No volunteers match your filters.
                 </TableCell>
               </TableRow>

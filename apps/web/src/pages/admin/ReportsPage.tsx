@@ -74,6 +74,27 @@ export function ReportsPage() {
     }
   };
 
+  /** The one-click list exports — each is a whole dataset, always as Excel. */
+  const LIST_EXPORTS = [
+    { type: 'programs', label: 'Programmes' },
+    { type: 'activities', label: 'Activities' },
+    { type: 'volunteer_directory', label: 'Volunteers' },
+    { type: 'volunteer_activities', label: 'Volunteer–activity' },
+  ] as const;
+
+  const doListExport = async (type: string, label: string) => {
+    setExporting(type);
+    try {
+      await exportAndDownload(type, 'Excel', {});
+      void refetchRuns();
+      enqueueSnackbar(`${label} export downloaded`, { variant: 'success' });
+    } catch (err) {
+      enqueueSnackbar(asApiError(err)?.message ?? `${label} export failed`, { variant: 'error' });
+    } finally {
+      setExporting(null);
+    }
+  };
+
   const doExport = async (format: 'CSV' | 'Excel' | 'PDF') => {
     setExporting(format);
     try {
@@ -120,6 +141,36 @@ export function ReportsPage() {
         </>
       }
     >
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 1.5,
+          px: 2,
+          mb: 2,
+          borderRadius: 3,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          flexWrap: 'wrap',
+          bgcolor: 'rgba(255,255,255,0.6)',
+        }}
+      >
+        <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', mr: 1 }}>
+          List exports (Excel)
+        </Typography>
+        {LIST_EXPORTS.map((x) => (
+          <Button
+            key={x.type}
+            size="small"
+            variant="pillOutlined"
+            disabled={exporting !== null}
+            onClick={() => void doListExport(x.type, x.label)}
+          >
+            {exporting === x.type ? 'Exporting…' : `⬇ ${x.label}`}
+          </Button>
+        ))}
+      </Paper>
+
       <FilterBar
         search={{ value: q, onChange: setQ, placeholder: 'Search name or email…' }}
         groups={[
