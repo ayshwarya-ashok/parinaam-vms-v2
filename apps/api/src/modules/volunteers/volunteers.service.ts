@@ -67,6 +67,7 @@ export class VolunteersService {
     passwordHash: string,
   ): Promise<{ user: User; volunteer: Volunteer }> {
     this.assertCategoryRules(dto);
+    await this.assertStudentRules(dto);
 
     if (dto.organizationId) {
       const org = await this.organizations.findOne({
@@ -98,6 +99,8 @@ export class VolunteersService {
           userId: user.id,
           ...this.profileFields(dto),
           category: dto.category,
+          subCategory: dto.subCategory ?? null,
+          institution: dto.institution ?? null,
           organizationId: dto.organizationId ?? null,
           complianceRead: dto.complianceRead,
           registrationStatus: 'pending' as const,
@@ -139,6 +142,7 @@ export class VolunteersService {
       );
     }
     this.assertCategoryRules(dto);
+    await this.assertStudentRules(dto);
 
     if (dto.organizationId) {
       const org = await this.organizations.findOne({
@@ -152,6 +156,8 @@ export class VolunteersService {
         userId: principal.sub,
         ...this.profileFields(dto),
         category: dto.category,
+        subCategory: dto.subCategory ?? null,
+        institution: dto.institution ?? null,
         organizationId: dto.organizationId ?? null,
         complianceRead: dto.complianceRead,
         registrationStatus: 'pending',
@@ -190,6 +196,49 @@ export class VolunteersService {
         400,
       );
     }
+  }
+
+  /**
+   * "As a student" (V018): a student IS an Individual — the sub-category
+   * refines it, never replaces it — and must name an institution from the
+   * admin-curated INSTITUTION reference list (no free text; the form is a
+   * dropdown and the API holds the same line). Non-students carry neither
+   * field, whatever the request said.
+   */
+  private async assertStudentRules(dto: RegisterVolunteerDto): Promise<void> {
+    if (dto.subCategory !== 'Student') {
+      dto.subCategory = undefined;
+      dto.institution = undefined;
+      return;
+    }
+    if (dto.category !== 'Individual') {
+      throw new BusinessException(
+        'NOT_ELIGIBLE',
+        'Student registrations are Individual volunteers — pick one or the other.',
+        400,
+      );
+    }
+    const label = dto.institution?.trim();
+    if (!label) {
+      throw new BusinessException(
+        'INSTITUTION_REQUIRED',
+        'Students must select their institution.',
+        400,
+      );
+    }
+    const [row] = await this.dataSource.query(
+      `SELECT 1 FROM reference_values
+        WHERE category = 'INSTITUTION' AND label = $1 AND is_active`,
+      [label],
+    );
+    if (!row) {
+      throw new BusinessException(
+        'INSTITUTION_REQUIRED',
+        'Pick an institution from the list.',
+        400,
+      );
+    }
+    dto.institution = label;
   }
 
   /** Shared shape between registration and profile edits. Codes are joined here. */
@@ -402,6 +451,8 @@ export class VolunteersService {
         phone: v.phone,
         city: v.city,
         category: v.category,
+        subCategory: v.subCategory,
+        institution: v.institution,
         organization: v.organization?.name ?? null,
         phase: v.phase,
         isActive: v.user?.isActive ?? true,

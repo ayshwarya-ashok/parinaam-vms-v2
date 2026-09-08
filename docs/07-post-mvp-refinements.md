@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-09-08 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across eighteen review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across nineteen review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -482,6 +482,28 @@ re-masks itself after **2 seconds** (clicking the eye again re-hides immediately
 timer clears on unmount), so a password is never left readable on a shared or projected
 screen. The other password fields (public register, Profile → Change password) can adopt
 the component when next touched.
+
+---
+
+## Round 19 — "As a student", and the last-name gap  (2026-09-08)
+
+Two asks:
+
+- **"As a student" on /register.** A third radio beside "An individual" and "Through my
+  employer (CSR)". A student IS category **Individual** — everything downstream keys on
+  Individual vs CSR — with a tracked **sub-category** (`volunteers.sub_category`, V018) and
+  an **institution** picked from an admin-curated dropdown (reference_values, category
+  `INSTITUTION` — ten seeded institutions plus "Other"; no free text, and the API rejects
+  labels not on the list with `INSTITUTION_REQUIRED`). Students see the institution select
+  in place of the organization picker. The admin directory shows the sub-category on the
+  category chip ("Individual · Student"), the detail drawer opens with "Student volunteer"
+  and an Institution field. Schema CHECKs keep the shape honest: sub-category only on
+  Individuals, institution only on students. Verified live: valid student lands pending
+  with institution recorded; bogus/missing institution → 400; Student+CSR → `NOT_ELIGIBLE`.
+- **Are last name and city mandatory on /register?** City was, at every layer. Last name
+  was mandatory in the form and in `validateProfile` — but the API's DTO accepted an
+  **empty string** (`@IsString` without `@IsNotEmpty`). Closed on both name fields;
+  verified live (`lastName: ""` → 400).
 
 ---
 

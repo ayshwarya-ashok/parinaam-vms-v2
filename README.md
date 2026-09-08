@@ -2,7 +2,7 @@
 
 Volunteer Management System for Parinaam Foundation — a full rebuild derived from
 `VMS_prototype_v2.html` and `VMS_database_model.md`, delivered in eight phases and refined
-through eighteen post-MVP review rounds (`docs/07-post-mvp-refinements.md`) and the client's
+through nineteen post-MVP review rounds (`docs/07-post-mvp-refinements.md`) and the client's
 phased-sessions refinement (`docs/08`, `docs/09`).
 
 **Stack** React 18 + MUI · NestJS 10 · PostgreSQL 16 · Redis · **n8n** (email orchestration) ·
@@ -64,7 +64,7 @@ The defaults run out of the box. The ones worth knowing:
 
 ## 1.5 Database setup
 
-Automatic. On the database container's **first** boot it applies migrations `V001–V016` in
+Automatic. On the database container's **first** boot it applies migrations `V001–V018` in
 order (recording a SHA-256 checksum per file in `schema_migrations`), creates n8n's own
 database, and loads seeds. Nothing to run by hand.
 
@@ -208,9 +208,14 @@ its own nav: Dashboard, Events, Calendar, Trainings, Certificates, Feedback, Pro
 
 ## 2.3 Registration & onboarding
 
-- **Sign up** (from the login page) collects credentials, then the profile — identity fields
+- **Sign up** (from the login page, or the shareable public /register link) collects
+  credentials, then the profile — identity fields
   (name, gender, DOB, city, state, 10-digit phone) are mandatory. Account and profile are
   created **atomically on submit**: abandoning the form leaves nothing behind.
+  "Volunteering as" offers three choices: an individual (organization optional), through an
+  employer (CSR — organization required), or **as a student** — stored as Individual with a
+  tracked `Student` sub-category and an institution picked from the admin-curated list; the
+  directory shows "Individual · Student" and the institution in the detail drawer.
 - New registrations land as **pending**. Admin → **Volunteers** shows a "🔔 N awaiting review"
   button; click a row for the full drawer (everything they entered, editable while pending) and
   **Approve** or **Reject** (a reason is required and is emailed to the applicant; rejection

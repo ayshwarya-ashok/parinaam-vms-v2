@@ -88,6 +88,14 @@ export class Volunteer {
   @Column({ type: 'enum', enumName: 'volunteer_category', enum: ['Individual', 'CSR'], default: 'Individual' })
   category!: VolunteerCategory;
 
+  /** Individual-only refinement — 'Student' is the only value (V018). */
+  @Column({ name: 'sub_category', type: 'varchar', length: 30, nullable: true })
+  subCategory!: 'Student' | null;
+
+  /** The student's institution — a reference_values INSTITUTION label, denormalized. */
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  institution!: string | null;
+
   @Column({ name: 'organization_id', type: 'uuid', nullable: true })
   organizationId!: string | null;
 

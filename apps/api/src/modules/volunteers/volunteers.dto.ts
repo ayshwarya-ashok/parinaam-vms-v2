@@ -25,10 +25,12 @@ export const PHONE_PATTERN = /^(?:\+?91[\s-]?|0)?[\s-]?(?:\d[\s-]?){10}$/;
 
 export class RegisterVolunteerDto {
   @IsString()
+  @IsNotEmpty({ message: 'First name is required' })
   @MaxLength(100)
   firstName!: string;
 
   @IsString()
+  @IsNotEmpty({ message: 'Last name is required' })
   @MaxLength(100)
   lastName!: string;
 
@@ -62,6 +64,17 @@ export class RegisterVolunteerDto {
 
   @IsIn(['Individual', 'CSR'])
   category!: 'Individual' | 'CSR';
+
+  /** Students are Individuals with this set — the service enforces the pairing. */
+  @IsOptional()
+  @IsIn(['Student'])
+  subCategory?: 'Student';
+
+  /** Required for students; must be a label from the INSTITUTION reference list. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  institution?: string;
 
   /** Required when category = CSR (BR-01). */
   @IsOptional()

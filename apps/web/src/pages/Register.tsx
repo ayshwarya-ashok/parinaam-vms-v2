@@ -74,6 +74,8 @@ export function Register() {
     state: '',
     phone: '',
     category: 'Individual' as 'Individual' | 'CSR',
+    subCategory: '' as '' | 'Student',
+    institution: '',
     organizationId: '',
     occupation: '',
     skills: '',
@@ -155,6 +157,10 @@ export function Register() {
       setError('Please select the organization sponsoring your volunteering.');
       return;
     }
+    if (form.subCategory === 'Student' && !form.institution) {
+      setError('Please select your institution.');
+      return;
+    }
     const found = validateProfile(form);
     if (Object.keys(found).length > 0) {
       setProblems(found);
@@ -173,6 +179,8 @@ export function Register() {
     state: form.state || undefined,
     phone: phoneForApi(form.phone),
     category: form.category,
+    subCategory: form.subCategory || undefined,
+    institution: form.subCategory === 'Student' ? form.institution : undefined,
     organizationId: form.organizationId || undefined,
     occupation: form.occupation || undefined,
     skills: form.skills || undefined,
@@ -456,10 +464,23 @@ export function Register() {
               <SectionTitle>Volunteering as</SectionTitle>
 
               <Box>
+                {/* Student is Individual + a tracked sub-category, so the radio
+                    speaks in three options while the API still sees two
+                    categories. */}
                 <RadioGroup
                   row
-                  value={form.category}
-                  onChange={(e) => set('category', e.target.value as 'Individual' | 'CSR')}
+                  value={form.subCategory === 'Student' ? 'Student' : form.category}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setForm((f) => ({
+                      ...f,
+                      category: v === 'CSR' ? 'CSR' : 'Individual',
+                      subCategory: v === 'Student' ? 'Student' : '',
+                      // A student names an institution, not an employer.
+                      organizationId: v === 'Student' ? '' : f.organizationId,
+                      institution: v === 'Student' ? f.institution : '',
+                    }));
+                  }}
                 >
                   <FormControlLabel value="Individual" control={<Radio />} label="An individual" />
                   <FormControlLabel
@@ -467,10 +488,27 @@ export function Register() {
                     control={<Radio />}
                     label="Through my employer (CSR)"
                   />
+                  <FormControlLabel value="Student" control={<Radio />} label="As a student" />
                 </RadioGroup>
               </Box>
 
-              <TextField
+              {form.subCategory === 'Student' ? (
+                <TextField
+                  select
+                  required
+                  label="Institution"
+                  value={form.institution}
+                  onChange={(e) => set('institution', e.target.value)}
+                  helperText="Pick the institution you study at"
+                >
+                  {(options.INSTITUTION ?? []).map((inst) => (
+                    <MenuItem key={inst.code} value={inst.label}>
+                      {inst.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              ) : (
+                <TextField
                   select
                   required={form.category === 'CSR'}
                   label={
@@ -497,6 +535,7 @@ export function Register() {
                     </MenuItem>
                   ))}
                 </TextField>
+              )}
 
               <Paper
                 variant="outlined"

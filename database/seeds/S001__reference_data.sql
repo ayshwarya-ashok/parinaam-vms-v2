@@ -168,3 +168,20 @@ INSERT INTO reference_values (category, code, label, sort_order) VALUES
   ('AVAILABILITY',    'sunday',          'Sundays',                     4),
   ('AVAILABILITY',    'flexible',        'Flexible / on request',       5)
 ON CONFLICT (category, code) DO NOTHING;
+
+-- -----------------------------------------------------------------------------
+-- Institutions for the "As a student" registration option (V018). The admin
+-- curates this list; students pick from it — no free text.
+-- -----------------------------------------------------------------------------
+INSERT INTO reference_values (category, code, label, sort_order) VALUES
+  ('INSTITUTION', 'bangalore_university', 'Bangalore University',            1),
+  ('INSTITUTION', 'bms_college',          'BMS College of Engineering',      2),
+  ('INSTITUTION', 'christ_university',    'Christ University',               3),
+  ('INSTITUTION', 'jain_university',      'Jain (Deemed-to-be University)',  4),
+  ('INSTITUTION', 'mount_carmel',         'Mount Carmel College',            5),
+  ('INSTITUTION', 'pes_university',       'PES University',                  6),
+  ('INSTITUTION', 'presidency_university','Presidency University',           7),
+  ('INSTITUTION', 'rv_college',           'RV College of Engineering',       8),
+  ('INSTITUTION', 'st_josephs',           'St. Joseph''s University',        9),
+  ('INSTITUTION', 'other',                'Other institution',              10)
+ON CONFLICT (category, code) DO NOTHING;

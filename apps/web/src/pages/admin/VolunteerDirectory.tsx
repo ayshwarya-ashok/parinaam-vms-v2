@@ -53,6 +53,8 @@ interface DirectoryRow {
   phone: string | null;
   city: string | null;
   category: 'Individual' | 'CSR';
+  subCategory: 'Student' | null;
+  institution: string | null;
   organization: string | null;
   phase: 'Onboarding' | 'In Training' | 'Active' | 'Inactive';
   isActive: boolean;
@@ -430,7 +432,11 @@ export function VolunteerDirectory() {
                   )}
                 </TableCell>
                 <TableCell>
-                  <Chip label={v.category} size="small" variant="outlined" />
+                  <Chip
+                    label={v.subCategory ? `${v.category} · ${v.subCategory}` : v.category}
+                    size="small"
+                    variant="outlined"
+                  />
                 </TableCell>
                 <TableCell>
                   <StatusPill status={statusPill[v.registrationStatus]} />
@@ -938,7 +944,11 @@ function VolunteerDetailDrawer({
       {v && (
         <Box>
           <Typography variant="overline" sx={{ color: tokens.accentStrong }}>
-            {v.category === 'CSR' ? 'CSR volunteer' : 'Individual volunteer'}
+            {v.category === 'CSR'
+              ? 'CSR volunteer'
+              : v.subCategory === 'Student'
+                ? 'Student volunteer'
+                : 'Individual volunteer'}
           </Typography>
           <Typography variant="h4" sx={{ mb: 0.5 }}>
             {v.firstName} {v.lastName}
@@ -1066,6 +1076,7 @@ function VolunteerDetailDrawer({
               <Field label="Gender" value={v.gender} />
               <Field label="Occupation" value={v.occupation} />
               {v.organization && <Field label="Organization" value={v.organization.name} />}
+              {v.institution && <Field label="Institution" value={v.institution} />}
             </Section>
           </Box>
           )}

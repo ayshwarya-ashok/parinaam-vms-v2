@@ -80,7 +80,10 @@ actually happens. Backs BR-13.
 ### `volunteers`
 One-to-one with `users`. `volunteers_csr_org_chk` enforces BR-01 in the schema: a CSR volunteer
 must reference an organization; an Individual may optionally reference one as an affiliation
-(V017 — originally Individuals could not). `phase` is **derived** — owned by
+(V017 — originally Individuals could not). `sub_category` (V018) refines Individuals only —
+`'Student'` is its sole value — and `institution` (the label of a `reference_values`
+`INSTITUTION` row, denormalized) exists only on students; both are CHECK-guarded.
+`phase` is **derived** — owned by
 `fn_recompute_volunteer_phase()`, with `Inactive` the one value the function will not overwrite.
 `email_opt_in` governs announcements only; transactional mail ignores it.
 
