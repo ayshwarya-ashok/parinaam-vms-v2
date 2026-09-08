@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
-| **Period** | 2026-08-20 → 2026-09-01 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across fifteen review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Period** | 2026-08-20 → 2026-09-08 (ongoing) |
+| **Driver** | Hands-on testing by the product owner across eighteen review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -350,6 +350,14 @@ the client team via **Tailscale Funnel** (public HTTPS URL, nothing installed on
 The front door later moved from :8080 to **:8090** after the legacy stack's nocodb container
 won a port race following a Docker restart. Full record: `runbooks/share-local-stack.md`.
 
+Sequel (`d72af45`, 2026-09-04): the sharing runbook's one revert step — pointing
+`PUBLIC_WEB_URL` back to localhost when the funnel goes off — was missed, so certificate
+links in Mailpit led to the dead funnel URL. Reverted, and two latent bugs fixed with it:
+the **worker never received `PUBLIC_WEB_URL` at all** (its sweep emails — pre-session,
+reminders, feedback — fell back to `http://localhost:5173`, a port nothing listens on),
+and both fallback defaults pointed at Vite ports. Everything now defaults to the front
+door `http://localhost:8090`, and the worker carries the same variable as the api.
+
 ## Round 14 — Admin-side volunteer creation  (2026-08-26)
 
 Two additions to the Volunteers page:
@@ -434,6 +442,15 @@ reasons; admin-create CSR without org → `ORGANIZATION_REQUIRED`; public regist
 CSR-without-org and accepted Individual-with-org. All test rows and organizations removed
 after.
 
+Follow-ups in the same round: seed **S006** put four affiliated Individuals into the demo
+data (`kavya@techcorp.in` at the CSR org for the contrast case; Infosys BPM ×2; Wipro
+Cares — organizations resolved **by name**, because the app's resolve-or-create path may
+have made them first, which had in fact already happened via a template-sample import).
+And the volunteer's own profile now shows the linked organization as a **disabled input**
+("Linked by Parinaam — contact the admin to change it") — not editable at any layer: the
+save never sends it, `UpdateProfileDto` doesn't accept it, and `forbidNonWhitelisted`
+turns a hand-crafted PATCH into a 400 (verified live).
+
 ---
 
 ## Round 17 — App-bar navigation went flat  (2026-09-01)
@@ -452,6 +469,19 @@ the light strip: a soft ink wash over the crumb, a 2px yellow bar at its base, b
 The
 small-screen drawer, the wordmark button and the Logout pill are unchanged — Logout is an
 action, not navigation, and keeps its outline-pill shape on purpose.
+
+---
+
+## Round 18 — The password eye  (2026-09-07/08)
+
+Both login forms (volunteer login/signup on the landing page, admin login) gained a
+show/hide **eye** on the password field, via a shared `PasswordField` component: the
+toggle `preventDefault`s mousedown so it never steals focus mid-typing, and carries a
+proper aria-label. On request, the reveal became **a peek, not a mode** — the field
+re-masks itself after **2 seconds** (clicking the eye again re-hides immediately; the
+timer clears on unmount), so a password is never left readable on a shared or projected
+screen. The other password fields (public register, Profile → Change password) can adopt
+the component when next touched.
 
 ---
 
