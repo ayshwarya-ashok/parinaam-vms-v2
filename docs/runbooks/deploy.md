@@ -33,7 +33,7 @@ curl -s localhost:3001/api/v1/health/ready        # db + redis + n8n all "up"
 node scripts/n8n-drift-check.mjs                  # live workflow matches repo
 node apps/api/scripts/authz-matrix.mjs            # 132 authz checks
 curl -s -X POST localhost:3001/api/v1/internal/test-email \
-  -H "Content-Type: application/json" -d '{"to":"deploy.check@example.org"}'
+  -H "Content-Type: application/json" -d '{"to":"deploy.check@example.com"}'
 # → message must appear at http://localhost:8026 within ~15 s
 ```
 

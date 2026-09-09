@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { usePrograms } from '@/api/admin';
 import { EmptyState, FilterBar, PageShell, StatusPill } from '@/components';
+import { useAuth } from '@/app/auth';
 
 function fmtDate(iso: string | null): string {
   if (!iso) return '—';
@@ -14,6 +15,9 @@ function fmtDate(iso: string | null): string {
 }
 
 export function ProgramsList() {
+  // Field coordinators see this page read-only — the API enforces the same.
+  const readOnly = useAuth().user?.role === 'field_coordinator';
+
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('all');
   const navigate = useNavigate();
@@ -23,9 +27,11 @@ export function ProgramsList() {
     <PageShell
       title="Programs"
       actions={
-        <Button component={RouterLink} to="/admin/programs/new" variant="pill">
-          + New Program
-        </Button>
+        readOnly ? undefined : (
+          <Button component={RouterLink} to="/admin/programs/new" variant="pill">
+            + New Program
+          </Button>
+        )
       }
     >
       <FilterBar

@@ -3,9 +3,17 @@ import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './auth';
 
+type Role = 'admin' | 'volunteer' | 'field_coordinator';
+
 interface RequireAuthProps {
-  role?: 'admin' | 'volunteer';
+  /** One role, or any of several — field coordinators share the admin shell. */
+  role?: Role | readonly Role[];
   children: ReactNode;
+}
+
+/** Where each role calls home — the wrong-door redirect target. */
+function homeOf(role: Role): string {
+  return role === 'volunteer' ? '/app/dashboard' : '/admin/dashboard';
 }
 
 /**
@@ -26,16 +34,30 @@ export function RequireAuth({ role, children }: RequireAuthProps) {
     );
   }
 
+  const allowed: readonly Role[] | undefined =
+    role === undefined ? undefined : Array.isArray(role) ? role : [role as Role];
+
   if (status === 'anonymous' || !user) {
-    const loginPath = role === 'admin' ? '/admin/login' : '/login';
+    const loginPath = allowed && !allowed.includes('volunteer') ? '/admin/login' : '/login';
     return <Navigate to={loginPath} replace state={{ from: location.pathname }} />;
   }
 
-  if (role && user.role !== role) {
+  if (allowed && !allowed.includes(user.role)) {
     // Wrong door: an authenticated volunteer opening /admin lands on their own
     // dashboard rather than a bare 403, and vice versa.
-    return <Navigate to={user.role === 'admin' ? '/admin/dashboard' : '/app/dashboard'} replace />;
+    return <Navigate to={homeOf(user.role)} replace />;
   }
 
+  return <>{children}</>;
+}
+
+/**
+ * Admin-only pocket inside the shared admin/coordinator shell: Reports,
+ * Trainings, and every catalog-mutation form. A field coordinator landing
+ * here is sent back to the dashboard, mirroring the API's @Roles('admin').
+ */
+export function RequireAdmin({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  if (user && user.role !== 'admin') return <Navigate to="/admin/dashboard" replace />;
   return <>{children}</>;
 }

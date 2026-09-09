@@ -1,7 +1,7 @@
 import { Box, Button, Chip, Paper, TextField, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useCalendar, type SessionRow } from '@/api/volunteer';
 import { PageShell } from '@/components';
 import { tokens } from '@/theme';
@@ -35,6 +35,12 @@ export function CalendarPage() {
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth()); // 0-based
   const navigate = useNavigate();
+  // This page serves both shells (/app/calendar and /admin/calendar), so a
+  // session click must land on the viewer's own detail page — the volunteer
+  // session view, or the admin session record. A hardcoded /app target used
+  // to bounce admins off the role guard back to their dashboard.
+  const inAdminShell = useLocation().pathname.startsWith('/admin');
+  const sessionHref = (id: string) => (inAdminShell ? `/admin/sessions/${id}` : `/app/events/${id}`);
 
   const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
   const { data } = useCalendar(monthKey);
@@ -191,7 +197,7 @@ export function CalendarPage() {
                 <Paper
                   key={s.id}
                   variant="outlined"
-                  onClick={() => navigate(`/app/events/${s.id}`)}
+                  onClick={() => navigate(sessionHref(s.id))}
                   sx={{ p: 1.5, borderRadius: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, flexWrap: 'wrap', cursor: 'pointer', bgcolor: 'rgba(255,255,255,0.8)', opacity: s.status === 'cancelled' ? 0.55 : 1 }}
                 >
                   <Box>

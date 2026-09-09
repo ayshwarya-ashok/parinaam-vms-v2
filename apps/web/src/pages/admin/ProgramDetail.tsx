@@ -18,8 +18,12 @@ import { Link as RouterLink, useParams } from 'react-router-dom';
 import { useProgram, useProgramAction } from '@/api/admin';
 import { api, asApiError } from '@/api/client';
 import { PageShell, StatusPill } from '@/components';
+import { useAuth } from '@/app/auth';
 
 export function ProgramDetail() {
+  // Field coordinators see this page read-only — the API enforces the same.
+  const readOnly = useAuth().user?.role === 'field_coordinator';
+
   const { id } = useParams<{ id: string }>();
   const { enqueueSnackbar } = useSnackbar();
 
@@ -78,6 +82,7 @@ export function ProgramDetail() {
       actions={
         <>
           <StatusPill status={program.status} />
+          {!readOnly && (<>
           <Button component={RouterLink} to={`/admin/programs/${id}/edit`} variant="pillOutlined" size="small">
             ✎ Edit
           </Button>
@@ -125,6 +130,7 @@ export function ProgramDetail() {
           <Button component={RouterLink} to={`/admin/programs/${id}/activities/new`} variant="pill" size="small">
             + Add Activity
           </Button>
+          </>)}
         </>
       }
     >

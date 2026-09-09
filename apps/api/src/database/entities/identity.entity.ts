@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 import type { Volunteer } from './people.entity';
 
-export type UserRole = 'admin' | 'volunteer';
+export type UserRole = 'admin' | 'volunteer' | 'field_coordinator';
 
 /** Authentication record. Coordinators are deliberately not users. */
 @Entity('users')
@@ -26,7 +26,7 @@ export class User {
   @Column({ name: 'password_hash', type: 'varchar', length: 255, select: false })
   passwordHash!: string;
 
-  @Column({ type: 'enum', enum: ['admin', 'volunteer'], enumName: 'user_role' })
+  @Column({ type: 'enum', enum: ['admin', 'volunteer', 'field_coordinator'], enumName: 'user_role' })
   role!: UserRole;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })

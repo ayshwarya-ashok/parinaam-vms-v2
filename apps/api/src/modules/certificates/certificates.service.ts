@@ -323,17 +323,17 @@ export class CertificatesService {
     }));
   }
 
-  /** Admin, or the volunteer the certificate belongs to. */
+  /** Back-office (admin / field coordinator), or the volunteer it belongs to. */
   async download(
     certificateId: string,
-    principal: { sub: string; role: 'admin' | 'volunteer' },
+    principal: { sub: string; role: 'admin' | 'volunteer' | 'field_coordinator' },
   ): Promise<{ data: Buffer; filename: string }> {
     const cert = await this.certs.findOne({ where: { id: certificateId } });
     if (!cert || !cert.issued || !cert.filePath) {
       throw new NotFoundException('Certificate not found');
     }
 
-    if (principal.role !== 'admin') {
+    if (principal.role === 'volunteer') {
       const volunteer = await this.volunteers.findOne({ where: { userId: principal.sub } });
       if (!volunteer || volunteer.id !== cert.volunteerId) {
         throw new NotFoundException('Certificate not found');

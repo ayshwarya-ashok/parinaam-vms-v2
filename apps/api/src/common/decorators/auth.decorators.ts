@@ -11,14 +11,14 @@ export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
 
 export const ROLES_KEY = 'roles';
 /** Restricts a route to the named roles. Checked after authentication. */
-export const Roles = (...roles: Array<'admin' | 'volunteer'>) =>
+export const Roles = (...roles: Array<'admin' | 'volunteer' | 'field_coordinator'>) =>
   SetMetadata(ROLES_KEY, roles);
 
 /** The verified JWT payload attached to the request by JwtAuthGuard. */
 export interface AuthPrincipal {
   sub: string;
   email: string;
-  role: 'admin' | 'volunteer';
+  role: 'admin' | 'volunteer' | 'field_coordinator';
 }
 
 export const CurrentUser = createParamDecorator(

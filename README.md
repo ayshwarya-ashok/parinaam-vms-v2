@@ -2,7 +2,7 @@
 
 Volunteer Management System for Parinaam Foundation — a full rebuild derived from
 `VMS_prototype_v2.html` and `VMS_database_model.md`, delivered in eight phases and refined
-through twenty post-MVP review rounds (`docs/07-post-mvp-refinements.md`) and the client's
+through twenty-one post-MVP review rounds (`docs/07-post-mvp-refinements.md`) and the client's
 phased-sessions refinement (`docs/08`, `docs/09`).
 
 **Stack** React 18 + MUI · NestJS 10 · PostgreSQL 16 · Redis · **n8n** (email orchestration) ·
@@ -64,7 +64,7 @@ The defaults run out of the box. The ones worth knowing:
 
 ## 1.5 Database setup
 
-Automatic. On the database container's **first** boot it applies migrations `V001–V018` in
+Automatic. On the database container's **first** boot it applies migrations `V001–V019` in
 order (recording a SHA-256 checksum per file in `schema_migrations`), creates n8n's own
 database, and loads seeds. Nothing to run by hand.
 
@@ -82,7 +82,7 @@ the box** (reference date 2026-08-18):
 - **Lake Clean-up Drive** (Green Bengaluru) — the fully-worked activity: three completed
   sessions with mixed attendance sources and a documented absence, an upcoming session
   deliberately **full with a live waitlist**, and a **draft** for testing Publish/Edit
-- One registration left **pending** (`anita.rao@example.org`) so the approval flow has a subject
+- One registration left **pending** (`anita.rao@example.com`) so the approval flow has a subject
 - Two issued certificates (individual + corporate), published testimonials feeding the public page
 - Two sessions on 10 Sep that deliberately **overlap**, for the scheduling-conflict flow
 - **The four client-document scenarios** (S005): AAP Exposure Visit and Read to Rise, the
@@ -141,13 +141,14 @@ All demo accounts use the password **`Parinaam@123`**.
 | Role | Email | Why this account is interesting |
 |---|---|---|
 | **Admin** | `admin@parinaam.org` | Full admin — start here |
-| Volunteer | `rahul@example.org` | Active; holds certificate PAR-2026-000001; waitlisted on the Sept Lake drive |
-| Volunteer | `meera@example.org` | Active; enrolled in the (full) Sept Lake drive; a published testimonial is hers |
-| Volunteer | `ananya@example.org` | Active, all compliance passed |
-| Volunteer | `deepa@example.org` | Onboarding — hasn't signed consent yet; shows the consent gate |
+| Volunteer | `rahul@example.com` | Active; holds certificate PAR-2026-000001; waitlisted on the Sept Lake drive |
+| Volunteer | `meera@example.com` | Active; enrolled in the (full) Sept Lake drive; a published testimonial is hers |
+| Volunteer | `ananya@example.com` | Active, all compliance passed |
+| Volunteer | `deepa@example.com` | Onboarding — hasn't signed consent yet; shows the consent gate |
 | CSR volunteer | `csr@techcorp.in` | Holds the **corporate** certificate naming TechCorp; named **mentor lead** on the Chote Kadam phases (EVT-2026-0204) |
 | Volunteer | `kavya@techcorp.in` | **Individual affiliated to TechCorp** (V017 scenario) — same company as the CSR volunteer above, different category |
-| Volunteer | `anita.rao@example.org` | **Registration pending** — can log in and train, cannot enroll until approved |
+| Volunteer | `anita.rao@example.com` | **Registration pending** — can log in and train, cannot enroll until approved |
+| **Field coordinator** | `priya@parinaam.org` | Signs in at **/admin/login**; full Field Execution, Recognition and Metrics; read-only Programs, Communities, Calendar and Volunteers; no Reports or Trainings (`vikram@parinaam.org` is the second one) |
 
 ### Infrastructure service credentials
 
@@ -203,7 +204,7 @@ Execution, Recognition, Metrics and Reports.
 
 `http://localhost:5174` → **Volunteer login** → any volunteer account. The volunteer shell has
 its own nav: Dashboard, Events, Calendar, Trainings, Certificates, Feedback, Profile. Log in as
-`deepa@example.org` to see the consent gate; as `anita.rao@example.org` to see the
+`deepa@example.com` to see the consent gate; as `anita.rao@example.com` to see the
 "registration under review" banner and the enrollment lock.
 
 ## 2.3 Registration & onboarding
@@ -348,8 +349,8 @@ Each of these runs end to end on the seed data, in a few minutes:
 2. **Full volunteer lifecycle.** Sign up a brand-new volunteer → note the pending banner and
    the enrollment lock → approve them as admin → sign consent → pass a mandatory quiz → enroll
    in an open session. Watch each email arrive as you go.
-3. **Waitlist promotion, two ways.** As `rahul@example.org` you're #1 on the waitlist for the
-   full **September Drive**. Either withdraw `meera@example.org` from it, or — better — as
+3. **Waitlist promotion, two ways.** As `rahul@example.com` you're #1 on the waitlist for the
+   full **September Drive**. Either withdraw `meera@example.com` from it, or — better — as
    admin **Edit Occurrence** and raise capacity from 2 to 3. Rahul is enrolled automatically
    and congratulated by email.
 4. **Run a session end to end.** Publish the draft **October Drive** (Green Bengaluru → Lake
@@ -359,13 +360,13 @@ Each of these runs end to end on the seed data, in a few minutes:
 5. **Issue a certificate.** Recognition → Certificates → filter Green Bengaluru → **Issue** for
    a volunteer with attended hours. Download the logo-headed PDF; find the same PDF attached to
    the email in Mailpit.
-6. **Close the feedback loop.** As a volunteer who attended (e.g. `meera@example.org`), rate a
+6. **Close the feedback loop.** As a volunteer who attended (e.g. `meera@example.com`), rate a
    session under **Feedback**. As admin, see it in Recognition → Feedback analytics and
    **Publish as testimonial** — then refresh the public page: the quote is live.
 7. **A funder report.** Metrics → period **Custom range** (try 1–30 June 2026: one session,
    11.75 hours, 320 beneficiaries). Reports → export the same data three ways → create an
    automated weekly schedule → **Run now** → the Excel lands in Mailpit as an attachment.
-8. **The retake rule.** As `rahul@example.org` open the *Orientation* training: it offers a
+8. **The retake rule.** As `rahul@example.com` open the *Orientation* training: it offers a
    retake with the latest-score warning. Fail it on purpose — the pass is revoked; pass it
    again — restored, with the full attempt history kept.
 9. **Walk the Chote Kadam mentor journey.** Programs → Chote Kadam → open **Anganwadi

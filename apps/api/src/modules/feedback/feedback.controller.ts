@@ -96,7 +96,7 @@ export class FeedbackController {
   }
 
   @Get()
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: 'All submissions, filterable by programme / occurrence / rating' })
   async list(
     @Query('programId') programId?: string,
@@ -115,14 +115,14 @@ export class FeedbackController {
   }
 
   @Get('analytics')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: 'Rating/NPS aggregates and ranked issue/improvement tags' })
   analytics(@Query('programId') programId?: string) {
     return this.feedback.analytics(programId || undefined);
   }
 
   @Patch(':id/publish')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: 'Publish or retract a testimonial (BR-16: publish is an explicit admin act)' })
   async publish(@Param('id', UuidPipe) id: string, @Body() dto: PublishDto) {
     await this.feedback.setPublished(id, dto.publish);

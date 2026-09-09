@@ -8,7 +8,7 @@ import { Roles } from '../../common/decorators/auth.decorators';
  * city as real SQL predicates) is Phase 7 — this serves the Phase 2 hub only.
  */
 @ApiTags('analytics')
-@Roles('admin')
+@Roles('admin', 'field_coordinator')
 @Controller('analytics')
 export class AnalyticsController {
   constructor(private readonly dataSource: DataSource) {}

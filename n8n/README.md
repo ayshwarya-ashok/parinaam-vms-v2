@@ -47,7 +47,7 @@ depends on the ack arriving before the delivery callback; do not reorder them.
 {
   "emailLogId": "uuid",
   "templateKey": "attendance_volunteer",
-  "to": "ananya@example.org",
+  "to": "ananya@example.com",
   "subject": "Action required: mark your attendance — Blood Pressure Screening",
   "html": "<!doctype html>…",
   "text": "plain text fallback",
@@ -123,12 +123,12 @@ Two smoke tests:
 ```bash
 # The whole pipeline through the application (recommended):
 curl -X POST http://localhost:3001/api/v1/internal/test-email \
-  -H "Content-Type: application/json" -d '{"to":"smoke@example.org"}'
+  -H "Content-Type: application/json" -d '{"to":"smoke@example.com"}'
 # → appears in Mailpit within seconds; the email_logs row reaches status "sent".
 
 # n8n in isolation — post a signed payload straight at the webhook:
 SECRET=$(grep VMS_WEBHOOK_SECRET .env | cut -d= -f2)
-BODY='{"emailLogId":"00000000-0000-0000-0000-000000000000","templateKey":"smoke_test","to":"ananya@example.org","subject":"Parinaam VMS smoke test","html":"<h1>It works</h1>","fromName":"Parinaam Foundation","fromEmail":"noreply@parinaam.org","callbackUrl":"http://api:3000/api/v1/webhooks/n8n/email-status"}'
+BODY='{"emailLogId":"00000000-0000-0000-0000-000000000000","templateKey":"smoke_test","to":"ananya@example.com","subject":"Parinaam VMS smoke test","html":"<h1>It works</h1>","fromName":"Parinaam Foundation","fromEmail":"noreply@parinaam.org","callbackUrl":"http://api:3000/api/v1/webhooks/n8n/email-status"}'
 SIG=$(printf '%s' "$BODY" | openssl dgst -sha256 -hmac "$SECRET" -r | cut -d' ' -f1)
 curl -X POST http://localhost:5679/webhook/vms-email \
   -H "Content-Type: application/json" -H "X-VMS-Signature: $SIG" -d "$BODY"

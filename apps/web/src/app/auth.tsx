@@ -13,7 +13,7 @@ import { api, asApiError, setAccessToken } from '@/api/client';
 export interface SessionUser {
   id: string;
   email: string;
-  role: 'admin' | 'volunteer';
+  role: 'admin' | 'volunteer' | 'field_coordinator';
   profileComplete: boolean;
   volunteer: {
     id: string;
@@ -40,7 +40,7 @@ const AuthContext = createContext<AuthState | null>(null);
 
 interface LoginResponse {
   accessToken: string;
-  user: { id: string; email: string; role: 'admin' | 'volunteer' };
+  user: { id: string; email: string; role: 'admin' | 'volunteer' | 'field_coordinator' };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

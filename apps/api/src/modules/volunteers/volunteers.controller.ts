@@ -104,7 +104,7 @@ export class VolunteersController {
   // ── Admin directory (open question Q1 — confirmed in scope) ────────────────
 
   @Get('volunteers')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: 'Volunteer directory with search and filters' })
   directory(
     @Query('q') q?: string,
@@ -130,7 +130,7 @@ export class VolunteersController {
   }
 
   @Get('volunteers/:id')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: 'Full volunteer profile' })
   adminGet(@Param('id', UuidPipe) id: string) {
     return this.service.adminGet(id);
@@ -192,13 +192,13 @@ export class VolunteersController {
   @Roles('admin')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 2 * 1024 * 1024, files: 1 } }))
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Bulk-create volunteers from the XLSX template — per-row validation, duplicates skipped and reported' })
+  @ApiOperation({ summary: 'Bulk-create volunteers from the XLSX template or a CSV with the same columns — per-row validation, duplicates skipped and reported' })
   importXlsx(
     @CurrentUser() user: AuthPrincipal,
     @UploadedFile() file: { buffer: Buffer } | undefined,
   ) {
     if (!file?.buffer) {
-      throw new BusinessException('IMPORT_INVALID', 'Attach the filled-in .xlsx file as "file".', 400);
+      throw new BusinessException('IMPORT_INVALID', 'Attach the filled-in .xlsx or .csv file as "file".', 400);
     }
     return this.service.importFromXlsx(user, file.buffer);
   }

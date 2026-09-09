@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-09-08 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across twenty review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across twenty-one review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -523,6 +523,40 @@ Two asks:
   run history. Verified live: all four download with the right columns; a volunteer token
   gets 403. (Found en route: the enrollments table is `event_enrollments` — the first cut
   of the volunteer–activity query 500d.)
+
+---
+
+## Round 21 — The field coordinator role, CSV import, and housekeeping  (2026-09-09)
+
+Three refinements and one observation:
+
+- **CSV joined XLSX on the volunteer import.** The same endpoint takes both: an upload
+  opening with `PK` is parsed as a workbook, anything else as RFC-4180-ish CSV (quoted
+  fields, embedded commas, CRLF, Excel's UTF-8 BOM) loaded into an in-memory worksheet —
+  so every existing rule (starred headers, per-row validation with reasons, the 200-row
+  cap, default password) applies to both formats without a second code path. Verified
+  live: a CSV with a quoted "Rao, Dr" surname imported; a bad-phone row skipped with the
+  reason.
+- **Demo emails moved `@example.org` → `@example.com`** — 117 references across seeds,
+  READMEs, runbooks, the import-template samples and the authz script, plus the 24 live
+  demo accounts (erased-volunteer addresses untouched — they are `@erased.invalid`).
+- **The field coordinator role** (V019, S007). A third `user_role` for on-the-ground
+  staff, sharing the admin shell (sign-in at /admin/login) with a narrower cut:
+  | Area | Access |
+  |---|---|
+  | Field Execution (incl. session record, attendance, walk-ins, visits, phase marks/override, pre-session + sponsor emails, **mark completed**) | Full — same as admin |
+  | Recognition (certificates incl. issue/reissue/download, feedback incl. publish) | Full — same as admin |
+  | Metrics | Full — same as admin |
+  | Programs, Communities, Calendar, Volunteers | Read-only (mutation buttons hidden; the API @Roles are the real gate) |
+  | Reports, Trainings, audit log, coordinator CRUD, phase/catalog structure | None |
+  Demo logins: `priya@parinaam.org` / `vikram@parinaam.org` — the seeded coordinators,
+  now with accounts. The dashboard drops the Trainings/Reports cards and retitles itself.
+  The **authz matrix grew a fourth column**: 78 endpoints × 4 roles = **312 checks**, all
+  green on first run.
+- **Observation: admin calendar clicks led to the dashboard.** The shared CalendarPage
+  hardcoded the volunteer route (/app/events/:id), so the admin shell's role guard
+  bounced every click. The target now follows the shell: volunteers → session detail,
+  admin/coordinator → the session record.
 
 ---
 

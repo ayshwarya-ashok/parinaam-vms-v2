@@ -84,6 +84,12 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
   const { logout, user } = useAuth();
   const pendingReview = variant === 'volunteer' && user?.volunteer?.registrationStatus === 'pending';
 
+  // Field coordinators share the admin shell minus the admin-only sections.
+  const visibleNav =
+    user?.role === 'field_coordinator'
+      ? nav.filter((item) => item.to !== '/admin/trainings' && item.to !== '/admin/reports')
+      : nav;
+
   const handleLogout = async () => {
     await logout();
     navigate('/', { replace: true }); // the public impact page
@@ -155,7 +161,7 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
               minWidth: 0,
             }}
           >
-            {nav.map((item) => {
+            {visibleNav.map((item) => {
               const active = isActive(item.to);
               return (
                 <Button
@@ -244,7 +250,7 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
           <Box component="img" src="/parinaam-logo-dark.svg" alt="Parinaam" sx={{ height: 40, display: 'block' }} />
         </Box>
         <List sx={{ px: 0 }}>
-          {nav.map((item) => {
+          {visibleNav.map((item) => {
             const active = isActive(item.to);
             return (
               <ListItemButton

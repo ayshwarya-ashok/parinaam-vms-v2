@@ -21,6 +21,7 @@ import { useActivity } from '@/api/admin';
 import { useDynamicCrumbs } from '@/app/breadcrumbs';
 import { api, asApiError } from '@/api/client';
 import { ConfirmDialog, PageShell, SortableCell, StatusPill, useTableSort } from '@/components';
+import { useAuth } from '@/app/auth';
 
 function fmtDate(iso: string): string {
   return new Date(`${iso.slice(0, 10)}T00:00:00`).toLocaleDateString('en-IN', {
@@ -31,6 +32,9 @@ function fmtDate(iso: string): string {
 }
 
 export function ActivityDetail() {
+  // Field coordinators see this page read-only — the API enforces the same.
+  const readOnly = useAuth().user?.role === 'field_coordinator';
+
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
@@ -130,6 +134,7 @@ export function ActivityDetail() {
       actions={
         <>
           <StatusPill status={activity.status} />
+          {!readOnly && (<>
           <Button component={RouterLink} to={`/admin/activities/${id}/edit`} variant="pillOutlined" size="small">
             ✎ Edit
           </Button>
@@ -146,6 +151,7 @@ export function ActivityDetail() {
           <Button component={RouterLink} to={`/admin/activities/${id}/events/new`} variant="pill" size="small">
             + Schedule Session
           </Button>
+          </>)}
         </>
       }
     >
@@ -238,14 +244,14 @@ export function ActivityDetail() {
                     >
                       {e.status === 'completed' ? 'Attendance' : 'Roster'}
                     </Button>
-                    {e.status === 'draft' && (
+                    {!readOnly && e.status === 'draft' && (
                       <Tooltip title="Makes the session visible to volunteers and open for enrolment. Until then it is a draft only staff can see.">
                         <Button size="small" variant="pill" sx={{ px: 1.5, py: 0.25 }} onClick={() => publish.mutate(e.id)}>
                           Publish
                         </Button>
                       </Tooltip>
                     )}
-                    {e.status === 'upcoming' && e.phase_total === 0 && String(e.date).slice(0, 10) <= todayIso && (
+                    {!readOnly && e.status === 'upcoming' && e.phase_total === 0 && String(e.date).slice(0, 10) <= todayIso && (
                       <Button
                         size="small"
                         variant="pill"
@@ -256,7 +262,7 @@ export function ActivityDetail() {
                         ✓ Mark completed
                       </Button>
                     )}
-                    {(e.status === 'draft' || e.status === 'upcoming' || e.status === 'inprogress') && (
+                    {!readOnly && (e.status === 'draft' || e.status === 'upcoming' || e.status === 'inprogress') && (
                       <>
                         <Button
                           size="small"

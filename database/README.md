@@ -8,8 +8,8 @@ mirror these files and a drift between them is a bug in the entity, not the SQL.
 ```
 docker-init/01_bootstrap.sh   first-boot: create n8n's DB, apply every migration (checksummed
                               into schema_migrations), load S001, then S002+ if SEED_DEMO_DATA
-migrations/  V001–V018        forward-only, additive, never edited after applying
-seeds/       S001–S006        idempotent — safe to re-run
+migrations/  V001–V019        forward-only, additive, never edited after applying
+seeds/       S001–S007        idempotent — safe to re-run
 ```
 
 ## Migrations
@@ -26,6 +26,7 @@ seeds/       S001–S006        idempotent — safe to re-run
 | V016 | Item-4 close-out: `certificates.memento_note`, `photo_source` gains `volunteer_feedback`, `event_photos.feedback_id` |
 | V017 | BR-01 revised: `volunteers_csr_org_chk` keeps CSR→organization mandatory but lets an Individual carry one as an optional affiliation |
 | V018 | "As a student": `volunteers.sub_category` (Individuals only) + `volunteers.institution` (students only), both CHECK-guarded; institutions come from `reference_values` category `INSTITUTION` |
+| V019 | `user_role` gains `field_coordinator` — full field-execution/recognition/metrics capability, read-only programs/communities/volunteers, no reports or trainings (grants live in `@Roles`; see docs/07 Round 21) |
 
 **Adding one:** create `V0NN__short_description.sql`; never edit an applied file (the bootstrap
 records a SHA-256 per file); long index builds use `CREATE INDEX CONCURRENTLY` in their own
@@ -57,6 +58,7 @@ parinaam_vms -v ON_ERROR_STOP=1 -f /database/migrations/V0NN__…sql`, then inse
 | S004 | Completes volunteer identity fields the mandatory-field rule requires; normalises phones to bare ten digits; **never touches erased records** |
 | S005 | The four client-document scenarios (docs/08 §4): AAP Exposure Visit + Read to Rise, the 7-phase Chote Kadam mentor journey (inprogress, CSR lead, one visit), Snow City outing, two beneficiary communities |
 | S006 | Four **Individual volunteers affiliated to an organization** (the V017 scenario): Kavya @ TechCorp (same company as the CSR volunteer — the contrast case), Manish + Shruti @ Infosys BPM, Farhan @ Wipro Cares. Organizations resolved **by name**, never by fixed id — the app's resolve-or-create path may have made them first |
+| S007 | Field coordinator demo logins: `priya@parinaam.org`, `vikram@parinaam.org` (the seeded coordinators, now with accounts) — password `Parinaam@123`, sign in at /admin/login |
 
 Training-material PDFs are generated, not shipped — run `scripts/generate-seed-materials.mjs`
 once after first boot (see the root README §1.6).

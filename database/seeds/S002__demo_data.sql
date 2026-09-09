@@ -20,21 +20,21 @@
 -- -----------------------------------------------------------------------------
 INSERT INTO users (id, email, password_hash, role, email_verified_at) VALUES
   ('00000000-0000-0000-0000-000000000001', 'admin@parinaam.org',  crypt('Parinaam@123', gen_salt('bf', 10)), 'admin',     now()),
-  ('00000000-0000-0000-0000-000000000002', 'ananya@example.org',  crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
-  ('00000000-0000-0000-0000-000000000003', 'rahul@example.org',   crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
-  ('00000000-0000-0000-0000-000000000004', 'sunita@example.org',  crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
-  ('00000000-0000-0000-0000-000000000005', 'meera@example.org',   crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
-  ('00000000-0000-0000-0000-000000000006', 'arjun@example.org',   crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
-  ('00000000-0000-0000-0000-000000000007', 'lakshmi@example.org', crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
-  ('00000000-0000-0000-0000-000000000008', 'dev@example.org',     crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
-  ('00000000-0000-0000-0000-000000000009', 'pooja@example.org',   crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
-  ('00000000-0000-0000-0000-000000000010', 'nikhil@example.org',  crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
-  ('00000000-0000-0000-0000-000000000011', 'deepa@example.org',   crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
-  ('00000000-0000-0000-0000-000000000012', 'amit@example.org',    crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
-  ('00000000-0000-0000-0000-000000000013', 'riya@example.org',    crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
-  ('00000000-0000-0000-0000-000000000014', 'karan@example.org',   crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
-  ('00000000-0000-0000-0000-000000000015', 'preethi@example.org', crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
-  ('00000000-0000-0000-0000-000000000016', 'suresh@example.org',  crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
+  ('00000000-0000-0000-0000-000000000002', 'ananya@example.com',  crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
+  ('00000000-0000-0000-0000-000000000003', 'rahul@example.com',   crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
+  ('00000000-0000-0000-0000-000000000004', 'sunita@example.com',  crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
+  ('00000000-0000-0000-0000-000000000005', 'meera@example.com',   crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
+  ('00000000-0000-0000-0000-000000000006', 'arjun@example.com',   crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
+  ('00000000-0000-0000-0000-000000000007', 'lakshmi@example.com', crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
+  ('00000000-0000-0000-0000-000000000008', 'dev@example.com',     crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
+  ('00000000-0000-0000-0000-000000000009', 'pooja@example.com',   crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
+  ('00000000-0000-0000-0000-000000000010', 'nikhil@example.com',  crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
+  ('00000000-0000-0000-0000-000000000011', 'deepa@example.com',   crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
+  ('00000000-0000-0000-0000-000000000012', 'amit@example.com',    crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
+  ('00000000-0000-0000-0000-000000000013', 'riya@example.com',    crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
+  ('00000000-0000-0000-0000-000000000014', 'karan@example.com',   crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
+  ('00000000-0000-0000-0000-000000000015', 'preethi@example.com', crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
+  ('00000000-0000-0000-0000-000000000016', 'suresh@example.com',  crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now()),
   ('00000000-0000-0000-0000-000000000017', 'csr@techcorp.in',     crypt('Parinaam@123', gen_salt('bf', 10)), 'volunteer', now())
 ON CONFLICT (email) DO NOTHING;
 
@@ -272,30 +272,30 @@ SELECT v.id, t.id, m.attempt_no, m.score, m.correct, m.qcount, m.passed,
        m.attempted_at::timestamptz,
        CASE WHEN m.passed THEN (m.attempted_at::date + INTERVAL '12 months')::date END
 FROM (VALUES
-  ('ananya@example.org', 'tc1', 1, 65.00, 3, 5, FALSE, '2026-07-04 10:00+05:30'),
-  ('ananya@example.org', 'tc1', 2, 88.00, 4, 5, TRUE,  '2026-07-05 10:30+05:30'),
-  ('ananya@example.org', 'tc2', 1, 85.00, 4, 5, TRUE,  '2026-07-05 11:00+05:30'),
-  ('ananya@example.org', 'tc3', 1, 100.00,4, 4, TRUE,  '2026-07-05 11:30+05:30'),
-  ('meera@example.org',  'tc1', 1, 92.00, 5, 5, TRUE,  '2026-07-06 09:00+05:30'),
-  ('meera@example.org',  'tc2', 1, 90.00, 5, 5, TRUE,  '2026-07-06 09:40+05:30'),
-  ('meera@example.org',  'tc3', 1, 100.00,4, 4, TRUE,  '2026-07-06 10:10+05:30'),
+  ('ananya@example.com', 'tc1', 1, 65.00, 3, 5, FALSE, '2026-07-04 10:00+05:30'),
+  ('ananya@example.com', 'tc1', 2, 88.00, 4, 5, TRUE,  '2026-07-05 10:30+05:30'),
+  ('ananya@example.com', 'tc2', 1, 85.00, 4, 5, TRUE,  '2026-07-05 11:00+05:30'),
+  ('ananya@example.com', 'tc3', 1, 100.00,4, 4, TRUE,  '2026-07-05 11:30+05:30'),
+  ('meera@example.com',  'tc1', 1, 92.00, 5, 5, TRUE,  '2026-07-06 09:00+05:30'),
+  ('meera@example.com',  'tc2', 1, 90.00, 5, 5, TRUE,  '2026-07-06 09:40+05:30'),
+  ('meera@example.com',  'tc3', 1, 100.00,4, 4, TRUE,  '2026-07-06 10:10+05:30'),
   ('csr@techcorp.in',    'tc1', 1, 90.00, 5, 5, TRUE,  '2026-07-06 12:00+05:30'),
   ('csr@techcorp.in',    'tc2', 1, 90.00, 5, 5, TRUE,  '2026-07-06 12:30+05:30'),
   ('csr@techcorp.in',    'tc3', 1, 100.00,4, 4, TRUE,  '2026-07-06 13:00+05:30'),
-  ('rahul@example.org',  'tc1', 1, 50.00, 2, 5, FALSE, '2026-07-06 12:00+05:30'),
-  ('rahul@example.org',  'tc1', 2, 60.00, 3, 5, FALSE, '2026-07-07 12:00+05:30'),
-  ('rahul@example.org',  'tc1', 3, 55.00, 3, 5, FALSE, '2026-07-08 12:00+05:30'),
-  ('rahul@example.org',  'tc2', 1, 60.00, 3, 5, FALSE, '2026-07-06 13:00+05:30'),
-  ('rahul@example.org',  'tc2', 2, 78.00, 4, 5, FALSE, '2026-07-07 13:00+05:30'),
-  ('rahul@example.org',  'tc3', 1, 75.00, 3, 4, TRUE,  '2026-07-06 14:00+05:30'),
-  ('nikhil@example.org', 'tc1', 1, 72.00, 4, 5, FALSE, '2026-07-09 10:00+05:30'),
-  ('nikhil@example.org', 'tc3', 1, 50.00, 2, 4, FALSE, '2026-07-09 11:00+05:30'),
-  ('ananya@example.org', 't1',  1, 100.00,5, 5, TRUE,  '2026-07-06 09:00+05:30'),
-  ('ananya@example.org', 't2',  1, 80.00, 4, 5, TRUE,  '2026-07-07 09:00+05:30'),
-  ('meera@example.org',  't1',  1, 100.00,5, 5, TRUE,  '2026-07-07 09:00+05:30'),
-  ('meera@example.org',  't4',  1, 100.00,3, 3, TRUE,  '2026-07-07 10:00+05:30'),
+  ('rahul@example.com',  'tc1', 1, 50.00, 2, 5, FALSE, '2026-07-06 12:00+05:30'),
+  ('rahul@example.com',  'tc1', 2, 60.00, 3, 5, FALSE, '2026-07-07 12:00+05:30'),
+  ('rahul@example.com',  'tc1', 3, 55.00, 3, 5, FALSE, '2026-07-08 12:00+05:30'),
+  ('rahul@example.com',  'tc2', 1, 60.00, 3, 5, FALSE, '2026-07-06 13:00+05:30'),
+  ('rahul@example.com',  'tc2', 2, 78.00, 4, 5, FALSE, '2026-07-07 13:00+05:30'),
+  ('rahul@example.com',  'tc3', 1, 75.00, 3, 4, TRUE,  '2026-07-06 14:00+05:30'),
+  ('nikhil@example.com', 'tc1', 1, 72.00, 4, 5, FALSE, '2026-07-09 10:00+05:30'),
+  ('nikhil@example.com', 'tc3', 1, 50.00, 2, 4, FALSE, '2026-07-09 11:00+05:30'),
+  ('ananya@example.com', 't1',  1, 100.00,5, 5, TRUE,  '2026-07-06 09:00+05:30'),
+  ('ananya@example.com', 't2',  1, 80.00, 4, 5, TRUE,  '2026-07-07 09:00+05:30'),
+  ('meera@example.com',  't1',  1, 100.00,5, 5, TRUE,  '2026-07-07 09:00+05:30'),
+  ('meera@example.com',  't4',  1, 100.00,3, 3, TRUE,  '2026-07-07 10:00+05:30'),
   ('csr@techcorp.in',    't1',  1, 100.00,5, 5, TRUE,  '2026-07-07 11:00+05:30'),
-  ('rahul@example.org',  't1',  1, 80.00, 4, 5, TRUE,  '2026-07-08 09:00+05:30')
+  ('rahul@example.com',  't1',  1, 80.00, 4, 5, TRUE,  '2026-07-08 09:00+05:30')
 ) AS m(email, tcode, attempt_no, score, correct, qcount, passed, attempted_at)
 JOIN users u      ON u.email = m.email
 JOIN volunteers v ON v.user_id = u.id
@@ -308,23 +308,23 @@ ON CONFLICT (volunteer_id, training_id, attempt_number) DO NOTHING;
 INSERT INTO event_enrollments (volunteer_id, event_id, status, skills)
 SELECT v.id, e.id, 'enrolled', v.skills
 FROM (VALUES
-  ('rahul@example.org',  'EVT-2026-0001'),
-  ('sunita@example.org', 'EVT-2026-0001'),
+  ('rahul@example.com',  'EVT-2026-0001'),
+  ('sunita@example.com', 'EVT-2026-0001'),
   ('csr@techcorp.in',    'EVT-2026-0001'),
-  ('ananya@example.org', 'EVT-2026-0002'),
-  ('rahul@example.org',  'EVT-2026-0003'),
-  ('meera@example.org',  'EVT-2026-0004'),
-  ('arjun@example.org',  'EVT-2026-0004'),
-  ('dev@example.org',    'EVT-2026-0004'),
-  ('meera@example.org',  'EVT-2026-0005'),
-  ('lakshmi@example.org','EVT-2026-0005'),
-  ('pooja@example.org',  'EVT-2026-0005'),
-  ('nikhil@example.org', 'EVT-2026-0006'),
-  ('deepa@example.org',  'EVT-2026-0006'),
-  ('amit@example.org',   'EVT-2026-0006'),
-  ('riya@example.org',   'EVT-2026-0007'),
-  ('ananya@example.org', 'EVT-2026-0010'),
-  ('ananya@example.org', 'EVT-2026-0012')
+  ('ananya@example.com', 'EVT-2026-0002'),
+  ('rahul@example.com',  'EVT-2026-0003'),
+  ('meera@example.com',  'EVT-2026-0004'),
+  ('arjun@example.com',  'EVT-2026-0004'),
+  ('dev@example.com',    'EVT-2026-0004'),
+  ('meera@example.com',  'EVT-2026-0005'),
+  ('lakshmi@example.com','EVT-2026-0005'),
+  ('pooja@example.com',  'EVT-2026-0005'),
+  ('nikhil@example.com', 'EVT-2026-0006'),
+  ('deepa@example.com',  'EVT-2026-0006'),
+  ('amit@example.com',   'EVT-2026-0006'),
+  ('riya@example.com',   'EVT-2026-0007'),
+  ('ananya@example.com', 'EVT-2026-0010'),
+  ('ananya@example.com', 'EVT-2026-0012')
 ) AS m(email, ecode)
 JOIN users u      ON u.email = m.email
 JOIN volunteers v ON v.user_id = u.id
@@ -335,8 +335,8 @@ ON CONFLICT (volunteer_id, event_id) DO NOTHING;
 INSERT INTO waitlist_entries (volunteer_id, event_id, position)
 SELECT v.id, e.id, m.pos
 FROM (VALUES
-  ('lakshmi@example.org', 'EVT-2026-0004', 1),
-  ('karan@example.org',   'EVT-2026-0004', 2)
+  ('lakshmi@example.com', 'EVT-2026-0004', 1),
+  ('karan@example.com',   'EVT-2026-0004', 2)
 ) AS m(email, ecode, pos)
 JOIN users u      ON u.email = m.email
 JOIN volunteers v ON v.user_id = u.id
@@ -372,21 +372,21 @@ INSERT INTO attendance_records
 SELECT e.id, v.id, m.attended, m.arrive::time, m.depart::time, m.hours,
        m.reason::absence_reason, m.notes, m.src::attendance_source, m.rec_at::timestamptz
 FROM (VALUES
-  ('EVT-2026-0001','rahul@example.org',  TRUE, '09:00','12:00', 3.00, NULL, NULL,                                  'self',        '2026-07-15 18:10+05:30'),
-  ('EVT-2026-0001','sunita@example.org', TRUE, '09:15','12:00', 2.75, NULL, 'Arrived slightly late.',              'self',        '2026-07-15 19:00+05:30'),
+  ('EVT-2026-0001','rahul@example.com',  TRUE, '09:00','12:00', 3.00, NULL, NULL,                                  'self',        '2026-07-15 18:10+05:30'),
+  ('EVT-2026-0001','sunita@example.com', TRUE, '09:15','12:00', 2.75, NULL, 'Arrived slightly late.',              'self',        '2026-07-15 19:00+05:30'),
   ('EVT-2026-0001','csr@techcorp.in',    TRUE, '09:00','12:00', 3.00, NULL, 'TechCorp CSR team lead.',             'self',        '2026-07-15 19:10+05:30'),
-  ('EVT-2026-0002','ananya@example.org', TRUE, '09:55','11:55', 2.00, NULL, 'Counselled 14 families.',             'self',        '2026-07-15 18:00+05:30'),
-  ('EVT-2026-0003','rahul@example.org',  TRUE, '13:00','17:00', 4.00, NULL, NULL,                                  'coordinator', '2026-07-16 09:00+05:30'),
-  ('EVT-2026-0004','meera@example.org',  TRUE, '09:30','11:30', 2.00, NULL, 'Great engagement from participants.', 'self',        '2026-07-22 17:00+05:30'),
-  ('EVT-2026-0004','arjun@example.org',  TRUE, '09:30','11:30', 2.00, NULL, NULL,                                  'self',        '2026-07-22 17:05+05:30'),
-  ('EVT-2026-0004','dev@example.org',    TRUE, '09:35','11:30', 2.00, NULL, NULL,                                  'self',        '2026-07-22 17:20+05:30'),
-  ('EVT-2026-0005','meera@example.org',  TRUE, '11:30','13:30', 2.00, NULL, NULL,                                  'self',        '2026-07-22 18:00+05:30'),
-  ('EVT-2026-0005','lakshmi@example.org',FALSE, NULL,   NULL,   NULL, 'Transport issue','Bus strike in the area.',  'self',        '2026-07-22 18:30+05:30'),
-  ('EVT-2026-0005','pooja@example.org',  TRUE, '11:40','13:30', 1.83, NULL, NULL,                                  'self',        '2026-07-22 19:00+05:30'),
-  ('EVT-2026-0006','nikhil@example.org', TRUE, '10:00','13:00', 3.00, NULL, 'Youth were highly responsive.',       'self',        '2026-08-05 18:00+05:30'),
-  ('EVT-2026-0006','deepa@example.org',  TRUE, '10:00','13:00', 3.00, NULL, NULL,                                  'self',        '2026-08-05 18:10+05:30'),
-  ('EVT-2026-0006','amit@example.org',   TRUE, '10:10','13:00', 2.83, NULL, NULL,                                  'self',        '2026-08-05 18:20+05:30'),
-  ('EVT-2026-0007','riya@example.org',   FALSE, NULL,  NULL,    NULL, 'Personal emergency', NULL,                  'self',        '2026-08-05 20:00+05:30')
+  ('EVT-2026-0002','ananya@example.com', TRUE, '09:55','11:55', 2.00, NULL, 'Counselled 14 families.',             'self',        '2026-07-15 18:00+05:30'),
+  ('EVT-2026-0003','rahul@example.com',  TRUE, '13:00','17:00', 4.00, NULL, NULL,                                  'coordinator', '2026-07-16 09:00+05:30'),
+  ('EVT-2026-0004','meera@example.com',  TRUE, '09:30','11:30', 2.00, NULL, 'Great engagement from participants.', 'self',        '2026-07-22 17:00+05:30'),
+  ('EVT-2026-0004','arjun@example.com',  TRUE, '09:30','11:30', 2.00, NULL, NULL,                                  'self',        '2026-07-22 17:05+05:30'),
+  ('EVT-2026-0004','dev@example.com',    TRUE, '09:35','11:30', 2.00, NULL, NULL,                                  'self',        '2026-07-22 17:20+05:30'),
+  ('EVT-2026-0005','meera@example.com',  TRUE, '11:30','13:30', 2.00, NULL, NULL,                                  'self',        '2026-07-22 18:00+05:30'),
+  ('EVT-2026-0005','lakshmi@example.com',FALSE, NULL,   NULL,   NULL, 'Transport issue','Bus strike in the area.',  'self',        '2026-07-22 18:30+05:30'),
+  ('EVT-2026-0005','pooja@example.com',  TRUE, '11:40','13:30', 1.83, NULL, NULL,                                  'self',        '2026-07-22 19:00+05:30'),
+  ('EVT-2026-0006','nikhil@example.com', TRUE, '10:00','13:00', 3.00, NULL, 'Youth were highly responsive.',       'self',        '2026-08-05 18:00+05:30'),
+  ('EVT-2026-0006','deepa@example.com',  TRUE, '10:00','13:00', 3.00, NULL, NULL,                                  'self',        '2026-08-05 18:10+05:30'),
+  ('EVT-2026-0006','amit@example.com',   TRUE, '10:10','13:00', 2.83, NULL, NULL,                                  'self',        '2026-08-05 18:20+05:30'),
+  ('EVT-2026-0007','riya@example.com',   FALSE, NULL,  NULL,    NULL, 'Personal emergency', NULL,                  'self',        '2026-08-05 20:00+05:30')
 ) AS m(ecode, email, attended, arrive, depart, hours, reason, notes, src, rec_at)
 JOIN events e     ON e.code = m.ecode
 JOIN users u      ON u.email = m.email
@@ -445,19 +445,19 @@ INSERT INTO feedback_submissions
 SELECT m.fid::uuid, v.id, e.id, m.rating, m.nps, m.again::vol_again_type,
        m.well, m.wrong, m.improve, m.comments, m.publish, m.sub::timestamptz
 FROM (VALUES
-  ('00000000-0000-0000-0007-000000000001','meera@example.org','EVT-2026-0004',5,9,'Definitely',
+  ('00000000-0000-0000-0007-000000000001','meera@example.com','EVT-2026-0004',5,9,'Definitely',
    'The co-ordinator was extremely well-prepared and the Zoom setup was flawless. Participants were highly engaged.',
    NULL,
    'A post-event debrief would help volunteers consolidate learnings.',
    'Fantastic experience overall. Proud to be part of this.', TRUE, '2026-07-25 19:00+05:30'),
 
-  ('00000000-0000-0000-0007-000000000002','rahul@example.org','EVT-2026-0001',3,6,'Probably',
+  ('00000000-0000-0000-0007-000000000002','rahul@example.com','EVT-2026-0001',3,6,'Probably',
    'The venue was well set up and the medical supplies were adequate.',
    'The schedule slipped by over 45 minutes and we were not informed about the delays.',
    'Send a day-before briefing note with the exact schedule to all volunteers.',
    'Good cause but execution needs improvement.', TRUE, '2026-07-18 20:00+05:30'),
 
-  ('00000000-0000-0000-0007-000000000003','nikhil@example.org','EVT-2026-0006',4,8,'Definitely',
+  ('00000000-0000-0000-0007-000000000003','nikhil@example.com','EVT-2026-0006',4,8,'Definitely',
    'The youth were engaged and responsive. Peer interactions were energetic.',
    'We ran out of printed worksheets halfway through the study skills session.',
    'Ensure printed materials match the registered headcount, not just confirmed.',
@@ -515,10 +515,10 @@ SELECT a.program_id, e.id, v.id, 'volunteer', u.email, m.tkey, m.subject,
        'sent', 'vms-email-dispatch', 'seed-exec-' || m.n, 'seed-msg-' || m.n,
        m.at::timestamptz, m.at::timestamptz, m.at::timestamptz
 FROM (VALUES
-  ('EVT-2026-0001','rahul@example.org','attendance_volunteer','Action Required: Mark Your Attendance — Blood Pressure Screening','1','2026-07-12 09:00+05:30'),
-  ('EVT-2026-0004','meera@example.org','attendance_volunteer','Action Required: Mark Your Attendance — Basic Computer Skills','2','2026-07-19 09:00+05:30'),
-  ('EVT-2026-0006','nikhil@example.org','registration_confirmed','Registration Confirmed — Career Guidance Session','3','2026-07-25 10:05+05:30'),
-  ('EVT-2026-0010','ananya@example.org','registration_confirmed','Registration Confirmed — Tree Plantation Drive','4','2026-08-14 10:05+05:30')
+  ('EVT-2026-0001','rahul@example.com','attendance_volunteer','Action Required: Mark Your Attendance — Blood Pressure Screening','1','2026-07-12 09:00+05:30'),
+  ('EVT-2026-0004','meera@example.com','attendance_volunteer','Action Required: Mark Your Attendance — Basic Computer Skills','2','2026-07-19 09:00+05:30'),
+  ('EVT-2026-0006','nikhil@example.com','registration_confirmed','Registration Confirmed — Career Guidance Session','3','2026-07-25 10:05+05:30'),
+  ('EVT-2026-0010','ananya@example.com','registration_confirmed','Registration Confirmed — Tree Plantation Drive','4','2026-08-14 10:05+05:30')
 ) AS m(ecode, email, tkey, subject, n, at)
 JOIN events e     ON e.code = m.ecode
 JOIN activities a ON a.id = e.activity_id

@@ -42,6 +42,7 @@ import {
   type ProfileErrors,
 } from '@/app/validation';
 import { tokens } from '@/theme';
+import { useAuth } from '@/app/auth';
 
 type RegistrationStatus = 'pending' | 'approved' | 'rejected';
 
@@ -109,6 +110,9 @@ function fmtDate(iso: string | null): string {
  *     the person.)
  */
 export function VolunteerDirectory() {
+  // Field coordinators see this page read-only — the API enforces the same.
+  const readOnly = useAuth().user?.role === 'field_coordinator';
+
   const [q, setQ] = useState('');
   const [registrationStatus, setRegistrationStatus] = useState('all');
   const [category, setCategory] = useState('all');
@@ -342,15 +346,17 @@ export function VolunteerDirectory() {
       description="Review new registrations, and activate or inactivate volunteers. Click any row to see everything the volunteer told us when they signed up."
       actions={
         <>
+          {!readOnly && (<>
           <Button variant="pill" onClick={() => { setAddError(null); setAddForm({ ...emptyAdd }); }}>
             ＋ Add volunteer
           </Button>
           <Button variant="pillOutlined" onClick={() => { setImportResult(null); setImportOpen(true); }}>
-            ⬆ Import XLSX
+            ⬆ Import XLSX/CSV
           </Button>
           <Button variant="pillOutlined" onClick={() => setInviteOpen(true)}>
             ✉ Invite volunteers
           </Button>
+          </>)}
           {pending > 0 && (
             <Button
               variant={registrationStatus === 'pending' ? 'pill' : 'pillOutlined'}
@@ -464,7 +470,7 @@ export function VolunteerDirectory() {
                   </Typography>
                 </TableCell>
                 <TableCell align="right" sx={{ whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
-                  {v.registrationStatus === 'pending' ? (
+                  {readOnly ? null : v.registrationStatus === 'pending' ? (
                     <>
                       <Button
                         size="small"
@@ -550,6 +556,7 @@ export function VolunteerDirectory() {
         onApprove={(id) => review.mutate({ id, decision: 'approve' })}
         onReject={(row) => { setOpenId(null); setRejecting(row); setRejectReason(''); }}
         busy={review.isPending}
+        readOnly={readOnly}
       />
 
       {/* Rejection needs a reason — the volunteer is told what it was. */}
@@ -596,7 +603,7 @@ export function VolunteerDirectory() {
 
       {/* ── Bulk XLSX import ─────────────────────────────────────────────── */}
       <Dialog open={importOpen} onClose={() => setImportOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Import volunteers from XLSX</DialogTitle>
+        <DialogTitle>Import volunteers from Excel or CSV</DialogTitle>
         <DialogContent sx={{ display: 'grid', gap: 2, pt: '8px !important' }}>
           <Typography sx={{ fontSize: '0.88rem', color: 'text.secondary' }}>
             Start from the template — it carries the exact columns, two sample rows and the
@@ -622,11 +629,11 @@ export function VolunteerDirectory() {
               ⬇ Download template
             </Button>
             <Button variant="pillOutlined" size="small" component="label">
-              {importFile ? importFile.name : 'Choose .xlsx file'}
+              {importFile ? importFile.name : 'Choose .xlsx or .csv file'}
               <input
                 type="file"
                 hidden
-                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
                 onChange={(e) => {
                   setImportResult(null);
                   setImportFile(e.target.files?.[0] ?? null);
@@ -831,6 +838,7 @@ function VolunteerDetailDrawer({
   onApprove,
   onReject,
   busy,
+  readOnly,
 }: {
   id: string | null;
   options: ReferenceOptions;
@@ -838,6 +846,7 @@ function VolunteerDetailDrawer({
   onApprove: (id: string) => void;
   onReject: (row: DirectoryRow) => void;
   busy: boolean;
+  readOnly: boolean;
 }) {
   const { data: v } = useQuery({
     queryKey: ['volunteer-detail', id],
@@ -969,7 +978,7 @@ function VolunteerDetailDrawer({
             <Typography sx={{ fontSize: '0.78rem', color: 'text.secondary' }}>{v.phase}</Typography>
           </Box>
 
-          {v.registrationStatus === 'pending' && (
+          {!readOnly && v.registrationStatus === 'pending' && (
             <Paper
               variant="outlined"
               sx={{ p: 2, borderRadius: 3, mb: 2, bgcolor: 'rgba(30,122,178,0.08)' }}

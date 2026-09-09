@@ -1,7 +1,7 @@
 import { Suspense, lazy } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import { AppLayout } from './layouts/AppLayout';
-import { RequireAuth } from './guards';
+import { RequireAdmin, RequireAuth } from './guards';
 import { AdminLogin } from '@/pages/AdminLogin';
 import { Consent } from '@/pages/Consent';
 import { ProfilePage } from '@/pages/Profile';
@@ -124,7 +124,7 @@ export const router = createBrowserRouter([
   {
     path: '/admin',
     element: (
-      <RequireAuth role="admin">
+      <RequireAuth role={['admin', 'field_coordinator']}>
         <AppLayout variant="admin" nav={adminNav} />
       </RequireAuth>
     ),
@@ -137,14 +137,14 @@ export const router = createBrowserRouter([
         handle: { crumb: 'Programs' },
         children: [
           { index: true, element: <ProgramsList /> },
-          { path: 'new', element: <ProgramForm />, handle: { crumb: 'New' } },
+          { path: 'new', element: <RequireAdmin><ProgramForm /></RequireAdmin>, handle: { crumb: 'New' } },
           { path: ':id', element: <ProgramDetail />, handle: { crumb: 'Program' } },
-          { path: ':id/edit', element: <ProgramForm />, handle: { crumb: 'Edit' } },
-          { path: ':programId/activities/new', element: <ActivityForm />, handle: { crumb: 'Add Activity' } },
+          { path: ':id/edit', element: <RequireAdmin><ProgramForm /></RequireAdmin>, handle: { crumb: 'Edit' } },
+          { path: ':programId/activities/new', element: <RequireAdmin><ActivityForm /></RequireAdmin>, handle: { crumb: 'Add Activity' } },
         ],
       },
       { path: 'activities/:id', element: <ActivityDetail />, handle: { crumb: 'Activity' } },
-      { path: 'activities/:id/edit', element: <ActivityForm />, handle: { crumb: 'Edit Activity' } },
+      { path: 'activities/:id/edit', element: <RequireAdmin><ActivityForm /></RequireAdmin>, handle: { crumb: 'Edit Activity' } },
       {
         path: 'communities',
         handle: { crumb: 'Communities' },
@@ -153,17 +153,17 @@ export const router = createBrowserRouter([
           { path: ':id', element: <CommunityDetail />, handle: { crumb: 'Community' } },
         ],
       },
-      { path: 'activities/:activityId/events/new', element: <ScheduleEventForm />, handle: { crumb: 'Schedule' } },
-      { path: 'events/:id/edit', element: <EditEventForm />, handle: { crumb: 'Edit Occurrence' } },
+      { path: 'activities/:activityId/events/new', element: <RequireAdmin><ScheduleEventForm /></RequireAdmin>, handle: { crumb: 'Schedule' } },
+      { path: 'events/:id/edit', element: <RequireAdmin><EditEventForm /></RequireAdmin>, handle: { crumb: 'Edit Occurrence' } },
       { path: 'calendar', element: <CalendarPage />, handle: { crumb: 'Calendar' } },
       {
         path: 'trainings',
         handle: { crumb: 'Trainings' },
         children: [
-          { index: true, element: <TrainingsList /> },
-          { path: 'new', element: <TrainingForm />, handle: { crumb: 'New' } },
-          { path: ':id/edit', element: <TrainingForm />, handle: { crumb: 'Edit' } },
-          { path: ':id/assessments', element: <AssessmentsPage />, handle: { crumb: 'Assessments' } },
+          { index: true, element: <RequireAdmin><TrainingsList /></RequireAdmin> },
+          { path: 'new', element: <RequireAdmin><TrainingForm /></RequireAdmin>, handle: { crumb: 'New' } },
+          { path: ':id/edit', element: <RequireAdmin><TrainingForm /></RequireAdmin>, handle: { crumb: 'Edit' } },
+          { path: ':id/assessments', element: <RequireAdmin><AssessmentsPage /></RequireAdmin>, handle: { crumb: 'Assessments' } },
         ],
       },
       {
@@ -188,8 +188,8 @@ export const router = createBrowserRouter([
         path: 'reports',
         handle: { crumb: 'Reports' },
         children: [
-          { index: true, element: <ReportsPage /> },
-          { path: 'scheduled', element: <ScheduledReportsPage />, handle: { crumb: 'Automated' } },
+          { index: true, element: <RequireAdmin><ReportsPage /></RequireAdmin> },
+          { path: 'scheduled', element: <RequireAdmin><ScheduledReportsPage /></RequireAdmin>, handle: { crumb: 'Automated' } },
         ],
       },
     ],

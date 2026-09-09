@@ -13,7 +13,7 @@ export class AnalyticsController {
   constructor(private readonly analytics: AnalyticsService) {}
 
   @Get('dashboard')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: 'KPIs and every chart series in one payload, filtered by period / programme / city' })
   dashboard(
     @Query('period') period?: string,

@@ -104,7 +104,7 @@ export class ProgramsController {
   }
 
   @Get('programs/:id/participation')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: 'Per-volunteer hours and occurrences — the certificate source' })
   participation(@Param('id', UuidPipe) id: string) {
     return this.programs.participation(id);
@@ -133,7 +133,7 @@ export class ProgramsController {
   }
 
   @Get('programs/:id/announcements')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   announcementHistory(@Param('id', UuidPipe) id: string) {
     return this.eventsAdmin.announcementHistory(id);
   }
@@ -208,7 +208,7 @@ export class ProgramsController {
   }
 
   @Get('events/:id/admin')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   adminEventDetail(@Param('id', UuidPipe) id: string) {
     return this.eventsAdmin.adminDetail(id);
   }
@@ -220,7 +220,7 @@ export class ProgramsController {
   }
 
   @Post('events/:id/complete')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: 'Mark a past upcoming session as completed — what dashboards count as conducted' })
   completeEvent(@Param('id', UuidPipe) id: string) {
     return this.eventsAdmin.complete(id);
@@ -244,13 +244,13 @@ export class ProgramsController {
   }
 
   @Get('events/:id/enrollments')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   eventEnrollments(@Param('id', UuidPipe) id: string) {
     return this.eventsAdmin.enrollmentsOf(id);
   }
 
   @Post('events/:id/pre-session-email')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: 'Send (or re-send) the T-7 details / T-1 reminder email to every enrolled volunteer now' })
   preSessionEmail(
     @Param('id', UuidPipe) id: string,
@@ -262,7 +262,7 @@ export class ProgramsController {
   // ── Session phases ───────────────────────────────────────────────────────
 
   @Get('events/:id/phases')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: "A session's phases with lead names" })
   eventPhases(@Param('id', UuidPipe) id: string) {
     return this.phases.listByEvent(id);
@@ -293,14 +293,14 @@ export class ProgramsController {
   }
 
   @Post('phases/:id/start')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: 'Mark work on a phase as started (session goes inprogress)' })
   startPhase(@CurrentUser() user: AuthPrincipal, @Param('id', UuidPipe) id: string) {
     return this.phases.start(user, id);
   }
 
   @Post('phases/:id/complete')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: "Mark the Parinaam side complete — partner-owned phases need the lead's mark or an override" })
   completePhase(@CurrentUser() user: AuthPrincipal, @Param('id', UuidPipe) id: string) {
     return this.phases.completeParinaamSide(user, id);
@@ -321,7 +321,7 @@ export class ProgramsController {
   }
 
   @Post('phases/:id/override')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: 'Force a phase status with a reason — audited; may revert a completed session' })
   overridePhase(
     @CurrentUser() user: AuthPrincipal,

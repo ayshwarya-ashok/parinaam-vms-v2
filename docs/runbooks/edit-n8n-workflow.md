@@ -7,7 +7,7 @@ instance differs. Never leave an edit only in the n8n UI.
 ## Safe edit cycle
 1. Edit in the n8n UI (http://localhost:5679) against the dev stack.
 2. Send a test through the REAL pipeline:
-   `curl -X POST localhost:3001/api/v1/internal/test-email -H "Content-Type: application/json" -d '{"to":"wf.test@example.org"}'`
+   `curl -X POST localhost:3001/api/v1/internal/test-email -H "Content-Type: application/json" -d '{"to":"wf.test@example.com"}'`
    and confirm delivery in Mailpit **and** that the email_logs row reaches `sent`
    (the signed callback still works).
 3. Export and commit:

@@ -17,6 +17,7 @@ import { useCommunities, type CommunityRow } from '@/api/admin';
 import { api, asApiError } from '@/api/client';
 import { useToast } from '@/app/toast';
 import { EmptyState, FilterBar, PageShell } from '@/components';
+import { useAuth } from '@/app/auth';
 
 interface CommunityFormState {
   id: string | null;
@@ -33,6 +34,9 @@ const emptyForm: CommunityFormState = { id: null, name: '', description: '', cit
  * catalog is maintained. Archive, never delete: session links are history.
  */
 export function CommunitiesPage() {
+  // Field coordinators see this page read-only — the API enforces the same.
+  const readOnly = useAuth().user?.role === 'field_coordinator';
+
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -81,9 +85,11 @@ export function CommunitiesPage() {
       title="Beneficiary Communities"
       description="The communities Parinaam serves. Every published session must be linked to at least one — link sessions when scheduling or editing them."
       actions={
-        <Button variant="pill" onClick={() => setForm({ ...emptyForm })}>
-          + New community
-        </Button>
+        readOnly ? undefined : (
+          <Button variant="pill" onClick={() => setForm({ ...emptyForm })}>
+            + New community
+          </Button>
+        )
       }
     >
       <FilterBar
@@ -141,6 +147,7 @@ export function CommunitiesPage() {
                   {c.completed_sessions} completed
                   {c.draft_sessions > 0 ? ` · ${c.draft_sessions} draft` : ''}
                 </Typography>
+                {!readOnly && (<>
                 <Button size="small" variant="pillOutlined" onClick={() => openEdit(c)}>
                   Edit
                 </Button>
@@ -157,6 +164,7 @@ export function CommunitiesPage() {
                 >
                   {c.status === 'archived' ? 'Restore' : 'Archive'}
                 </Button>
+                </>)}
               </Box>
             </Box>
           </Paper>

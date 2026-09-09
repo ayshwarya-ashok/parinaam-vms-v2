@@ -40,14 +40,14 @@ export class CertificatesController {
   constructor(private readonly certificates: CertificatesService) {}
 
   @Get()
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: 'Certificate candidates — every attended (volunteer, programme) pair with issue state' })
   async list(@Query() query: ListQuery) {
     return { data: await this.certificates.candidates(query) };
   }
 
   @Post('issue')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: 'Issue the certificate for one volunteer in one programme (render, store, email)' })
   issue(@Body() dto: IssueDto, @CurrentUser() user: AuthPrincipal) {
     return this.certificates.issue(dto.volunteerId, dto.programId, user.sub, {
@@ -56,21 +56,21 @@ export class CertificatesController {
   }
 
   @Post('issue-bulk')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: 'Issue certificates for every eligible, not-yet-issued volunteer in a programme' })
   issueBulk(@Body() dto: IssueBulkDto, @CurrentUser() user: AuthPrincipal) {
     return this.certificates.issueBulk(dto.programId, user.sub);
   }
 
   @Post(':id/resend')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: 'Re-email the exact document already on file' })
   resend(@Param('id', UuidPipe) id: string) {
     return this.certificates.resend(id);
   }
 
   @Post(':id/reissue')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: 'Recompute hours/period, re-render and re-send (attendance changed after issue)' })
   reissue(@Param('id', UuidPipe) id: string, @CurrentUser() user: AuthPrincipal) {
     return this.certificates.reissueById(id, user.sub);

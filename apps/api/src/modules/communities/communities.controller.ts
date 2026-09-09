@@ -15,14 +15,14 @@ export class CommunitiesController {
   constructor(private readonly communities: CommunitiesService) {}
 
   @Get()
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: 'Beneficiary communities with per-status session counts' })
   list(@Query('includeArchived') includeArchived?: string) {
     return this.communities.list(includeArchived === 'true');
   }
 
   @Get(':id')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: 'One community' })
   detail(@Param('id', UuidPipe) id: string) {
     return this.communities.detail(id);
@@ -43,7 +43,7 @@ export class CommunitiesController {
   }
 
   @Get(':id/sessions')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: "The community's sessions, filterable by status" })
   sessions(@Param('id', UuidPipe) id: string, @Query('status') status?: string) {
     return this.communities.sessions(id, status);

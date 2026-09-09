@@ -26,7 +26,7 @@ export function AdminLogin() {
   const { status, user, login, logout } = useAuth();
   const navigate = useNavigate();
 
-  if (status === 'authenticated' && user?.role === 'admin') {
+  if (status === 'authenticated' && (user?.role === 'admin' || user?.role === 'field_coordinator')) {
     return <Navigate to="/admin/dashboard" replace />;
   }
 
@@ -36,7 +36,7 @@ export function AdminLogin() {
     setBusy(true);
     try {
       const sessionUser = await login(email, password);
-      if (sessionUser.role !== 'admin') {
+      if (sessionUser.role !== 'admin' && sessionUser.role !== 'field_coordinator') {
         // Correct password, wrong door. End the session we just created.
         await logout();
         setError('This account is not an administrator. Use the volunteer login instead.');

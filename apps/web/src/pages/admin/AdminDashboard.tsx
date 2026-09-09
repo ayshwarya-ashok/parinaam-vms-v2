@@ -2,6 +2,7 @@ import { Box, Button, Grid2 as Grid, Paper, Typography } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { useSummary } from '@/api/admin';
 import { PageShell, StatTile } from '@/components';
+import { useAuth } from '@/app/auth';
 
 const tiles = [
   {
@@ -43,10 +44,23 @@ const tiles = [
 ];
 
 export function AdminDashboard() {
+  // The coordinator dashboard is the admin one minus what the role cannot
+  // reach: no Trainings or Reports cards, no "+ New Program".
+  const readOnly = useAuth().user?.role === 'field_coordinator';
+  const visibleTiles = readOnly
+    ? tiles
+        .filter((t) => t.title !== 'Trainings')
+        .map((t) => ({
+          ...t,
+          title: t.title === 'Dashboard & Reports' ? 'Metrics' : t.title,
+          actions: t.actions.filter((a) => !a.primary && a.to !== '/admin/reports'),
+        }))
+    : tiles;
+
   const { data: s } = useSummary();
 
   return (
-    <PageShell title="Admin Dashboard">
+    <PageShell title={readOnly ? 'Field Coordinator Dashboard' : 'Admin Dashboard'}>
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid size={{ xs: 6, sm: 4, md: 2 }}>
           <StatTile
@@ -81,7 +95,7 @@ export function AdminDashboard() {
       </Grid>
 
       <Grid container spacing={2}>
-        {tiles.map((tile) => (
+        {visibleTiles.map((tile) => (
           <Grid key={tile.title} size={{ xs: 12, md: 6 }}>
             <Paper
               variant="outlined"

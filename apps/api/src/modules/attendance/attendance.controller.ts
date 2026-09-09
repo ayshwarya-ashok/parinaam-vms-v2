@@ -111,7 +111,7 @@ export class AttendanceController {
   // ── Admin: field execution ──────────────────────────────────────────────────
 
   @Get('attendance/dispatches')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: 'Field execution table — per-occurrence dispatch and submission state' })
   dispatches(
     @Query('q') q?: string,
@@ -122,7 +122,7 @@ export class AttendanceController {
   }
 
   @Post('attendance/dispatches/:eventId/preview')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   preview(
     @Param('eventId', UuidPipe) eventId: string,
     @Body() body: { target: 'volunteer' | 'coordinator' },
@@ -131,7 +131,7 @@ export class AttendanceController {
   }
 
   @Post('attendance/dispatches/:eventId/send')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: 'Issue one signed link per recipient and queue the emails' })
   dispatch(
     @CurrentUser() user: AuthPrincipal,
@@ -142,7 +142,7 @@ export class AttendanceController {
   }
 
   @Get('events/:id/session-record')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({
     summary: 'The whole session record: occurrence, roster with volunteer-logged attendance, coordinator report',
   })
@@ -151,7 +151,7 @@ export class AttendanceController {
   }
 
   @Post('events/:id/attendance')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: 'Log attendance for a volunteer who never submitted (upsert)' })
   recordFor(
     @CurrentUser() user: AuthPrincipal,
@@ -162,13 +162,13 @@ export class AttendanceController {
   }
 
   @Get('events/:id/attendance')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   records(@Param('id', UuidPipe) id: string) {
     return this.service.recordsOf(id);
   }
 
   @Post('phases/:id/visits')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: 'Log one visit (volunteer, day, hours) under a phase — hours accumulate across visits' })
   recordVisit(
     @CurrentUser() user: AuthPrincipal,
@@ -179,14 +179,14 @@ export class AttendanceController {
   }
 
   @Delete('attendance/visits/:recordId')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: 'Remove a mis-logged visit' })
   deleteVisit(@CurrentUser() user: AuthPrincipal, @Param('recordId', UuidPipe) recordId: string) {
     return this.service.deleteVisit(user, recordId);
   }
 
   @Post('events/:id/sponsor-pack')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: 'Email the sponsor thank-you pack: outcomes + 7-day photo links (completed sessions only)' })
   sponsorPack(
     @CurrentUser() user: AuthPrincipal,
@@ -197,13 +197,13 @@ export class AttendanceController {
   }
 
   @Get('events/:id/report')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   report(@Param('id', UuidPipe) id: string) {
     return this.service.reportOf(id);
   }
 
   @Patch('attendance/:id')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: 'Admin correction — source becomes admin, change audited' })
   override(
     @CurrentUser() user: AuthPrincipal,

@@ -20,7 +20,7 @@ export interface SessionTokens {
   accessToken: string;
   /** Opaque value for the httpOnly cookie. Never stored — only its hash is. */
   refreshToken: string;
-  user: { id: string; email: string; role: 'admin' | 'volunteer' };
+  user: { id: string; email: string; role: 'admin' | 'volunteer' | 'field_coordinator' };
 }
 
 interface ClientMeta {

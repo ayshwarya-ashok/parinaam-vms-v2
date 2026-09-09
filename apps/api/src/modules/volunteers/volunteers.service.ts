@@ -756,9 +756,9 @@ export class VolunteersService {
     sheet.addRow(VolunteersService.IMPORT_COLUMNS);
     sheet.getRow(1).font = { bold: true };
     sheet.columns.forEach((c, i) => (c.width = i < 8 ? 22 : 16));
-    sheet.addRow(['asha.k@example.org', 'Asha', 'Krishnan', 'Female', '1996-04-18', 'Bengaluru', 'Karnataka', '9876501234', '', '', 'teaching, storytelling', 'Teacher']);
-    sheet.addRow(['vikas.m@example.org', 'Vikas', 'Menon', 'Male', '1989-11-02', 'Bengaluru', 'Karnataka', '+91 98765 43210', 'CSR', 'TechCorp Solutions', '', '']);
-    sheet.addRow(['divya.s@example.org', 'Divya', 'Shetty', 'Female', '1993-08-21', 'Bengaluru', 'Karnataka', '9876512345', 'Individual', 'Infosys BPM', '', '']);
+    sheet.addRow(['asha.k@example.com', 'Asha', 'Krishnan', 'Female', '1996-04-18', 'Bengaluru', 'Karnataka', '9876501234', '', '', 'teaching, storytelling', 'Teacher']);
+    sheet.addRow(['vikas.m@example.com', 'Vikas', 'Menon', 'Male', '1989-11-02', 'Bengaluru', 'Karnataka', '+91 98765 43210', 'CSR', 'TechCorp Solutions', '', '']);
+    sheet.addRow(['divya.s@example.com', 'Divya', 'Shetty', 'Female', '1993-08-21', 'Bengaluru', 'Karnataka', '9876512345', 'Individual', 'Infosys BPM', '', '']);
 
     const readme = wb.addWorksheet('Read me');
     readme.getColumn(1).width = 100;
@@ -869,12 +869,54 @@ export class VolunteersService {
    * columns), per-row validation with reasons reported back, duplicates
    * skipped — one bad row never sinks the file.
    */
+  /**
+   * RFC-4180-ish CSV: quoted fields, embedded commas/quotes/newlines, CRLF,
+   * and a UTF-8 BOM (Excel's own "CSV UTF-8" export starts with one).
+   */
+  private static parseCsv(textContent: string): string[][] {
+    const src = textContent.replace(/^﻿/, '');
+    const rows: string[][] = [];
+    let field = '';
+    let row: string[] = [];
+    let inQuotes = false;
+    for (let i = 0; i < src.length; i++) {
+      const ch = src[i];
+      if (inQuotes) {
+        if (ch === '"') {
+          if (src[i + 1] === '"') { field += '"'; i++; }
+          else inQuotes = false;
+        } else field += ch;
+      } else if (ch === '"') inQuotes = true;
+      else if (ch === ',') { row.push(field); field = ''; }
+      else if (ch === '\n' || ch === '\r') {
+        if (ch === '\r' && src[i + 1] === '\n') i++;
+        row.push(field); field = '';
+        rows.push(row); row = [];
+      } else field += ch;
+    }
+    if (field !== '' || row.length > 0) { row.push(field); rows.push(row); }
+    return rows.filter((r) => r.some((c) => c.trim() !== ''));
+  }
+
   async importFromXlsx(principal: AuthPrincipal, buffer: Buffer) {
     const wb = new ExcelJS.Workbook();
-    try {
-      await wb.xlsx.load(buffer as unknown as ExcelJS.Buffer);
-    } catch {
-      throw new BusinessException('IMPORT_INVALID', 'Not a readable .xlsx file — download the template and start from it.', 400);
+    // XLSX is a zip and always opens with "PK"; anything else is treated as
+    // CSV text — both roads end at the same worksheet, so every rule below
+    // (headers, per-row validation, the 200-row cap) applies to both formats.
+    const isXlsx = buffer.length > 1 && buffer[0] === 0x50 && buffer[1] === 0x4b;
+    if (isXlsx) {
+      try {
+        await wb.xlsx.load(buffer as unknown as ExcelJS.Buffer);
+      } catch {
+        throw new BusinessException('IMPORT_INVALID', 'Not a readable .xlsx file — download the template and start from it.', 400);
+      }
+    } else {
+      const rows = VolunteersService.parseCsv(buffer.toString('utf8'));
+      if (rows.length < 2) {
+        throw new BusinessException('IMPORT_INVALID', 'Not a readable .xlsx or .csv file — download the template and start from it.', 400);
+      }
+      const csvSheet = wb.addWorksheet('Volunteers');
+      for (const r of rows) csvSheet.addRow(r);
     }
     const sheet = wb.worksheets[0];
     if (!sheet || sheet.rowCount < 2) {

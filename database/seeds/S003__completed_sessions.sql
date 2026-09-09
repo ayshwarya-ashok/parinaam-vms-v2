@@ -45,20 +45,20 @@ INSERT INTO event_enrollments (volunteer_id, event_id, status, skills, enrolled_
 SELECT v.id, e.id, 'enrolled', v.skills, m.at::timestamptz
 FROM (VALUES
   -- June: a good turnout
-  ('rahul@example.org',   'EVT-2026-0101', '2026-06-02 10:00+05:30'),
-  ('meera@example.org',   'EVT-2026-0101', '2026-06-02 18:20+05:30'),
-  ('arjun@example.org',   'EVT-2026-0101', '2026-06-03 09:05+05:30'),
-  ('nikhil@example.org',  'EVT-2026-0101', '2026-06-05 21:40+05:30'),
+  ('rahul@example.com',   'EVT-2026-0101', '2026-06-02 10:00+05:30'),
+  ('meera@example.com',   'EVT-2026-0101', '2026-06-02 18:20+05:30'),
+  ('arjun@example.com',   'EVT-2026-0101', '2026-06-03 09:05+05:30'),
+  ('nikhil@example.com',  'EVT-2026-0101', '2026-06-05 21:40+05:30'),
   -- July: one of these never files anything (Dev)
-  ('rahul@example.org',   'EVT-2026-0102', '2026-07-01 08:00+05:30'),
-  ('dev@example.org',     'EVT-2026-0102', '2026-07-01 08:30+05:30'),
-  ('meera@example.org',   'EVT-2026-0102', '2026-07-02 12:15+05:30'),
+  ('rahul@example.com',   'EVT-2026-0102', '2026-07-01 08:00+05:30'),
+  ('dev@example.com',     'EVT-2026-0102', '2026-07-01 08:30+05:30'),
+  ('meera@example.com',   'EVT-2026-0102', '2026-07-02 12:15+05:30'),
   -- August: small turnout, short session
-  ('ananya@example.org',  'EVT-2026-0103', '2026-08-01 07:45+05:30'),
-  ('amit@example.org',    'EVT-2026-0103', '2026-08-01 19:00+05:30'),
+  ('ananya@example.com',  'EVT-2026-0103', '2026-08-01 07:45+05:30'),
+  ('amit@example.com',    'EVT-2026-0103', '2026-08-01 19:00+05:30'),
   -- September (upcoming, 2 slots): full, so the waitlist below is real
-  ('meera@example.org',   'EVT-2026-0104', '2026-08-15 09:00+05:30'),
-  ('arjun@example.org',   'EVT-2026-0104', '2026-08-15 09:12+05:30')
+  ('meera@example.com',   'EVT-2026-0104', '2026-08-15 09:00+05:30'),
+  ('arjun@example.com',   'EVT-2026-0104', '2026-08-15 09:12+05:30')
 ) AS m(email, evt, at)
 JOIN users u ON u.email = m.email
 JOIN volunteers v ON v.user_id = u.id
@@ -71,8 +71,8 @@ WHERE NOT EXISTS (
 INSERT INTO waitlist_entries (volunteer_id, event_id, position, added_at)
 SELECT v.id, e.id, m.pos, m.at::timestamptz
 FROM (VALUES
-  ('rahul@example.org',  'EVT-2026-0104', 1, '2026-08-16 10:00+05:30'),
-  ('nikhil@example.org', 'EVT-2026-0104', 2, '2026-08-16 14:30+05:30')
+  ('rahul@example.com',  'EVT-2026-0104', 1, '2026-08-16 10:00+05:30'),
+  ('nikhil@example.com', 'EVT-2026-0104', 2, '2026-08-16 14:30+05:30')
 ) AS m(email, evt, pos, at)
 JOIN users u ON u.email = m.email
 JOIN volunteers v ON v.user_id = u.id
@@ -92,17 +92,17 @@ INSERT INTO attendance_records
 SELECT e.id, v.id, m.attended, m.arrive::time, m.depart::time, m.hours,
        m.reason::absence_reason, m.notes, m.src::attendance_source, m.rec_at::timestamptz
 FROM (VALUES
-  ('EVT-2026-0101','rahul@example.org',  TRUE,  '07:00','10:00', 3.00, NULL, 'Led the segregation team.',        'self',        '2026-06-13 12:30+05:30'),
-  ('EVT-2026-0101','meera@example.org',  TRUE,  '07:00','10:00', 3.00, NULL, NULL,                               'self',        '2026-06-13 13:10+05:30'),
-  ('EVT-2026-0101','arjun@example.org',  TRUE,  '07:15','10:00', 2.75, NULL, 'Arrived slightly late.',           'self',        '2026-06-13 19:05+05:30'),
-  ('EVT-2026-0101','nikhil@example.org', TRUE,  '07:00','10:00', 3.00, NULL, 'Marked present on the paper sheet.','coordinator','2026-06-13 11:00+05:30'),
+  ('EVT-2026-0101','rahul@example.com',  TRUE,  '07:00','10:00', 3.00, NULL, 'Led the segregation team.',        'self',        '2026-06-13 12:30+05:30'),
+  ('EVT-2026-0101','meera@example.com',  TRUE,  '07:00','10:00', 3.00, NULL, NULL,                               'self',        '2026-06-13 13:10+05:30'),
+  ('EVT-2026-0101','arjun@example.com',  TRUE,  '07:15','10:00', 2.75, NULL, 'Arrived slightly late.',           'self',        '2026-06-13 19:05+05:30'),
+  ('EVT-2026-0101','nikhil@example.com', TRUE,  '07:00','10:00', 3.00, NULL, 'Marked present on the paper sheet.','coordinator','2026-06-13 11:00+05:30'),
 
-  ('EVT-2026-0102','rahul@example.org',  TRUE,  '07:00','10:00', 3.00, NULL, NULL,                               'self',        '2026-07-11 14:00+05:30'),
-  ('EVT-2026-0102','meera@example.org',  FALSE, NULL,   NULL,    0.00, 'Medical / Health issue', 'Called the coordinator that morning.', 'self', '2026-07-11 06:30+05:30'),
-  -- dev@example.org: intentionally absent from this table (never responded).
+  ('EVT-2026-0102','rahul@example.com',  TRUE,  '07:00','10:00', 3.00, NULL, NULL,                               'self',        '2026-07-11 14:00+05:30'),
+  ('EVT-2026-0102','meera@example.com',  FALSE, NULL,   NULL,    0.00, 'Medical / Health issue', 'Called the coordinator that morning.', 'self', '2026-07-11 06:30+05:30'),
+  -- dev@example.com: intentionally absent from this table (never responded).
 
-  ('EVT-2026-0103','ananya@example.org', TRUE,  '07:30','09:00', 1.50, NULL, 'Rain cut the session short.',      'coordinator', '2026-08-08 10:15+05:30'),
-  ('EVT-2026-0103','amit@example.org',   TRUE,  '07:30','09:00', 1.50, NULL, 'Rain cut the session short.',      'coordinator', '2026-08-08 10:15+05:30')
+  ('EVT-2026-0103','ananya@example.com', TRUE,  '07:30','09:00', 1.50, NULL, 'Rain cut the session short.',      'coordinator', '2026-08-08 10:15+05:30'),
+  ('EVT-2026-0103','amit@example.com',   TRUE,  '07:30','09:00', 1.50, NULL, 'Rain cut the session short.',      'coordinator', '2026-08-08 10:15+05:30')
 ) AS m(evt, email, attended, arrive, depart, hours, reason, notes, src, rec_at)
 JOIN events e ON e.code = m.evt
 JOIN users u ON u.email = m.email
