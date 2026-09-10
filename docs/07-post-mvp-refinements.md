@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-09-08 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across twenty-one review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across twenty-two review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -557,6 +557,19 @@ Three refinements and one observation:
   hardcoded the volunteer route (/app/events/:id), so the admin shell's role guard
   bounced every click. The target now follows the shell: volunteers → session detail,
   admin/coordinator → the session record.
+
+---
+
+## Round 22 — The staff sign-in became a sibling of the landing page  (2026-09-10)
+
+/admin/login was a lone card floating on an empty viewport while the volunteer landing got
+the full hero treatment. Rebuilt in the same language: logo + "Back office" overline, a
+display headline (*Behind every session, a plan.*), supporting copy, and three LIVE figures
+from the same public-impact aggregates the landing uses — programs running, volunteers to
+guide, hours recorded ("no invented figures on the first screen anyone sees" applies here
+too) — with the familiar glassy auth card on the right. The card now says who it is for
+(administrators **and field coordinators**, since Round 21) and links volunteers to their
+own door. Behavior unchanged: same endpoint, same wrong-door rejection, password eye kept.
 
 ---
 
