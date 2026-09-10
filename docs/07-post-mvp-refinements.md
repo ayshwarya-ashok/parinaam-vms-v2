@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
-| **Period** | 2026-08-20 → 2026-09-08 (ongoing) |
+| **Period** | 2026-08-20 → 2026-09-10 (ongoing) |
 | **Driver** | Hands-on testing by the product owner across twenty-two review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
