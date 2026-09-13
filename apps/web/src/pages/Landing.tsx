@@ -67,6 +67,14 @@ export function Landing() {
     setBusy(true);
     try {
       if (tab === 'signup') {
+        // Staff addresses never self-register — the API refuses them too
+        // (STAFF_EMAIL); catching it here just saves the trip.
+        if (/@(?:[a-z0-9-]+\.)*parinaam\.org$/i.test(email)) {
+          setError(
+            'Parinaam staff addresses cannot register as volunteers. Ask an administrator to create your account.',
+          );
+          return;
+        }
         // No account is created here. Registration is atomic — credentials
         // travel (in memory only) to the profile form and are written with it.
         const { data } = await api.post<{ available: boolean }>('/auth/check-email', { email });
@@ -95,7 +103,10 @@ export function Landing() {
     <Container maxWidth="xl" sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center' }}>
       <Grid container spacing={6} sx={{ py: 6, alignItems: 'center', width: '100%' }}>
         <Grid size={{ xs: 12, md: 7 }}>
-          <Box component="img" src="/parinaam-logo.svg" alt="Parinaam Volunteer Management" sx={{ height: 60, display: 'block', mb: 1 }} />
+          {/* The logo IS the way back — it links to the public impact page. */}
+          <RouterLink to="/" aria-label="Parinaam — go to the impact page">
+            <Box component="img" src="/parinaam-logo.svg" alt="Parinaam Volunteer Management" sx={{ height: 60, display: 'block', mb: 1 }} />
+          </RouterLink>
           <Typography
             variant="h1"
             sx={{ fontSize: 'clamp(3rem, 6vw, 5.5rem)', maxWidth: '12ch', mt: 1 }}

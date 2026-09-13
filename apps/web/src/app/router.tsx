@@ -18,6 +18,7 @@ import { CommunityDetail } from '@/pages/admin/CommunityDetail';
 import { ScheduleEventForm } from '@/pages/admin/ScheduleEventForm';
 import { EditEventForm } from '@/pages/admin/EditEventForm';
 import { VolunteerDirectory } from '@/pages/admin/VolunteerDirectory';
+import { StaffProfile } from '@/pages/admin/StaffProfile';
 import { VolunteerDashboard } from '@/pages/volunteer/VolunteerDashboard';
 import { BrowseSessions } from '@/pages/volunteer/BrowseSessions';
 import { SessionDetailPage } from '@/pages/volunteer/SessionDetail';
@@ -66,6 +67,7 @@ const adminNav = [
   { label: 'Recognition', to: '/admin/recognition' },
   { label: 'Metrics', to: '/admin/metrics' },
   { label: 'Reports', to: '/admin/reports' },
+  { label: 'Profile', to: '/admin/profile' },
 ];
 
 /**
@@ -184,6 +186,7 @@ export const router = createBrowserRouter([
         ],
       },
       { path: 'metrics', element: <Suspense fallback={null}><MetricsDashboard /></Suspense>, handle: { crumb: 'Metrics' } },
+      { path: 'profile', element: <StaffProfile />, handle: { crumb: 'Profile' } },
       {
         path: 'reports',
         handle: { crumb: 'Reports' },

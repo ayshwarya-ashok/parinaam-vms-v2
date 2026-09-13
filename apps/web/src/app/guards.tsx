@@ -48,6 +48,13 @@ export function RequireAuth({ role, children }: RequireAuthProps) {
     return <Navigate to={homeOf(user.role)} replace />;
   }
 
+  // A reset or expired password is set BEFORE anything else: the whole shell
+  // funnels to the profile page until the owner has chosen a new one.
+  const profilePath = user.role === 'volunteer' ? '/app/profile' : '/admin/profile';
+  if (user.mustChangePassword && location.pathname !== profilePath) {
+    return <Navigate to={profilePath} replace />;
+  }
+
   return <>{children}</>;
 }
 

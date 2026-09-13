@@ -9,7 +9,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, Navigate, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { API_BASE_URL } from '@/api/client';
@@ -80,12 +80,15 @@ export function AdminLogin() {
     <Container maxWidth="xl" sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center' }}>
       <Grid container spacing={6} sx={{ py: 6, alignItems: 'center', width: '100%' }}>
         <Grid size={{ xs: 12, md: 7 }}>
-          <Box
-            component="img"
-            src="/parinaam-logo.svg"
-            alt="Parinaam Volunteer Management"
-            sx={{ height: 60, display: 'block', mb: 1 }}
-          />
+          {/* The logo IS the way back — it links to the public impact page. */}
+          <RouterLink to="/" aria-label="Parinaam — go to the impact page">
+            <Box
+              component="img"
+              src="/parinaam-logo.svg"
+              alt="Parinaam Volunteer Management"
+              sx={{ height: 60, display: 'block', mb: 1 }}
+            />
+          </RouterLink>
           <Typography variant="overline" sx={{ letterSpacing: '0.14em' }}>
             Back office
           </Typography>
@@ -168,9 +171,6 @@ export function AdminLogin() {
               />
               <Button variant="pill" type="submit" size="large" disabled={busy} sx={{ mt: 0.5 }}>
                 {busy ? 'Signing in…' : 'Sign in'}
-              </Button>
-              <Button variant="pillOutlined" onClick={() => navigate('/')}>
-                Back to the impact page
               </Button>
             </Box>
           </Paper>

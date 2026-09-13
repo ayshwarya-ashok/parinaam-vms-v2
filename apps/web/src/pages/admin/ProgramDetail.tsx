@@ -205,15 +205,17 @@ export function ProgramDetail() {
                 <Button component={RouterLink} to={`/admin/activities/${a.id}`} variant="pillOutlined" size="small" sx={{ px: 2, py: 0.5 }}>
                   Sessions
                 </Button>
-                <Button
-                  component={RouterLink}
-                  to={`/admin/activities/${a.id}/events/new`}
-                  variant="pill"
-                  size="small"
-                  sx={{ px: 2, py: 0.5 }}
-                >
-                  + Schedule
-                </Button>
+                {!readOnly && (
+                  <Button
+                    component={RouterLink}
+                    to={`/admin/activities/${a.id}/events/new`}
+                    variant="pill"
+                    size="small"
+                    sx={{ px: 2, py: 0.5 }}
+                  >
+                    + Schedule
+                  </Button>
+                )}
               </Box>
             </Box>
           </Paper>

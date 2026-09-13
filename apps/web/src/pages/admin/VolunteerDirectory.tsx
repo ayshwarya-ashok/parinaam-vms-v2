@@ -157,6 +157,22 @@ export function VolunteerDirectory() {
       }),
   });
 
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetResult, setResetResult] = useState<string | null>(null);
+  const resetPassword = useMutation({
+    mutationFn: async (email: string) =>
+      (await api.post<{ email: string; resetPassword: string }>('/auth/admin-reset-password', { email })).data,
+    onSuccess: (res) => {
+      setResetResult(
+        `${res.email} has been reset to the default password ${res.resetPassword}. They must set their own on their next login; their other sessions are signed out.`,
+      );
+      setResetEmail('');
+    },
+    onError: (err) =>
+      enqueueSnackbar(asApiError(err)?.message ?? 'Could not reset the password', { variant: 'error' }),
+  });
+
   const downloadTemplate = async () => {
     try {
       const res = await api.get('/volunteers/import-template', { responseType: 'blob' });
@@ -355,6 +371,9 @@ export function VolunteerDirectory() {
           </Button>
           <Button variant="pillOutlined" onClick={() => setInviteOpen(true)}>
             ✉ Invite volunteers
+          </Button>
+          <Button variant="pillOutlined" onClick={() => { setResetResult(null); setResetEmail(''); setResetOpen(true); }}>
+            🔑 Reset a password
           </Button>
           </>)}
           {pending > 0 && (
@@ -558,6 +577,43 @@ export function VolunteerDirectory() {
         busy={review.isPending}
         readOnly={readOnly}
       />
+
+      {/* Admin resets a volunteer's or field coordinator's password to the
+          documented default; the owner must set their own on next login. */}
+      <Dialog open={resetOpen} onClose={() => setResetOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Reset a password</DialogTitle>
+        <DialogContent sx={{ display: 'grid', gap: 2, pt: '8px !important' }}>
+          <Typography sx={{ fontSize: '0.9rem', color: 'text.secondary' }}>
+            For a volunteer or field coordinator who is locked out. Their password becomes the
+            shared default and they are required to choose their own on their next login.
+            Administrator accounts cannot be reset this way.
+          </Typography>
+          <TextField
+            label="Account email"
+            type="email"
+            autoFocus
+            value={resetEmail}
+            onChange={(e) => setResetEmail(e.target.value)}
+          />
+          {resetResult && (
+            <Typography sx={{ fontSize: '0.9rem', color: 'success.main', fontWeight: 600 }}>
+              ✓ {resetResult}
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button variant="pillOutlined" onClick={() => setResetOpen(false)}>
+            Close
+          </Button>
+          <Button
+            variant="pill"
+            disabled={resetPassword.isPending || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(resetEmail)}
+            onClick={() => resetPassword.mutate(resetEmail.trim())}
+          >
+            {resetPassword.isPending ? 'Resetting…' : 'Reset password'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Rejection needs a reason — the volunteer is told what it was. */}
       <Dialog

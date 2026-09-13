@@ -15,6 +15,10 @@ export interface SessionUser {
   email: string;
   role: 'admin' | 'volunteer' | 'field_coordinator';
   profileComplete: boolean;
+  /** ISO date the password expires (volunteer/field coordinator); null for admins. */
+  passwordExpiresAt: string | null;
+  /** Admin reset it, or it expired — the owner must set a new one before anything else. */
+  mustChangePassword: boolean;
   volunteer: {
     id: string;
     firstName: string;

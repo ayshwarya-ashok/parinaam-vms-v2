@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
-| **Period** | 2026-08-20 → 2026-09-10 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across twenty-two review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Period** | 2026-08-20 → 2026-09-13 (ongoing) |
+| **Driver** | Hands-on testing by the product owner across twenty-three review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -570,6 +570,42 @@ guide, hours recorded ("no invented figures on the first screen anyone sees" app
 too) — with the familiar glassy auth card on the right. The card now says who it is for
 (administrators **and field coordinators**, since Round 21) and links volunteers to their
 own door. Behavior unchanged: same endpoint, same wrong-door rejection, password eye kept.
+
+---
+
+## Round 23 — Profiles for every role, and the password lifecycle  (2026-09-13)
+
+- **Every role has a profile page now.** Staff (admin and field coordinator) get
+  /admin/profile — the account itself (email, role) plus the change-password card, with a
+  Profile item in the shell nav; volunteers keep their richer /app/profile. The
+  change-password card became ONE shared component (`ChangePasswordCard`) used by all
+  three, with eye-toggles on all its fields and without the "(an import or an admin add)"
+  aside [obs 4].
+- **Passwords expire (V020).** Volunteer and field-coordinator passwords are valid for
+  **120 days** from when they were last set; admin passwords never expire. The age is
+  stored (`password_changed_at`), the policy is computed — no expiry timestamps to
+  backfill when the policy changes. The owner sees the expiry date on their profile, a
+  shell-wide banner from 14 days out, and both turn **red at 5 days or fewer**. An
+  expired password behaves exactly like an admin reset:
+- **Admin reset, forced change.** "🔑 Reset a password" on the Volunteers page (admin
+  only) resets any volunteer or field coordinator to the documented default, signs out
+  their other sessions, and flags `must_change_password` — the route guard then funnels
+  their next login straight to the profile page until they set their own. Admin accounts
+  are NOT resettable this way (`NOT_ELIGIBLE`) — one admin must not quietly take over
+  another. Audited as `user.password_reset`. New endpoint in the authz matrix: **79
+  endpoints × 4 roles = 316 checks**, all green.
+- **Staff addresses cannot self-register** [obs 2]: `@parinaam.org` (any subdomain) is
+  refused at the single registration gate (`STAFF_EMAIL`) and caught early in the signup
+  form.
+- **The logo is the way back** [obs 3]: both login pages' Parinaam logo now links to the
+  public impact page; the "Back to the impact page" button is gone.
+- Also: the coordinator's read-only Programs view had one leak — the per-activity
+  "+ Schedule" button on the programme detail [obs 1]; gated.
+
+Verified live: admin expiry null; coordinator expires +120d; reset → default password +
+forced change on next login → change clears the flag and restarts the clock; resetting an
+admin 403s; @parinaam.org and @sub.parinaam.org registrations 400; a coordinator wound
+back 116 days reports 3 days left (the red state). Demo passwords restored after.
 
 ---
 

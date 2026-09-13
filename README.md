@@ -2,7 +2,7 @@
 
 Volunteer Management System for Parinaam Foundation — a full rebuild derived from
 `VMS_prototype_v2.html` and `VMS_database_model.md`, delivered in eight phases and refined
-through twenty-two post-MVP review rounds (`docs/07-post-mvp-refinements.md`) and the client's
+through twenty-three post-MVP review rounds (`docs/07-post-mvp-refinements.md`) and the client's
 phased-sessions refinement (`docs/08`, `docs/09`).
 
 **Stack** React 18 + MUI · NestJS 10 · PostgreSQL 16 · Redis · **n8n** (email orchestration) ·
@@ -64,7 +64,7 @@ The defaults run out of the box. The ones worth knowing:
 
 ## 1.5 Database setup
 
-Automatic. On the database container's **first** boot it applies migrations `V001–V019` in
+Automatic. On the database container's **first** boot it applies migrations `V001–V020` in
 order (recording a SHA-256 checksum per file in `schema_migrations`), creates n8n's own
 database, and loads seeds. Nothing to run by hand.
 
@@ -136,7 +136,9 @@ impact page. Everything you need is reachable from there.
 
 ## 1.9 Login credentials
 
-All demo accounts use the password **`Parinaam@123`**.
+All demo accounts use the password **`Parinaam@123`**. Volunteer and field-coordinator
+passwords expire every **120 days** (admins never); an admin can reset one to the default
+from Volunteers → **🔑 Reset a password**, which forces the owner to set their own on next login.
 
 | Role | Email | Why this account is interesting |
 |---|---|---|

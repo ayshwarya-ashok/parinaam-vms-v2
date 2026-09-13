@@ -7,6 +7,7 @@ import { BusinessException } from '../../common';
 import type { AuthPrincipal } from '../../common/decorators/auth.decorators';
 import { AppConfig } from '../../config';
 import { RefreshToken, User, Volunteer } from '../../database/entities';
+import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications';
 import { PasswordService } from './password.service';
 import { RegisterAccountDto } from '../volunteers/volunteers.dto';
@@ -15,6 +16,10 @@ import { VolunteersService } from '../volunteers/volunteers.service';
 const MAX_FAILED_LOGINS = 5;
 const LOCKOUT_MINUTES = 15;
 const REFRESH_TTL_DAYS = 7;
+/** Volunteer/field-coordinator passwords expire this long after being set. Admins never expire. */
+const PASSWORD_MAX_AGE_DAYS = 120;
+/** What an admin reset sets the password to — same documented default as the XLSX import. */
+const RESET_PASSWORD = 'Parinaam@123';
 
 export interface SessionTokens {
   accessToken: string;
@@ -41,6 +46,7 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: AppConfig,
     private readonly notifications: NotificationsService,
+    private readonly audit: AuditService,
   ) {}
 
   // ── Login ────────────────────────────────────────────────────────────────
@@ -236,6 +242,25 @@ export class AuthService {
 
   // ── Me ───────────────────────────────────────────────────────────────────
 
+  /**
+   * Password lifecycle (V020): volunteers and field coordinators expire
+   * PASSWORD_MAX_AGE_DAYS after the credential was last set; admins never.
+   * An expired password behaves exactly like an admin reset — the owner is
+   * forced to set a new one before doing anything else.
+   */
+  private passwordStatus(user: User): { passwordExpiresAt: string | null; mustChangePassword: boolean } {
+    if (user.role === 'admin') {
+      return { passwordExpiresAt: null, mustChangePassword: user.mustChangePassword };
+    }
+    const expiresAt = new Date(
+      new Date(user.passwordChangedAt).getTime() + PASSWORD_MAX_AGE_DAYS * 86_400_000,
+    );
+    return {
+      passwordExpiresAt: expiresAt.toISOString(),
+      mustChangePassword: user.mustChangePassword || expiresAt <= new Date(),
+    };
+  }
+
   async me(principal: AuthPrincipal) {
     const user = await this.users.findOne({ where: { id: principal.sub } });
     if (!user || !user.isActive) {
@@ -263,10 +288,11 @@ export class AuthService {
         : null,
       /**
        * Registration is atomic now, so a volunteer session always has a
-       * profile. The flag stays in the contract for admins and for any
-       * account created before that change.
+       * profile. The flag stays in the contract for staff roles (who have
+       * none) and for any account created before that change.
        */
-      profileComplete: user.role === 'admin' || volunteer !== null,
+      profileComplete: user.role !== 'volunteer' || volunteer !== null,
+      ...this.passwordStatus(user),
     };
   }
 
@@ -323,7 +349,49 @@ export class AuthService {
     if (!ok) {
       throw new BusinessException('INVALID_PASSWORD', 'The current password is incorrect.', 400);
     }
-    await this.users.update({ id: userId }, { passwordHash: await this.passwords.hash(newPassword) });
+    await this.users.update(
+      { id: userId },
+      {
+        passwordHash: await this.passwords.hash(newPassword),
+        passwordChangedAt: new Date(),
+        mustChangePassword: false,
+      },
+    );
     await this.revokeAllForUser(userId);
+  }
+
+  /**
+   * Admin resets a volunteer's or field coordinator's password to the
+   * documented default. Never an admin's — admins reset their own through
+   * change-password, and one admin must not be able to take over another's
+   * account this quietly. The owner is forced to set their own password on
+   * next login, and every live session dies now.
+   */
+  async adminResetPassword(principal: AuthPrincipal, email: string) {
+    const user = await this.users.findOne({ where: { email } });
+    if (!user) throw new BusinessException('ACCOUNT_NOT_FOUND', 'No account exists for this email.', 404);
+    if (user.role === 'admin') {
+      throw new BusinessException(
+        'NOT_ELIGIBLE',
+        'Administrator passwords cannot be reset this way — admins change their own.',
+        403,
+      );
+    }
+    await this.users.update(
+      { id: user.id },
+      {
+        passwordHash: await this.passwords.hash(RESET_PASSWORD),
+        passwordChangedAt: new Date(),
+        mustChangePassword: true,
+      },
+    );
+    await this.revokeAllForUser(user.id);
+    await this.audit.record(principal, {
+      action: 'user.password_reset',
+      entity: 'users',
+      entityId: user.id,
+      after: { email: user.email, role: user.role, mustChangePassword: true },
+    });
+    return { email: user.email, resetPassword: RESET_PASSWORD };
   }
 }

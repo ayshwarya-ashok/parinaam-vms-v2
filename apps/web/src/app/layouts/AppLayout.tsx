@@ -90,6 +90,15 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
       ? nav.filter((item) => item.to !== '/admin/trainings' && item.to !== '/admin/reports')
       : nav;
 
+  // Password-expiry warning (volunteers and field coordinators; admins never
+  // expire). Quiet until two weeks out, red inside five days — the guard takes
+  // over entirely once it actually expires.
+  const expiryDays = user?.passwordExpiresAt
+    ? Math.floor((new Date(user.passwordExpiresAt).getTime() - Date.now()) / 86_400_000)
+    : null;
+  const showExpiry = expiryDays !== null && expiryDays <= 14 && !user?.mustChangePassword;
+  const profilePath = variant === 'volunteer' ? '/app/profile' : '/admin/profile';
+
   const handleLogout = async () => {
     await logout();
     navigate('/', { replace: true }); // the public impact page
@@ -368,6 +377,30 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
             Your registration is being reviewed by our team. You can explore sessions and complete
             your trainings meanwhile — enrolling opens up once you are approved, and we will email
             you either way.
+          </Alert>
+        </Container>
+      )}
+
+      {showExpiry && user?.passwordExpiresAt && (
+        <Container maxWidth="xl" sx={{ pt: 2 }}>
+          <Alert
+            severity={expiryDays !== null && expiryDays <= 5 ? 'error' : 'warning'}
+            sx={{ borderRadius: 3 }}
+            action={
+              <Link
+                component={RouterLink}
+                to={profilePath}
+                sx={{ fontSize: '0.85rem', fontWeight: 700, alignSelf: 'center', mr: 1 }}
+              >
+                Change it now
+              </Link>
+            }
+          >
+            Your password expires in {expiryDays} day{expiryDays === 1 ? '' : 's'} — on{' '}
+            {new Date(user.passwordExpiresAt).toLocaleDateString('en-IN', {
+              day: 'numeric', month: 'long', year: 'numeric',
+            })}
+            .
           </Alert>
         </Container>
       )}

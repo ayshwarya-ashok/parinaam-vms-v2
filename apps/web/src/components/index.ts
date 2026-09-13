@@ -7,3 +7,4 @@ export * from './SortableTable';
 export * from './StatusPill';
 export * from './ErrorBoundary';
 export * from './OfflineBanner';
+export * from './ChangePasswordCard';

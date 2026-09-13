@@ -16,6 +16,7 @@ import {
   AuthPrincipal,
   CurrentUser,
   Public,
+  Roles,
 } from '../../common/decorators/auth.decorators';
 import { AppConfig } from '../../config';
 import { RegisterAccountDto } from '../volunteers/volunteers.dto';
@@ -25,6 +26,10 @@ class ChangePasswordDto {
   @IsString() @MinLength(1) currentPassword!: string;
   @MinLength(8, { message: 'Password must be at least 8 characters' })
   @IsString() newPassword!: string;
+}
+
+class AdminResetPasswordDto {
+  @IsEmail() email!: string;
 }
 
 class CredentialsDto {
@@ -150,5 +155,15 @@ export class AuthController {
   async changePassword(@CurrentUser() user: AuthPrincipal, @Body() dto: ChangePasswordDto) {
     await this.auth.changePassword(user.sub, dto.currentPassword, dto.newPassword);
     return { changed: true };
+  }
+
+  @Post('admin-reset-password')
+  @Roles('admin')
+  @ApiOperation({
+    summary:
+      'Reset a volunteer or field coordinator password to the documented default — the owner must set their own on next login. Never for admin accounts.',
+  })
+  adminResetPassword(@CurrentUser() user: AuthPrincipal, @Body() dto: AdminResetPasswordDto) {
+    return this.auth.adminResetPassword(user, dto.email);
   }
 }

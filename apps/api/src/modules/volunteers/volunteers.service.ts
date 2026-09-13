@@ -66,6 +66,16 @@ export class VolunteersService {
     dto: RegisterAccountDto,
     passwordHash: string,
   ): Promise<{ user: User; volunteer: Volunteer }> {
+    // Staff addresses never self-register as volunteers: parinaam.org (and any
+    // subdomain) accounts are created by an administrator, with the right role.
+    if (/@(?:[a-z0-9-]+\.)*parinaam\.org$/i.test(dto.email)) {
+      throw new BusinessException(
+        'STAFF_EMAIL',
+        'Parinaam staff addresses cannot register as volunteers. Ask an administrator to create your account.',
+        400,
+      );
+    }
+
     this.assertCategoryRules(dto);
     await this.assertStudentRules(dto);
 

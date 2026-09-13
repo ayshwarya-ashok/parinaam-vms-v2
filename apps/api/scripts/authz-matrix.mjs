@@ -36,6 +36,7 @@ const MATRIX = [
   // ── authenticated, any role ─────────────────────────────────────────
   ['GET',    '/auth/me',                                'D', 'A', 'A', 'A'],
   ['POST',   '/auth/change-password',                   'D', 'A', 'A', 'A'],
+  ['POST',   '/auth/admin-reset-password',              'D', 'D', 'D', 'A'],
   // ── volunteer self-service ──────────────────────────────────────────
   ['GET',    '/volunteers/me',                          'D', 'A', 'D', 'D'], // admins have no volunteer profile
   ['GET',    '/volunteers/me/compliance',               'D', 'A', 'D', 'D'],

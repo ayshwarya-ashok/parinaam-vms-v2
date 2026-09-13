@@ -44,6 +44,14 @@ export class User {
   @Column({ name: 'locked_until', type: 'timestamptz', nullable: true })
   lockedUntil!: Date | null;
 
+  /** When the credential was last set — expiry is computed from this (V020). */
+  @Column({ name: 'password_changed_at', type: 'timestamptz', default: () => 'now()' })
+  passwordChangedAt!: Date;
+
+  /** Set by an admin reset; the owner must choose their own password on next login. */
+  @Column({ name: 'must_change_password', type: 'boolean', default: false })
+  mustChangePassword!: boolean;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 
