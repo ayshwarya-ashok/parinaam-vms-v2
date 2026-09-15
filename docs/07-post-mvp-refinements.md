@@ -680,6 +680,15 @@ doing their job with real concurrent users. Authz matrix: **81 endpoints × 4 ro
   freshly sent emails carry the new spelling; existing PDFs and sent mail are history and
   keep theirs. (The docs corpus keeps its original prose — this rename is the product's
   voice, not the changelog's.)
+- **The Metrics horizontal scrollbar** turned out to be an invisible culprit: each chart
+  card renders a visually-hidden TABLE for screen readers, and its sx said `width: 1` —
+  which in MUI means 100%, not 1px — while `white-space: nowrap` let the table lay out at
+  its intrinsic width anyway. `clip` hid the pixels but the layout box still widened the
+  page. The hiding moved to a proper 1px overflow-hidden WRAPPER (the standard
+  visually-hidden pattern), and the fix was verified by driving headless Chrome over CDP:
+  logged in, rendered all ten charts, measured scrollWidth === clientWidth, screenshot
+  clean. (A first attempt — minWidth: 0 on the grid cells — was correct hygiene but not
+  the cause; kept.)
 - **Filter groups wrap now.** The FilterBar's outer bar always wrapped whole groups, but a
   single group's chips ran on one unwrappable line — with one chip per program, Metrics and
   Field Execution walked off the right edge of the screen. The group container itself is

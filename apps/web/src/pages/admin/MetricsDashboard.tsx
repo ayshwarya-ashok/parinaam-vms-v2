@@ -324,17 +324,29 @@ function ChartCard<T>({
       <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', mb: 1 }}>{title}</Typography>
       {/* chart.js resizes against its nearest positioned ancestor — this box. */}
       <Box sx={{ height: 220, position: 'relative', minWidth: 0, overflow: 'hidden' }}>{children}</Box>
+      {/*
+        Screen-reader table, visually hidden. The hiding lives on a WRAPPER
+        div, not the table: in sx, width: 1 means 100% (not 1px), and a
+        nowrap table sizes to its content regardless of width — clip hid the
+        pixels but the layout box still widened the page's scrollable area,
+        which is exactly the phantom horizontal scrollbar this page had.
+        A 1px overflow-hidden block wrapper contributes 1px, full stop.
+      */}
       <Box
-        component="table"
         sx={{
           position: 'absolute',
-          width: 1,
-          height: 1,
+          width: '1px',
+          height: '1px',
+          margin: '-1px',
+          padding: 0,
+          border: 0,
           overflow: 'hidden',
           clip: 'rect(0 0 0 0)',
+          clipPath: 'inset(50%)',
           whiteSpace: 'nowrap',
         }}
       >
+      <Box component="table">
         <caption>{title}</caption>
         <thead>
           <tr>{cols.map((col) => <th key={col} scope="col">{col}</th>)}</tr>
@@ -344,6 +356,7 @@ function ChartCard<T>({
             <tr key={i}>{of(row).map((cell, j) => <td key={j}>{cell}</td>)}</tr>
           ))}
         </tbody>
+      </Box>
       </Box>
     </Paper>
   );
