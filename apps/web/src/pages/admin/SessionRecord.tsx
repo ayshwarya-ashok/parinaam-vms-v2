@@ -266,13 +266,13 @@ export function SessionRecord() {
       setRemoveTarget(null);
       enqueueSnackbar(
         res.promoted > 0
-          ? 'Removed — the volunteer has been emailed, and the waitlist head took the seat'
-          : 'Removed — the volunteer has been emailed',
+          ? 'Unenrolled — the volunteer has been emailed, and the waitlist head took the seat'
+          : 'Unenrolled — the volunteer has been emailed',
         { variant: 'success' },
       );
     },
     onError: (err) =>
-      enqueueSnackbar(asApiError(err)?.message ?? 'Could not remove the volunteer', { variant: 'error' }),
+      enqueueSnackbar(asApiError(err)?.message ?? 'Could not unenroll the volunteer', { variant: 'error' }),
   });
 
   const [sponsorOpen, setSponsorOpen] = useState(false);
@@ -401,10 +401,10 @@ export function SessionRecord() {
 
       <ConfirmDialog
         open={removeTarget !== null}
-        title="Remove from this session?"
+        title="Unenroll from this session?"
         danger
         message={`${removeTarget?.name ?? ''} will be unenrolled and emailed about it. If anyone is waiting, the waitlist head takes the seat automatically.`}
-        confirmLabel="Remove"
+        confirmLabel="Unenroll"
         onCancel={() => setRemoveTarget(null)}
         onConfirm={() => removeTarget && staffUnenroll.mutate(removeTarget.id)}
       />
@@ -650,7 +650,7 @@ export function SessionRecord() {
                     <TableCell align="right">
                       <Button size="small" variant="pillOutlined" sx={{ px: 1.5, py: 0.25, color: tokens.accentStrong }}
                         onClick={() => setRemoveTarget({ id: r.volunteer_id, name: `${r.first_name} ${r.last_name}` })}>
-                        Remove
+                        Unenroll
                       </Button>
                     </TableCell>
                   </>
