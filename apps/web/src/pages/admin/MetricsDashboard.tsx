@@ -316,10 +316,14 @@ function ChartCard<T>({
   return (
     <Paper
       variant="outlined"
-      sx={{ p: 2, borderRadius: 3, gridColumn: wide ? { sm: 'span 2' } : undefined }}
+      // minWidth: 0 is what keeps the horizontal scrollbar away: a grid item
+      // defaults to min-width:auto, so a rendered chart canvas can force its
+      // track wider than the viewport and never let it shrink back.
+      sx={{ p: 2, borderRadius: 3, minWidth: 0, gridColumn: wide ? { sm: 'span 2' } : undefined }}
     >
       <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', mb: 1 }}>{title}</Typography>
-      <Box sx={{ height: 220 }}>{children}</Box>
+      {/* chart.js resizes against its nearest positioned ancestor — this box. */}
+      <Box sx={{ height: 220, position: 'relative', minWidth: 0, overflow: 'hidden' }}>{children}</Box>
       <Box
         component="table"
         sx={{
