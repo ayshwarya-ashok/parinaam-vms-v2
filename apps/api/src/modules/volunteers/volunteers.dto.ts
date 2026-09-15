@@ -23,6 +23,9 @@ import { UUID_PATTERN } from '../../common/pipes/uuid.pipe';
  */
 export const PHONE_PATTERN = /^(?:\+?91[\s-]?|0)?[\s-]?(?:\d[\s-]?){10}$/;
 
+/** The only age signal captured (V021) — a birth date was PII nothing needed. */
+export const AGE_GROUPS = ['Under 18', '18-25', '26-35', '36-45', '46-60', '60+'] as const;
+
 export class RegisterVolunteerDto {
   @IsString()
   @IsNotEmpty({ message: 'First name is required' })
@@ -43,8 +46,8 @@ export class RegisterVolunteerDto {
   @IsIn(['Female', 'Male', 'Non-binary', 'Prefer not to say'])
   gender!: string;
 
-  @IsDateString()
-  dateOfBirth!: string;
+  @IsIn(AGE_GROUPS)
+  ageGroup!: string;
 
   @IsString()
   @IsNotEmpty({ message: 'City is required' })
@@ -143,7 +146,7 @@ export class UpdateProfileDto {
   @IsOptional() @IsString() @IsNotEmpty({ message: 'First name is required' }) @MaxLength(100) firstName?: string;
   @IsOptional() @IsString() @IsNotEmpty({ message: 'Last name is required' }) @MaxLength(100) lastName?: string;
   @IsOptional() @IsIn(['Female', 'Male', 'Non-binary', 'Prefer not to say']) gender?: string;
-  @IsOptional() @IsDateString() dateOfBirth?: string;
+  @IsOptional() @IsIn(AGE_GROUPS) ageGroup?: string;
   @IsOptional() @IsString() @IsNotEmpty({ message: 'City is required' }) @MaxLength(100) city?: string;
   @IsOptional() @IsString() @IsNotEmpty({ message: 'State is required' }) @MaxLength(100) state?: string;
   @IsOptional() @IsString() @IsNotEmpty({ message: 'Phone number is required' }) @MaxLength(20)
@@ -195,7 +198,7 @@ export class AdminCreateVolunteerDto {
   @IsString() @IsNotEmpty() @MaxLength(100) firstName!: string;
   @IsString() @IsNotEmpty() @MaxLength(100) lastName!: string;
   @IsIn(['Female', 'Male', 'Non-binary', 'Prefer not to say']) gender!: string;
-  @IsDateString() dateOfBirth!: string;
+  @IsIn(AGE_GROUPS) ageGroup!: string;
   @IsString() @IsNotEmpty() @MaxLength(100) city!: string;
   @IsString() @IsNotEmpty() @MaxLength(100) state!: string;
   @Matches(PHONE_PATTERN, { message: 'Enter a 10-digit mobile number' }) phone!: string;

@@ -38,18 +38,18 @@ INSERT INTO organizations (id, name, email, phone, contact_person) VALUES
   ('00000000-0000-0000-0002-000000000003', 'Wipro Cares',  'hello@wiprocares.in',   '+91 80 4200 3000', 'Joseph Mathew')
 ON CONFLICT (name) DO NOTHING;
 
-INSERT INTO volunteers (id, user_id, first_name, last_name, gender, date_of_birth, city, state, phone,
+INSERT INTO volunteers (id, user_id, first_name, last_name, gender, age_group, city, state, phone,
                         category, organization_id, phase, skills, compliance_read,
                         registration_status, reviewed_by, reviewed_at)
-SELECT r.id::uuid, r.user_id::uuid, r.first_name, r.last_name, r.gender::gender_type, r.dob::date,
+SELECT r.id::uuid, r.user_id::uuid, r.first_name, r.last_name, r.gender::gender_type, r.age_group,
        r.city, r.state, r.phone, 'Individual'::volunteer_category,
        (SELECT o.id FROM organizations o WHERE o.name = r.org_name),
        r.phase::volunteer_phase, r.skills, TRUE,
        'approved'::registration_status, '00000000-0000-0000-0000-000000000001'::uuid, now()
 FROM (VALUES
-  ('00000000-0000-0000-0001-000000000018','00000000-0000-0000-0000-000000000018','Kavya','Hegde','Female','1993-08-21','Bengaluru','Karnataka','9820011017','TechCorp India Pvt. Ltd.','Active','Teaching, Communication'),
-  ('00000000-0000-0000-0001-000000000019','00000000-0000-0000-0000-000000000019','Manish','Agarwal','Male','1991-04-14','Bengaluru','Karnataka','9820011018','Infosys BPM','In Training','IT, Mentoring'),
-  ('00000000-0000-0000-0001-000000000020','00000000-0000-0000-0000-000000000020','Shruti','Kulkarni','Female','1996-12-03','Pune','Maharashtra','9820011019','Infosys BPM','In Training','HR, Career Guidance'),
-  ('00000000-0000-0000-0001-000000000021','00000000-0000-0000-0000-000000000021','Farhan','Sait','Male','1989-09-27','Bengaluru','Karnataka','9820011020','Wipro Cares','Active','Logistics, Management')
-) AS r (id, user_id, first_name, last_name, gender, dob, city, state, phone, org_name, phase, skills)
+  ('00000000-0000-0000-0001-000000000018','00000000-0000-0000-0000-000000000018','Kavya','Hegde','Female','26-35','Bengaluru','Karnataka','9820011017','TechCorp India Pvt. Ltd.','Active','Teaching, Communication'),
+  ('00000000-0000-0000-0001-000000000019','00000000-0000-0000-0000-000000000019','Manish','Agarwal','Male','26-35','Bengaluru','Karnataka','9820011018','Infosys BPM','In Training','IT, Mentoring'),
+  ('00000000-0000-0000-0001-000000000020','00000000-0000-0000-0000-000000000020','Shruti','Kulkarni','Female','26-35','Pune','Maharashtra','9820011019','Infosys BPM','In Training','HR, Career Guidance'),
+  ('00000000-0000-0000-0001-000000000021','00000000-0000-0000-0000-000000000021','Farhan','Sait','Male','36-45','Bengaluru','Karnataka','9820011020','Wipro Cares','Active','Logistics, Management')
+) AS r (id, user_id, first_name, last_name, gender, age_group, city, state, phone, org_name, phase, skills)
 ON CONFLICT (user_id) DO NOTHING;

@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
-| **Period** | 2026-08-20 → 2026-09-13 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across twenty-three review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Period** | 2026-08-20 → 2026-09-15 (ongoing) |
+| **Driver** | Hands-on testing by the product owner across twenty-four review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -606,6 +606,28 @@ Verified live: admin expiry null; coordinator expires +120d; reset → default p
 forced change on next login → change clears the flag and restarts the clock; resetting an
 admin 403s; @parinaam.org and @sub.parinaam.org registrations 400; a coordinator wound
 back 116 days reports 3 days left (the red state). Demo passwords restored after.
+
+---
+
+## Round 24 — Age group instead of date of birth  (2026-09-15)
+
+- **The birth date is gone, everywhere** [obs 1]. Nothing ever computed with it beyond
+  "roughly how old", so the system now captures one of six AGE GROUPS (Under 18, 18-25,
+  26-35, 36-45, 46-60, 60+) instead of precise PII. V021 bucketed every existing volunteer
+  from their stored DOB and then **dropped the column** and its CHECK — keeping a dead PII
+  column would have defeated the point. Touched at every capture site: /register, the
+  volunteer profile, the admin add dialog, the pending-registration editor, the import
+  template (`age_group*` column, loose matching so "18 - 25" and an en-dash both land),
+  seeds, and the erasure scrub. The erased volunteer stayed NULL, as it must.
+- **The password eye reached /register** [obs 2] — the standalone account section's two
+  password fields now use the shared `PasswordField` (2-second peek included).
+- **Copy fixes on /register** [obs 3]: "Current city", "How would you like to help?",
+  "As an individual", and the submit button is just "Submit".
+
+Verified live: register with a bucket 201 / with "17ish" 400; template carries
+`age_group*`; a CSV row typed "18 - 25" imported, "twenty" skipped with the bucket list
+as the reason; admin-create with a bucket 201; the migration bucketed 28 volunteers and
+left the erased one NULL. Test rows removed.
 
 ---
 

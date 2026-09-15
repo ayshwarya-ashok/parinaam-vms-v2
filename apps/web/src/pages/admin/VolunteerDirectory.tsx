@@ -40,6 +40,7 @@ import {
   phoneForApi,
   validateProfile,
   type ProfileErrors,
+  AGE_GROUPS,
 } from '@/app/validation';
 import { tokens } from '@/theme';
 import { useAuth } from '@/app/auth';
@@ -67,7 +68,7 @@ interface DirectoryRow {
 
 interface VolunteerDetail extends Omit<DirectoryRow, 'organization'> {
   gender: string | null;
-  dateOfBirth: string | null;
+  ageGroup: string | null;
   state: string | null;
   occupation: string | null;
   skills: string | null;
@@ -130,7 +131,7 @@ export function VolunteerDirectory() {
     defaultPassword: string | null;
   } | null>(null);
   const emptyAdd = {
-    email: '', firstName: '', lastName: '', gender: '', dateOfBirth: '',
+    email: '', firstName: '', lastName: '', gender: '', ageGroup: '',
     city: '', state: '', phone: '', skills: '', occupation: '', password: '',
     category: 'Individual' as 'Individual' | 'CSR', organization: '',
   };
@@ -222,7 +223,7 @@ export function VolunteerDirectory() {
           firstName: f.firstName.trim(),
           lastName: f.lastName.trim(),
           gender: f.gender,
-          dateOfBirth: f.dateOfBirth,
+          ageGroup: f.ageGroup,
           city: f.city.trim(),
           state: f.state.trim(),
           phone: f.phone.trim(),
@@ -754,9 +755,13 @@ export function VolunteerDirectory() {
                 <MenuItem key={g} value={g}>{g}</MenuItem>
               ))}
             </TextField>
-            <TextField label="Date of birth" required type="date" InputLabelProps={{ shrink: true }}
-              value={addForm?.dateOfBirth ?? ''}
-              onChange={(e) => setAddForm((f) => (f ? { ...f, dateOfBirth: e.target.value } : f))} />
+            <TextField select label="Age group" required
+              value={addForm?.ageGroup ?? ''}
+              onChange={(e) => setAddForm((f) => (f ? { ...f, ageGroup: e.target.value } : f))}>
+              {AGE_GROUPS.map((g) => (
+                <MenuItem key={g} value={g}>{g}</MenuItem>
+              ))}
+            </TextField>
           </Box>
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
             <TextField label="City" required value={addForm?.city ?? ''}
@@ -810,7 +815,7 @@ export function VolunteerDirectory() {
             disabled={
               addVolunteer.isPending ||
               !addForm?.email.trim() || !addForm?.firstName.trim() || !addForm?.lastName.trim() ||
-              !addForm?.gender || !addForm?.dateOfBirth || !addForm?.city.trim() ||
+              !addForm?.gender || !addForm?.ageGroup || !addForm?.city.trim() ||
               !addForm?.state.trim() || !addForm?.phone.trim() ||
               (addForm?.category === 'CSR' && !addForm?.organization.trim())
             }
@@ -929,7 +934,7 @@ function VolunteerDetailDrawer({
       firstName: v.firstName,
       lastName: v.lastName,
       gender: v.gender ?? '',
-      dateOfBirth: v.dateOfBirth ?? '',
+      ageGroup: v.ageGroup ?? '',
       phone: v.phone ?? '',
       city: v.city ?? '',
       state: v.state ?? '',
@@ -972,7 +977,7 @@ function VolunteerDetailDrawer({
       firstName: v?.firstName ?? '',
       lastName: v?.lastName ?? '',
       gender: v?.gender ?? '',
-      dateOfBirth: v?.dateOfBirth ?? '',
+      ageGroup: v?.ageGroup ?? '',
       phone: v?.phone ?? '',
       city: v?.city ?? '',
       state: v?.state ?? '',
@@ -1099,10 +1104,14 @@ function VolunteerDetailDrawer({
                     <MenuItem key={g} value={g}>{g}</MenuItem>
                   ))}
                 </TextField>
-                <TextField size="small" required type="date" label="Date of birth"
-                  InputLabelProps={{ shrink: true }} value={draft.dateOfBirth}
-                  error={Boolean(problems.dateOfBirth)} helperText={problems.dateOfBirth}
-                  onChange={(e) => editField('dateOfBirth', e.target.value)} />
+                <TextField size="small" required select label="Age group"
+                  value={draft.ageGroup}
+                  error={Boolean(problems.ageGroup)} helperText={problems.ageGroup}
+                  onChange={(e) => editField('ageGroup', e.target.value)}>
+                  {AGE_GROUPS.map((g) => (
+                    <MenuItem key={g} value={g}>{g}</MenuItem>
+                  ))}
+                </TextField>
                 <TextField size="small" required label="Phone" value={draft.phone}
                   error={Boolean(problems.phone)}
                   helperText={problems.phone ?? '10-digit mobile number'}
@@ -1139,7 +1148,7 @@ function VolunteerDetailDrawer({
             </Section>
 
             <Section title="About">
-              <Field label="Date of birth" value={v.dateOfBirth ? fmtDate(v.dateOfBirth) : null} />
+              <Field label="Age group" value={v.ageGroup} />
               <Field label="Gender" value={v.gender} />
               <Field label="Occupation" value={v.occupation} />
               {v.organization && <Field label="Organization" value={v.organization.name} />}

@@ -27,11 +27,11 @@ UPDATE volunteers v
    AND v.gender IS NULL;
 
 UPDATE volunteers v
-   SET date_of_birth = COALESCE(v.date_of_birth, DATE '1990-01-01')
+   SET age_group = COALESCE(v.age_group, '26-35')
   FROM users u
  WHERE u.id = v.user_id
    AND u.email NOT LIKE '%@erased.invalid'
-   AND v.date_of_birth IS NULL;
+   AND v.age_group IS NULL;
 
 -- City and state fall back to the city the volunteer's programme runs in, or
 -- to the head-office city when there is nothing else to go on.

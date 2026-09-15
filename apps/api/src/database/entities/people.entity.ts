@@ -73,8 +73,9 @@ export class Volunteer {
   @Column({ type: 'enum', enumName: 'gender_type', enum: ['Female', 'Male', 'Non-binary', 'Prefer not to say'], nullable: true })
   gender!: Gender | null;
 
-  @Column({ name: 'date_of_birth', type: 'date', nullable: true })
-  dateOfBirth!: string | null;
+  /** Under 18 / 18-25 / 26-35 / 36-45 / 46-60 / 60+ — never a birth date (V021). */
+  @Column({ name: 'age_group', type: 'varchar', length: 20, nullable: true })
+  ageGroup!: string | null;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   city!: string | null;

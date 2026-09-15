@@ -8,7 +8,7 @@ mirror these files and a drift between them is a bug in the entity, not the SQL.
 ```
 docker-init/01_bootstrap.sh   first-boot: create n8n's DB, apply every migration (checksummed
                               into schema_migrations), load S001, then S002+ if SEED_DEMO_DATA
-migrations/  V001–V020        forward-only, additive, never edited after applying
+migrations/  V001–V021        forward-only, additive, never edited after applying
 seeds/       S001–S007        idempotent — safe to re-run
 ```
 
@@ -28,6 +28,7 @@ seeds/       S001–S007        idempotent — safe to re-run
 | V018 | "As a student": `volunteers.sub_category` (Individuals only) + `volunteers.institution` (students only), both CHECK-guarded; institutions come from `reference_values` category `INSTITUTION` |
 | V019 | `user_role` gains `field_coordinator` — full field-execution/recognition/metrics capability, read-only programs/communities/volunteers, no reports or trainings (grants live in `@Roles`; see docs/07 Round 21) |
 | V020 | Password lifecycle: `users.password_changed_at` (volunteers/coordinators expire 120 days later — policy computed in the API) + `users.must_change_password` (admin reset → forced change on next login) |
+| V021 | `volunteers.age_group` (six buckets, CHECK-guarded) replaces `date_of_birth` — existing rows bucketed from their DOB, then the DOB column dropped (it was PII nothing computed with) |
 
 **Adding one:** create `V0NN__short_description.sql`; never edit an applied file (the bootstrap
 records a SHA-256 per file); long index builds use `CREATE INDEX CONCURRENTLY` in their own

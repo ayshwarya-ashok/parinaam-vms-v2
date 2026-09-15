@@ -80,7 +80,7 @@ actually happens. Backs BR-13.
 ### `volunteers`
 One-to-one with `users`. `volunteers_csr_org_chk` enforces BR-01 in the schema: a CSR volunteer
 must reference an organization; an Individual may optionally reference one as an affiliation
-(V017 — originally Individuals could not). `sub_category` (V018) refines Individuals only —
+(V017 — originally Individuals could not). `age_group` (V021) replaced `date_of_birth` — six buckets, never a birth date; the DOB column and its CHECK were dropped. `sub_category` (V018) refines Individuals only —
 `'Student'` is its sole value — and `institution` (the label of a `reference_values`
 `INSTITUTION` row, denormalized) exists only on students; both are CHECK-guarded.
 `phase` is **derived** — owned by

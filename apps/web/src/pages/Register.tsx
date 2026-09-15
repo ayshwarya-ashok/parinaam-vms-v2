@@ -27,8 +27,10 @@ import {
   phoneForApi,
   validateProfile,
   type ProfileErrors,
+  AGE_GROUPS,
 } from '@/app/validation';
 import { tokens } from '@/theme';
+import { PasswordField } from '@/components/PasswordField';
 
 interface OrganizationOption {
   id: string;
@@ -43,7 +45,6 @@ interface RegistrationCredentials {
   password: string;
 }
 
-const TODAY = new Date().toISOString().slice(0, 10);
 
 /**
  * Volunteer registration — the account and the profile, submitted together.
@@ -69,7 +70,7 @@ export function Register() {
     firstName: '',
     lastName: '',
     gender: '',
-    dateOfBirth: '',
+    ageGroup: '',
     city: '',
     state: '',
     phone: '',
@@ -174,7 +175,7 @@ export function Register() {
     firstName: form.firstName,
     lastName: form.lastName,
     gender: form.gender || undefined,
-    dateOfBirth: form.dateOfBirth || undefined,
+    ageGroup: form.ageGroup || undefined,
     city: form.city || undefined,
     state: form.state || undefined,
     phone: phoneForApi(form.phone),
@@ -288,10 +289,9 @@ export function Register() {
                       />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>
-                      <TextField
+                      <PasswordField
                         fullWidth
                         required
-                        type="password"
                         label="Password"
                         value={account.password}
                         onChange={(e) => setAccount((a) => ({ ...a, password: e.target.value }))}
@@ -299,10 +299,9 @@ export function Register() {
                       />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>
-                      <TextField
+                      <PasswordField
                         fullWidth
                         required
-                        type="password"
                         label="Confirm password"
                         value={account.confirm}
                         error={account.confirm !== '' && account.confirm !== account.password}
@@ -343,17 +342,20 @@ export function Register() {
 
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
                 <TextField
-                  label="Date of birth"
-                  type="date"
-                  InputLabelProps={{ shrink: true }}
-                  inputProps={{ max: TODAY }}
-                  autoComplete="bday"
-                  value={form.dateOfBirth}
-                  onChange={(e) => set('dateOfBirth', e.target.value)}
+                  select
+                  label="Age group"
+                  value={form.ageGroup}
+                  onChange={(e) => set('ageGroup', e.target.value)}
                   required
-                  error={Boolean(problems.dateOfBirth)}
-                  helperText={problems.dateOfBirth}
-                />
+                  error={Boolean(problems.ageGroup)}
+                  helperText={problems.ageGroup}
+                >
+                  {AGE_GROUPS.map((g) => (
+                    <MenuItem key={g} value={g}>
+                      {g}
+                    </MenuItem>
+                  ))}
+                </TextField>
                 <TextField
                   select
                   label="Gender"
@@ -373,7 +375,7 @@ export function Register() {
 
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
                 <TextField
-                  label="Which city are you in?"
+                  label="Current city"
                   autoComplete="address-level2"
                   value={form.city}
                   onChange={(e) => set('city', e.target.value)}
@@ -404,8 +406,8 @@ export function Register() {
                 onChange={(e) => set('phone', e.target.value)}
               />
 
-              {/* ── How you would like to help ────────────────────────────── */}
-              <SectionTitle>How you would like to help</SectionTitle>
+              {/* ── How would you like to help? ───────────────────────────── */}
+              <SectionTitle>How would you like to help?</SectionTitle>
 
               <ChipPicker
                 label="What would you like to help with?"
@@ -482,7 +484,7 @@ export function Register() {
                     }));
                   }}
                 >
-                  <FormControlLabel value="Individual" control={<Radio />} label="An individual" />
+                  <FormControlLabel value="Individual" control={<Radio />} label="As an individual" />
                   <FormControlLabel
                     value="CSR"
                     control={<Radio />}
@@ -562,7 +564,7 @@ export function Register() {
 
               <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
                 <Button variant="pill" type="submit" size="large" disabled={busy} sx={{ flex: 1 }}>
-                  {busy ? 'Creating your account…' : 'Submit registration'}
+                  {busy ? 'Creating your account…' : 'Submit'}
                 </Button>
                 {/*
                   A way out. Nothing has been created yet, so leaving costs

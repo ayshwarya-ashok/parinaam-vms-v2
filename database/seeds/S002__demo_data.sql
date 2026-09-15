@@ -42,23 +42,23 @@ INSERT INTO organizations (id, name, email, phone, contact_person) VALUES
   ('00000000-0000-0000-0002-000000000001', 'TechCorp India Pvt. Ltd.', 'csr@techcorp.in', '+91 80 4000 1000', 'Ravi Kulkarni')
 ON CONFLICT (name) DO NOTHING;
 
-INSERT INTO volunteers (id, user_id, first_name, last_name, gender, date_of_birth, city, state, phone, category, organization_id, phase, skills, compliance_read) VALUES
-  ('00000000-0000-0000-0001-000000000002','00000000-0000-0000-0000-000000000002','Ananya','Sharma','Female','1995-03-12','Pune','Maharashtra','+91 98200 11001','Individual',NULL,'Active','First Aid',TRUE),
-  ('00000000-0000-0000-0001-000000000003','00000000-0000-0000-0000-000000000003','Rahul','Desai','Male','1990-07-08','Mumbai','Maharashtra','+91 98200 11002','Individual',NULL,'In Training','Medical',TRUE),
-  ('00000000-0000-0000-0001-000000000004','00000000-0000-0000-0000-000000000004','Sunita','Rao','Female','1988-11-23','Mumbai','Maharashtra','+91 98200 11003','Individual',NULL,'In Training','Teaching',TRUE),
-  ('00000000-0000-0000-0001-000000000005','00000000-0000-0000-0000-000000000005','Meera','Joshi','Female','1993-01-30','Pune','Maharashtra','+91 98200 11004','Individual',NULL,'Active','Teaching, IT',TRUE),
-  ('00000000-0000-0000-0001-000000000006','00000000-0000-0000-0000-000000000006','Arjun','Nair','Male','1996-05-19','Pune','Maharashtra','+91 98200 11005','Individual',NULL,'In Training','IT',TRUE),
-  ('00000000-0000-0000-0001-000000000007','00000000-0000-0000-0000-000000000007','Lakshmi','Rao','Female','1992-09-02','Pune','Maharashtra','+91 98200 11006','Individual',NULL,'In Training','Teaching',TRUE),
-  ('00000000-0000-0000-0001-000000000008','00000000-0000-0000-0000-000000000008','Dev','Sharma','Male','1994-12-15','Pune','Maharashtra','+91 98200 11007','Individual',NULL,'In Training','IT, Communication',TRUE),
-  ('00000000-0000-0000-0001-000000000009','00000000-0000-0000-0000-000000000009','Pooja','Iyer','Female','1997-04-06','Pune','Maharashtra','+91 98200 11008','Individual',NULL,'Onboarding','Teaching',FALSE),
-  ('00000000-0000-0000-0001-000000000010','00000000-0000-0000-0000-000000000010','Nikhil','Gupta','Male','1991-02-28','Bengaluru','Karnataka','+91 98200 11009','Individual',NULL,'In Training','Mentoring',TRUE),
-  ('00000000-0000-0000-0001-000000000011','00000000-0000-0000-0000-000000000011','Deepa','Pillai','Female','1989-06-11','Bengaluru','Karnataka','+91 98200 11010','Individual',NULL,'Onboarding','Career Guidance',FALSE),
-  ('00000000-0000-0000-0001-000000000012','00000000-0000-0000-0000-000000000012','Amit','Verma','Male','1993-08-21','Bengaluru','Karnataka','+91 98200 11011','Individual',NULL,'In Training','Communication',TRUE),
-  ('00000000-0000-0000-0001-000000000013','00000000-0000-0000-0000-000000000013','Riya','Shah','Female','1998-10-04','Bengaluru','Karnataka','+91 98200 11012','Individual',NULL,'Onboarding','Teaching',FALSE),
-  ('00000000-0000-0000-0001-000000000014','00000000-0000-0000-0000-000000000014','Karan','Mehta','Male','1990-03-17','Bengaluru','Karnataka','+91 98200 11013','Individual',NULL,'In Training','IT, Mentoring',TRUE),
-  ('00000000-0000-0000-0001-000000000015','00000000-0000-0000-0000-000000000015','Preethi','Nair','Female','1995-07-25','Bengaluru','Karnataka','+91 98200 11014','Individual',NULL,'Onboarding','HR, Teaching',FALSE),
-  ('00000000-0000-0000-0001-000000000016','00000000-0000-0000-0000-000000000016','Suresh','Kumar','Male','1987-01-09','Bengaluru','Karnataka','+91 98200 11015','Individual',NULL,'In Training','Management',TRUE),
-  ('00000000-0000-0000-0001-000000000017','00000000-0000-0000-0000-000000000017','Ravi','Kulkarni','Male','1985-05-05','Mumbai','Maharashtra','+91 98200 11016','CSR','00000000-0000-0000-0002-000000000001','Active','Logistics',TRUE)
+INSERT INTO volunteers (id, user_id, first_name, last_name, gender, age_group, city, state, phone, category, organization_id, phase, skills, compliance_read) VALUES
+  ('00000000-0000-0000-0001-000000000002','00000000-0000-0000-0000-000000000002','Ananya','Sharma','Female','26-35','Pune','Maharashtra','+91 98200 11001','Individual',NULL,'Active','First Aid',TRUE),
+  ('00000000-0000-0000-0001-000000000003','00000000-0000-0000-0000-000000000003','Rahul','Desai','Male','36-45','Mumbai','Maharashtra','+91 98200 11002','Individual',NULL,'In Training','Medical',TRUE),
+  ('00000000-0000-0000-0001-000000000004','00000000-0000-0000-0000-000000000004','Sunita','Rao','Female','36-45','Mumbai','Maharashtra','+91 98200 11003','Individual',NULL,'In Training','Teaching',TRUE),
+  ('00000000-0000-0000-0001-000000000005','00000000-0000-0000-0000-000000000005','Meera','Joshi','Female','26-35','Pune','Maharashtra','+91 98200 11004','Individual',NULL,'Active','Teaching, IT',TRUE),
+  ('00000000-0000-0000-0001-000000000006','00000000-0000-0000-0000-000000000006','Arjun','Nair','Male','26-35','Pune','Maharashtra','+91 98200 11005','Individual',NULL,'In Training','IT',TRUE),
+  ('00000000-0000-0000-0001-000000000007','00000000-0000-0000-0000-000000000007','Lakshmi','Rao','Female','26-35','Pune','Maharashtra','+91 98200 11006','Individual',NULL,'In Training','Teaching',TRUE),
+  ('00000000-0000-0000-0001-000000000008','00000000-0000-0000-0000-000000000008','Dev','Sharma','Male','26-35','Pune','Maharashtra','+91 98200 11007','Individual',NULL,'In Training','IT, Communication',TRUE),
+  ('00000000-0000-0000-0001-000000000009','00000000-0000-0000-0000-000000000009','Pooja','Iyer','Female','26-35','Pune','Maharashtra','+91 98200 11008','Individual',NULL,'Onboarding','Teaching',FALSE),
+  ('00000000-0000-0000-0001-000000000010','00000000-0000-0000-0000-000000000010','Nikhil','Gupta','Male','26-35','Bengaluru','Karnataka','+91 98200 11009','Individual',NULL,'In Training','Mentoring',TRUE),
+  ('00000000-0000-0000-0001-000000000011','00000000-0000-0000-0000-000000000011','Deepa','Pillai','Female','36-45','Bengaluru','Karnataka','+91 98200 11010','Individual',NULL,'Onboarding','Career Guidance',FALSE),
+  ('00000000-0000-0000-0001-000000000012','00000000-0000-0000-0000-000000000012','Amit','Verma','Male','26-35','Bengaluru','Karnataka','+91 98200 11011','Individual',NULL,'In Training','Communication',TRUE),
+  ('00000000-0000-0000-0001-000000000013','00000000-0000-0000-0000-000000000013','Riya','Shah','Female','26-35','Bengaluru','Karnataka','+91 98200 11012','Individual',NULL,'Onboarding','Teaching',FALSE),
+  ('00000000-0000-0000-0001-000000000014','00000000-0000-0000-0000-000000000014','Karan','Mehta','Male','36-45','Bengaluru','Karnataka','+91 98200 11013','Individual',NULL,'In Training','IT, Mentoring',TRUE),
+  ('00000000-0000-0000-0001-000000000015','00000000-0000-0000-0000-000000000015','Preethi','Nair','Female','26-35','Bengaluru','Karnataka','+91 98200 11014','Individual',NULL,'Onboarding','HR, Teaching',FALSE),
+  ('00000000-0000-0000-0001-000000000016','00000000-0000-0000-0000-000000000016','Suresh','Kumar','Male','36-45','Bengaluru','Karnataka','+91 98200 11015','Individual',NULL,'In Training','Management',TRUE),
+  ('00000000-0000-0000-0001-000000000017','00000000-0000-0000-0000-000000000017','Ravi','Kulkarni','Male','36-45','Mumbai','Maharashtra','+91 98200 11016','CSR','00000000-0000-0000-0002-000000000001','Active','Logistics',TRUE)
 ON CONFLICT (user_id) DO NOTHING;
 
 INSERT INTO coordinators (id, name, email, mobile) VALUES

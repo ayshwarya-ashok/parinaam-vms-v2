@@ -591,7 +591,7 @@ verification, anyone who could reach the API could mark mail as delivered and su
 
 | Concern | Control |
 |---|---|
-| PII at rest | Volunteer contact details, DOB and consent in Postgres; disk encryption at the volume level |
+| PII at rest | Volunteer contact details, age group and consent in Postgres (V021 dropped the birth date); disk encryption at the volume level |
 | PII in transit | TLS 1.2+ at the proxy; HSTS in production |
 | PII in logs | Pino redaction; email bodies live in `email_logs`, never stdout |
 | Children's data | The system stores **no beneficiary identities** — only aggregate counts in `event_reports`. A deliberate boundary that must stay |

@@ -14,6 +14,7 @@ import { AuditService } from '../audit/audit.service';
 import { PasswordService } from '../auth/password.service';
 import { NotificationsService } from '../notifications';
 import {
+  AGE_GROUPS,
   AdminCreateVolunteerDto,
   RegisterAccountDto,
   RegisterVolunteerDto,
@@ -257,7 +258,7 @@ export class VolunteersService {
       firstName: dto.firstName,
       lastName: dto.lastName,
       gender: (dto.gender as Volunteer['gender']) ?? null,
-      dateOfBirth: dto.dateOfBirth ?? null,
+      ageGroup: dto.ageGroup ?? null,
       city: dto.city ?? null,
       state: dto.state ?? null,
       phone: dto.phone ?? null,
@@ -293,7 +294,7 @@ export class VolunteersService {
       ...(dto.firstName !== undefined && { firstName: dto.firstName }),
       ...(dto.lastName !== undefined && { lastName: dto.lastName }),
       ...(dto.gender !== undefined && { gender: dto.gender }),
-      ...(dto.dateOfBirth !== undefined && { dateOfBirth: dto.dateOfBirth }),
+      ...(dto.ageGroup !== undefined && { ageGroup: dto.ageGroup }),
       ...(dto.city !== undefined && { city: dto.city }),
       ...(dto.state !== undefined && { state: dto.state }),
       ...(dto.phone !== undefined && { phone: dto.phone }),
@@ -562,7 +563,7 @@ export class VolunteersService {
       ...(dto.firstName !== undefined && { firstName: dto.firstName }),
       ...(dto.lastName !== undefined && { lastName: dto.lastName }),
       ...(dto.gender !== undefined && { gender: dto.gender as Volunteer['gender'] }),
-      ...(dto.dateOfBirth !== undefined && { dateOfBirth: dto.dateOfBirth }),
+      ...(dto.ageGroup !== undefined && { ageGroup: dto.ageGroup }),
       ...(dto.city !== undefined && { city: dto.city }),
       ...(dto.state !== undefined && { state: dto.state }),
       ...(dto.phone !== undefined && { phone: dto.phone }),
@@ -718,7 +719,7 @@ export class VolunteersService {
   private static readonly IMPORT_GENDERS = ['Female', 'Male', 'Non-binary', 'Prefer not to say'];
   private static readonly IMPORT_DEFAULT_PASSWORD = 'Parinaam@123';
   private static readonly IMPORT_COLUMNS = [
-    'email*', 'first_name*', 'last_name*', 'gender*', 'date_of_birth* (YYYY-MM-DD)',
+    'email*', 'first_name*', 'last_name*', 'gender*', 'age_group*',
     'city*', 'state*', 'phone* (10 digits)', 'category (Individual/CSR)', 'organization',
     'skills', 'occupation',
   ];
@@ -777,7 +778,7 @@ export class VolunteersService {
       '',
       '• Columns marked * are mandatory; everything else may be left blank.',
       '• gender must be one of: Female, Male, Non-binary, Prefer not to say.',
-      '• date_of_birth format: YYYY-MM-DD (a real Excel date cell also works).',
+      '• age_group: one of Under 18, 18-25, 26-35, 36-45, 46-60, 60+ (matched loosely — \"18 - 25\" works).',
       '• phone: an Indian mobile number — +91 / 91 / 0 prefixes are accepted and normalised to 10 digits.',
       '• category: Individual (default when blank) or CSR. CSR rows MUST name an organization.',
       '• organization: the company name. Mandatory for CSR; optional for Individuals who volunteer representing their employer. Unknown names are created automatically.',
@@ -796,7 +797,7 @@ export class VolunteersService {
     principal: AuthPrincipal,
     data: {
       email: string; firstName: string; lastName: string; gender: string;
-      dateOfBirth: string; city: string; state: string; phone: string;
+      ageGroup: string; city: string; state: string; phone: string;
       skills?: string | null; occupation?: string | null; password?: string | null;
       category?: 'Individual' | 'CSR'; organizationId?: string | null;
     },
@@ -814,7 +815,7 @@ export class VolunteersService {
           firstName: data.firstName,
           lastName: data.lastName,
           gender: data.gender as Volunteer['gender'],
-          dateOfBirth: data.dateOfBirth,
+          ageGroup: data.ageGroup,
           city: data.city,
           state: data.state,
           phone: data.phone,
@@ -942,7 +943,7 @@ export class VolunteersService {
       const key = String(cell.text ?? '').toLowerCase().split('(')[0].replace(/[^a-z_]/g, '');
       if (key) colOf[key] = col;
     });
-    const required = ['email', 'first_name', 'last_name', 'gender', 'date_of_birth', 'city', 'state', 'phone'];
+    const required = ['email', 'first_name', 'last_name', 'gender', 'age_group', 'city', 'state', 'phone'];
     const missing = required.filter((k) => !colOf[k.replace(/[^a-z_]/g, '')]);
     if (missing.length > 0) {
       throw new BusinessException('IMPORT_INVALID', 'Missing column(s): ' + missing.join(', ') + '. Download the template for the expected format.', 400);
@@ -977,9 +978,11 @@ export class VolunteersService {
       );
       if (!gender) { skip('gender must be one of: ' + VolunteersService.IMPORT_GENDERS.join(', ')); continue; }
 
-      const dob = text(row, 'date_of_birth');
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(dob) || Number.isNaN(Date.parse(dob))) {
-        skip('date_of_birth must be YYYY-MM-DD'); continue;
+      // Age groups match loosely: "18 - 25" and "18–25" both land on 18-25.
+      const ageRaw = text(row, 'age_group').replace(/\s+/g, '').replace(/[\u2013\u2014]/g, '-');
+      const ageGroup = AGE_GROUPS.find((g) => g.replace(/\s+/g, '').toLowerCase() === ageRaw.toLowerCase());
+      if (!ageGroup) {
+        skip('age_group must be one of: ' + AGE_GROUPS.join(', ')); continue;
       }
 
       const city = text(row, 'city');
@@ -1011,7 +1014,7 @@ export class VolunteersService {
       // Every import gets the documented initial password — the template
       // deliberately has no password column (client decision, Round 14).
       await this.createApproved(principal, {
-        email, firstName, lastName, gender, dateOfBirth: dob, city, state, phone,
+        email, firstName, lastName, gender, ageGroup, city, state, phone,
         category, organizationId,
         skills: text(row, 'skills') || null,
         occupation: text(row, 'occupation') || null,
@@ -1164,7 +1167,7 @@ export class VolunteersService {
         firstName: 'Erased',
         lastName: `Volunteer-${short}`,
         phone: null,
-        dateOfBirth: null,
+        ageGroup: null,
         city: null,
         state: null,
         phase: 'Inactive',

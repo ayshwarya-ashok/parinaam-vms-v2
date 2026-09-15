@@ -18,6 +18,7 @@ import {
   phoneForApi,
   validateProfile,
   type ProfileErrors,
+  AGE_GROUPS,
 } from '@/app/validation';
 import { ChangePasswordCard, PageShell, StatusPill } from '@/components';
 
@@ -26,7 +27,7 @@ interface Profile {
   firstName: string;
   lastName: string;
   gender: string | null;
-  dateOfBirth: string | null;
+  ageGroup: string | null;
   city: string | null;
   state: string | null;
   phone: string | null;
@@ -65,7 +66,7 @@ export function ProfilePage() {
           firstName: form.firstName,
           lastName: form.lastName,
           gender: form.gender || undefined,
-          dateOfBirth: form.dateOfBirth || undefined,
+          ageGroup: form.ageGroup || undefined,
           city: form.city ?? undefined,
           state: form.state ?? undefined,
           phone: phoneForApi(form.phone),
@@ -99,7 +100,7 @@ export function ProfilePage() {
     setProblems({});
 
     // Compare only the fields this form can actually change.
-    const fields = ['firstName', 'lastName', 'gender', 'dateOfBirth', 'city', 'state', 'phone', 'skills', 'emailOptIn'] as const;
+    const fields = ['firstName', 'lastName', 'gender', 'ageGroup', 'city', 'state', 'phone', 'skills', 'emailOptIn'] as const;
     const pick = (source: Partial<Profile>) =>
       Object.fromEntries(fields.map((f) => [f, source[f] ?? ''])) as Record<string, unknown>;
 
@@ -179,16 +180,21 @@ export function ProfilePage() {
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
-              label="Date of birth"
-              type="date"
+              select
+              label="Age group"
               fullWidth
-              InputLabelProps={{ shrink: true }}
-              value={form.dateOfBirth ?? ''}
-              onChange={(e) => set('dateOfBirth', e.target.value)}
+              value={form.ageGroup ?? ''}
+              onChange={(e) => set('ageGroup', e.target.value)}
               required
-              error={Boolean(problems.dateOfBirth)}
-              helperText={problems.dateOfBirth}
-            />
+              error={Boolean(problems.ageGroup)}
+              helperText={problems.ageGroup}
+            >
+              {AGE_GROUPS.map((g) => (
+                <MenuItem key={g} value={g}>
+                  {g}
+                </MenuItem>
+              ))}
+            </TextField>
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField

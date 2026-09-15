@@ -1,3 +1,6 @@
+/** Mirrors the API's AGE_GROUPS — the only age signal the system stores. */
+export const AGE_GROUPS = ['Under 18', '18-25', '26-35', '36-45', '46-60', '60+'] as const;
+
 /**
  * Validation shared across every form that asks for the same thing.
  *
@@ -52,7 +55,7 @@ export interface RequiredProfileFields {
   firstName?: string | null;
   lastName?: string | null;
   gender?: string | null;
-  dateOfBirth?: string | null;
+  ageGroup?: string | null;
   city?: string | null;
   state?: string | null;
   phone?: string | null;
@@ -64,7 +67,7 @@ const LABELS: Record<keyof RequiredProfileFields, string> = {
   firstName: 'First name',
   lastName: 'Last name',
   gender: 'Gender',
-  dateOfBirth: 'Date of birth',
+  ageGroup: 'Age group',
   city: 'City',
   state: 'State',
   phone: 'Phone number',
@@ -77,12 +80,6 @@ export function validateProfile(form: RequiredProfileFields): ProfileErrors {
     if (String(form[key] ?? '').trim() === '') {
       problems[key] = `${LABELS[key]} is required.`;
     }
-  }
-
-  // A future date of birth is a typo, not a person.
-  const dob = String(form.dateOfBirth ?? '').trim();
-  if (dob !== '' && dob > new Date().toISOString().slice(0, 10)) {
-    problems.dateOfBirth = 'A date of birth cannot be in the future.';
   }
 
   const badPhone = phoneError(form.phone, true);
