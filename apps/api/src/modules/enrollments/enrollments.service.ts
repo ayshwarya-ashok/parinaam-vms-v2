@@ -4,6 +4,7 @@ import { DataSource, EntityManager, Repository } from 'typeorm';
 import { BusinessErrors, BusinessException } from '../../common';
 import type { AuthPrincipal } from '../../common/decorators/auth.decorators';
 import { EventEnrollment, Volunteer, WaitlistEntry } from '../../database/entities';
+import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications';
 
 interface EnrollOptions {
@@ -32,6 +33,7 @@ export class EnrollmentsService {
     @InjectRepository(Volunteer) private readonly volunteers: Repository<Volunteer>,
     private readonly dataSource: DataSource,
     private readonly notifications: NotificationsService,
+    private readonly audit: AuditService,
   ) {}
 
   /**
@@ -67,7 +69,63 @@ export class EnrollmentsService {
   async enroll(principal: AuthPrincipal, eventId: string, opts: EnrollOptions) {
     const volunteer = await this.volunteerOf(principal);
     this.assertApproved(volunteer);
+    return this.enrollAs(volunteer, principal.email, eventId, opts, true);
+  }
 
+  /**
+   * Staff (admin or field coordinator) enroll a volunteer on their behalf.
+   * Same transaction as self-enrolment, with staff judgement standing in for
+   * the volunteer's clicks: a full session waitlists them (reported back), a
+   * scheduling conflict is auto-acknowledged (and recorded on the row), and
+   * the BR-05 training gate is not enforced — the confirmation email still
+   * names anything outstanding. The volunteer must be approved and active;
+   * their own login shows the enrollment immediately, and everyone else's
+   * capacity counts move because those are views, never stored.
+   */
+  async adminEnroll(principal: AuthPrincipal, eventId: string, volunteerId: string) {
+    const volunteer = await this.volunteers.findOne({
+      where: { id: volunteerId },
+      relations: { user: true },
+    });
+    if (!volunteer) throw new NotFoundException('Volunteer not found');
+    if (!volunteer.user?.isActive) {
+      throw new BusinessException(
+        'NOT_ELIGIBLE',
+        'This account is deactivated — reactivate it before enrolling them.',
+        400,
+      );
+    }
+    if (volunteer.registrationStatus !== 'approved') {
+      throw new BusinessException(
+        'REGISTRATION_PENDING',
+        'This registration has not been approved yet — approve it before enrolling them.',
+        400,
+      );
+    }
+
+    const result = await this.enrollAs(
+      volunteer,
+      volunteer.user.email,
+      eventId,
+      { acceptWaitlist: true, acknowledgeConflict: true },
+      false,
+    );
+    await this.audit.record(principal, {
+      action: 'enrollment.staff_enrolled',
+      entity: 'event_enrollments',
+      entityId: eventId,
+      after: { volunteerId, volunteerName: volunteer.fullName, state: result.state },
+    });
+    return result;
+  }
+
+  private enrollAs(
+    volunteer: Volunteer,
+    confirmationEmail: string,
+    eventId: string,
+    opts: EnrollOptions,
+    enforcePrereqs: boolean,
+  ) {
     return this.dataSource.transaction(async (mgr) => {
       // Lock the occurrence row: two concurrent enrollments must serialise on
       // the capacity check, or the last seat gets sold twice.
@@ -110,7 +168,7 @@ export class EnrollmentsService {
       const [{ value: enforce }] = await mgr.query(
         `SELECT value FROM app_settings WHERE key = 'features.enforceTrainingPrerequisites'`,
       );
-      if (enforce === true || enforce === 'true') {
+      if (enforcePrereqs && (enforce === true || enforce === 'true')) {
         const [{ fn_event_prereqs_met: met }] = await mgr.query(
           'SELECT fn_event_prereqs_met($1, $2)',
           [volunteer.id, eventId],
@@ -177,7 +235,7 @@ export class EnrollmentsService {
       );
 
       // 7 — confirmation, written to the outbox in this same transaction
-      await this.queueConfirmation(mgr, volunteer, event, principal.email);
+      await this.queueConfirmation(mgr, volunteer, event, confirmationEmail);
 
       return {
         state: 'enrolled' as const,

@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-09-15 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across twenty-four review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across twenty-five review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -628,6 +628,27 @@ Verified live: register with a bucket 201 / with "17ish" 400; template carries
 `age_group*`; a CSV row typed "18 - 25" imported, "twenty" skipped with the bucket list
 as the reason; admin-create with a bucket 201; the migration bucketed 28 volunteers and
 left the erased one NULL. Test rows removed.
+
+---
+
+## Round 25 — Staff enroll volunteers on their behalf  (2026-09-15)
+
+Admins and field coordinators can now put a volunteer on a roster themselves: the session
+record (upcoming sessions) gained **＋ Enroll volunteer** — a picker of active, approved
+volunteers not already on the roster. `POST /events/:id/enrollments` runs the SAME
+rule-dense transaction as self-enrolment, with staff judgement standing in for the
+volunteer's clicks: a full session waitlists them (position reported back), a scheduling
+conflict is auto-acknowledged and recorded on the row, and the BR-05 training gate is not
+enforced — the confirmation email (sent to the VOLUNTEER, not the actor) still names
+anything outstanding. Pending registrations and deactivated accounts are refused. Audited
+as `enrollment.staff_enrolled`.
+
+"Updated in the respective volunteer's login and other volunteers' too" needed no extra
+work by construction: the volunteer's dashboard reads their enrollments, and every
+capacity figure anyone else sees is a view over the same rows (BR-06: `spots_left` is
+never stored). Verified live as a FIELD COORDINATOR: enroll 201 and visible in the
+volunteer's own session list, double-enroll 409, pending volunteer 400, confirmation
+email sent to the volunteer. Authz matrix: **80 endpoints × 4 roles = 320 checks**, green.
 
 ---
 

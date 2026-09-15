@@ -39,6 +39,11 @@ class BatchEnrollDto extends EnrollDto {
   eventIds!: string[];
 }
 
+class StaffEnrollDto {
+  @Matches(UUID_PATTERN, { message: 'must be a UUID' })
+  volunteerId!: string;
+}
+
 @ApiTags('events')
 @Controller()
 export class EnrollmentsController {
@@ -104,6 +109,20 @@ export class EnrollmentsController {
     @Body() dto: EnrollDto,
   ) {
     return this.enrollments.enroll(user, id, dto);
+  }
+
+  @Post('events/:id/enrollments')
+  @Roles('admin', 'field_coordinator')
+  @ApiOperation({
+    summary:
+      'Staff enroll a volunteer on their behalf — full session waitlists them, conflicts are auto-acknowledged, the training gate is not enforced; audited, confirmation emailed to the volunteer.',
+  })
+  staffEnroll(
+    @CurrentUser() user: AuthPrincipal,
+    @Param('id', UuidPipe) id: string,
+    @Body() dto: StaffEnrollDto,
+  ) {
+    return this.enrollments.adminEnroll(user, id, dto.volunteerId);
   }
 
   @Delete('events/:id/enroll')

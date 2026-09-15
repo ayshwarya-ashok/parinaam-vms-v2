@@ -163,6 +163,8 @@ export function SessionRecord() {
   const { id } = useParams<{ id: string }>();
   const [edit, setEdit] = useState<EditState | null>(null);
   const [walkInOpen, setWalkInOpen] = useState(false);
+  const [enrollOpen, setEnrollOpen] = useState(false);
+  const [enrollVolunteer, setEnrollVolunteer] = useState('');
   const [walkInVolunteer, setWalkInVolunteer] = useState('');
   const [walkInHours, setWalkInHours] = useState('');
   const queryClient = useQueryClient();
@@ -204,7 +206,7 @@ export function SessionRecord() {
           { params: { registrationStatus: 'approved', limit: 100 } },
         )
       ).data.data,
-    enabled: walkInOpen,
+    enabled: walkInOpen || enrollOpen,
   });
 
   const rosterIds = new Set((data?.roster ?? []).map((r) => r.volunteer_id));
@@ -229,6 +231,29 @@ export function SessionRecord() {
       enqueueSnackbar('Walk-in recorded', { variant: 'success' });
     },
     onError: (err) => enqueueSnackbar(asApiError(err)?.message ?? 'Could not record the walk-in', { variant: 'error' }),
+  });
+
+  const staffEnroll = useMutation({
+    mutationFn: async () =>
+      (
+        await api.post<{ state: 'enrolled' | 'waitlisted'; waitlistPosition?: number }>(
+          `/events/${id}/enrollments`,
+          { volunteerId: enrollVolunteer },
+        )
+      ).data,
+    onSuccess: (res) => {
+      void queryClient.invalidateQueries({ queryKey: ['session-record', id] });
+      setEnrollOpen(false);
+      setEnrollVolunteer('');
+      enqueueSnackbar(
+        res.state === 'enrolled'
+          ? 'Enrolled — the volunteer sees it on their dashboard and got the confirmation email'
+          : `Session is full — added to the waitlist at #${res.waitlistPosition}`,
+        { variant: res.state === 'enrolled' ? 'success' : 'info' },
+      );
+    },
+    onError: (err) =>
+      enqueueSnackbar(asApiError(err)?.message ?? 'Could not enroll the volunteer', { variant: 'error' }),
   });
 
   const [sponsorOpen, setSponsorOpen] = useState(false);
@@ -335,6 +360,11 @@ export function SessionRecord() {
               ✓ Mark completed
             </Button>
           )}
+          {event.status === 'upcoming' && (
+            <Button variant="pillOutlined" onClick={() => { setEnrollVolunteer(''); setEnrollOpen(true); }}>
+              ＋ Enroll volunteer
+            </Button>
+          )}
           {event.status === 'completed' && (
             <Button variant="pillOutlined" onClick={() => setSponsorOpen(true)}>
               ✉ Send sponsor pack
@@ -349,6 +379,43 @@ export function SessionRecord() {
           This session was cancelled{event.cancel_reason ? `: ${event.cancel_reason}` : '.'}
         </Alert>
       )}
+
+      {/* Staff enrollment on a volunteer's behalf: full session -> waitlist,
+          conflicts auto-acknowledged, training gate not enforced (the
+          confirmation email still names anything outstanding). */}
+      <Dialog open={enrollOpen} onClose={() => setEnrollOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Enroll a volunteer</DialogTitle>
+        <DialogContent sx={{ display: 'grid', gap: 2, pt: '8px !important' }}>
+          <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>
+            Active, approved volunteers who are not already on this roster. They get the usual
+            confirmation email, and if the session is full they join the waitlist.
+          </Typography>
+          <TextField
+            select
+            label="Volunteer"
+            value={enrollVolunteer}
+            onChange={(e) => setEnrollVolunteer(e.target.value)}
+          >
+            {walkInCandidates.map((v) => (
+              <MenuItem key={v.id} value={v.id}>
+                {v.firstName} {v.lastName} — {v.email}
+              </MenuItem>
+            ))}
+          </TextField>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button variant="pillOutlined" onClick={() => setEnrollOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="pill"
+            disabled={staffEnroll.isPending || !enrollVolunteer}
+            onClick={() => staffEnroll.mutate()}
+          >
+            {staffEnroll.isPending ? 'Enrolling…' : 'Enroll'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog open={sponsorOpen} onClose={() => setSponsorOpen(false)} fullWidth maxWidth="xs">
         <DialogTitle>Send sponsor thank-you pack</DialogTitle>
