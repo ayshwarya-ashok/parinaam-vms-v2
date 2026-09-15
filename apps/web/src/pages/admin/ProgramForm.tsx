@@ -65,7 +65,7 @@ export function ProgramForm() {
     setError(null);
 
     if (name.trim() === '') {
-      setNameError('A programme needs a name.');
+      setNameError('A program needs a name.');
       toast.failure('Check the highlighted fields.');
       return;
     }

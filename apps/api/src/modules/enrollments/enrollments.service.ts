@@ -141,7 +141,7 @@ export class EnrollmentsService {
       if (!event) throw new NotFoundException('Session not found');
 
       // 1 — BR-17 cascade in one call: event status, activity status,
-      //     programme status, past date.
+      //     program status, past date.
       const [{ fn_is_event_enrollable: enrollable }] = await mgr.query(
         'SELECT fn_is_event_enrollable($1)',
         [eventId],
@@ -163,7 +163,7 @@ export class EnrollmentsService {
         );
       }
 
-      // 3 — BR-05: the union of programme-level and activity-level trainings,
+      // 3 — BR-05: the union of program-level and activity-level trainings,
       //     gated behind the feature flag Phase 4 flips on.
       const [{ value: enforce }] = await mgr.query(
         `SELECT value FROM app_settings WHERE key = 'features.enforceTrainingPrerequisites'`,

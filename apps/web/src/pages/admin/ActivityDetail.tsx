@@ -51,8 +51,8 @@ export function ActivityDetail() {
     status: (e) => e.status,
   });
 
-  // The URL carries no programme segment, so the breadcrumb to the parent
-  // programme is injected from the fetched activity.
+  // The URL carries no program segment, so the breadcrumb to the parent
+  // program is injected from the fetched activity.
   useDynamicCrumbs(
     activity
       ? [

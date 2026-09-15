@@ -64,7 +64,7 @@ function initials(attribution: string): string {
  *
  * Every figure is live. Where the prototype hard-coded a number, this reads
  * the equivalent from /public/impact; the gallery falls back to the
- * prototype's gradient cards, captioned with real programmes, whenever fewer
+ * prototype's gradient cards, captioned with real programs, whenever fewer
  * public photos exist than tiles.
  */
 export function ImpactPage() {
@@ -105,7 +105,7 @@ export function ImpactPage() {
    * Two kinds of tile, and they are never confused for one another.
    *
    * A photo tile is an actual photograph a coordinator uploaded and an admin
-   * marked public. A programme tile is a data card — the programme's own
+   * marked public. A program tile is a data card — the program's own
    * hours, turnout and beneficiaries — shown where no photograph exists.
    * Earlier these looked identical, so five gradient rectangles read as five
    * stock photos the system did not have.
@@ -115,7 +115,7 @@ export function ImpactPage() {
     url: photo.url,
     caption: photo.caption,
   }));
-  const programmeTiles = (data?.programs ?? []).slice(0, Math.max(0, 6 - photoTiles.length));
+  const programTiles = (data?.programs ?? []).slice(0, Math.max(0, 6 - photoTiles.length));
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#F7FAFD' }}>
@@ -339,7 +339,7 @@ export function ImpactPage() {
             </Box>
           ))}
 
-          {programmeTiles.map((p, i) => (
+          {programTiles.map((p, i) => (
             <Box
               key={p.name}
               sx={{
@@ -371,7 +371,7 @@ export function ImpactPage() {
                   py: 0.25,
                 }}
               >
-                Programme
+                Program
               </Box>
               <Typography sx={{ fontFamily: SERIF, fontSize: '2rem', lineHeight: 1 }}>
                 {p.beneficiaries.toLocaleString('en-IN')}

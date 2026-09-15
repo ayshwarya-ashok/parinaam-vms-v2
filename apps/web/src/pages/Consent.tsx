@@ -51,7 +51,7 @@ const POLICIES = [
     title: 'NDA — Non-Disclosure Agreement',
     body:
       'All information you encounter during your volunteering — including beneficiary details, ' +
-      'organisational data, volunteer records and programme information — is strictly confidential. ' +
+      'organisational data, volunteer records and program information — is strictly confidential. ' +
       'You agree not to disclose, share or reproduce any such information to third parties, directly or ' +
       'indirectly, during or after your volunteer engagement. Breach may result in legal action.',
     agreement:

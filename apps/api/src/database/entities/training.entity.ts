@@ -181,7 +181,7 @@ export class TrainingOption {
   optionText!: string;
 }
 
-/** Programme-level training links: initiative-wide context. */
+/** Program-level training links: initiative-wide context. */
 @Entity('program_trainings')
 export class ProgramTraining {
   @Column({ name: 'program_id', type: 'uuid', primary: true })

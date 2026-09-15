@@ -67,11 +67,11 @@ export function FeedbackAdmin() {
       <FilterBar
         groups={[
           {
-            label: 'Programme',
+            label: 'Program',
             value: programId || 'all',
             onChange: (v) => setProgramId(v === 'all' ? '' : v),
             options: [
-              { value: 'all', label: 'All programmes' },
+              { value: 'all', label: 'All programs' },
               ...(programs ?? []).map((p) => ({ value: p.id, label: p.name })),
             ],
           },

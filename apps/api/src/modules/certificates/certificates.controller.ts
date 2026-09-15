@@ -41,14 +41,14 @@ export class CertificatesController {
 
   @Get()
   @Roles('admin', 'field_coordinator')
-  @ApiOperation({ summary: 'Certificate candidates — every attended (volunteer, programme) pair with issue state' })
+  @ApiOperation({ summary: 'Certificate candidates — every attended (volunteer, program) pair with issue state' })
   async list(@Query() query: ListQuery) {
     return { data: await this.certificates.candidates(query) };
   }
 
   @Post('issue')
   @Roles('admin', 'field_coordinator')
-  @ApiOperation({ summary: 'Issue the certificate for one volunteer in one programme (render, store, email)' })
+  @ApiOperation({ summary: 'Issue the certificate for one volunteer in one program (render, store, email)' })
   issue(@Body() dto: IssueDto, @CurrentUser() user: AuthPrincipal) {
     return this.certificates.issue(dto.volunteerId, dto.programId, user.sub, {
       mementoNote: dto.mementoNote,
@@ -57,7 +57,7 @@ export class CertificatesController {
 
   @Post('issue-bulk')
   @Roles('admin', 'field_coordinator')
-  @ApiOperation({ summary: 'Issue certificates for every eligible, not-yet-issued volunteer in a programme' })
+  @ApiOperation({ summary: 'Issue certificates for every eligible, not-yet-issued volunteer in a program' })
   issueBulk(@Body() dto: IssueBulkDto, @CurrentUser() user: AuthPrincipal) {
     return this.certificates.issueBulk(dto.programId, user.sub);
   }

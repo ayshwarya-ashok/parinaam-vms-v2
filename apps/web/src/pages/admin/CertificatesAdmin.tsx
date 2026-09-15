@@ -38,7 +38,7 @@ function fmtDate(iso: string | null): string {
   });
 }
 
-/** BR-18 console: who has earned what, per programme, and what has gone out. */
+/** BR-18 console: who has earned what, per program, and what has gone out. */
 export function CertificatesAdmin() {
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('all');
@@ -107,7 +107,7 @@ export function CertificatesAdmin() {
 
   const { sorted, sort, toggle } = useTableSort(data, {
     volunteer: (r) => r.volunteerName,
-    programme: (r) => r.programName,
+    program: (r) => r.programName,
     hours: (r) => Number(r.hours),
     certificate: (r) => r.certificate?.certificateNumber ?? null,
   });
@@ -118,7 +118,7 @@ export function CertificatesAdmin() {
   return (
     <PageShell
       title="Issue Certificates"
-      description="Every volunteer with attended hours, per programme. Issuing renders the PDF, stores it, and emails it with the document attached."
+      description="Every volunteer with attended hours, per program. Issuing renders the PDF, stores it, and emails it with the document attached."
       actions={
         programId ? (
           <Button variant="pill" disabled={pendingInProgram === 0} onClick={() => setBulkOpen(true)}>
@@ -128,7 +128,7 @@ export function CertificatesAdmin() {
       }
     >
       <FilterBar
-        search={{ value: q, onChange: setQ, placeholder: 'Search volunteer, email or programme…' }}
+        search={{ value: q, onChange: setQ, placeholder: 'Search volunteer, email or program…' }}
         groups={[
           {
             label: 'Status',
@@ -141,11 +141,11 @@ export function CertificatesAdmin() {
             ],
           },
           {
-            label: 'Programme',
+            label: 'Program',
             value: programId || 'all',
             onChange: (v) => setProgramId(v === 'all' ? '' : v),
             options: [
-              { value: 'all', label: 'All programmes' },
+              { value: 'all', label: 'All programs' },
               ...(programs ?? []).map((p) => ({ value: p.id, label: p.name })),
             ],
           },
@@ -157,7 +157,7 @@ export function CertificatesAdmin() {
           <TableHead>
             <TableRow>
               <SortableCell sortKey="volunteer" sort={sort} onSort={toggle}>Volunteer</SortableCell>
-              <SortableCell sortKey="programme" sort={sort} onSort={toggle}>Programme</SortableCell>
+              <SortableCell sortKey="program" sort={sort} onSort={toggle}>Program</SortableCell>
               <SortableCell sortKey="hours" sort={sort} onSort={toggle} align="center">Participation</SortableCell>
               <SortableCell sortKey="certificate" sort={sort} onSort={toggle}>Certificate</SortableCell>
               <TableCell align="right">Actions</TableCell>
@@ -279,7 +279,7 @@ export function CertificatesAdmin() {
       <ConfirmDialog
         open={bulkOpen}
         title={`Issue all pending certificates — ${programName ?? ''}`}
-        message={`This issues ${pendingInProgram} certificate(s) for ${programName ?? 'this programme'}, each rendered and emailed with the PDF attached. Continue?`}
+        message={`This issues ${pendingInProgram} certificate(s) for ${programName ?? 'this program'}, each rendered and emailed with the PDF attached. Continue?`}
         confirmLabel={bulk.isPending ? 'Issuing…' : 'Issue all'}
         onConfirm={() => bulk.mutate()}
         onCancel={() => setBulkOpen(false)}

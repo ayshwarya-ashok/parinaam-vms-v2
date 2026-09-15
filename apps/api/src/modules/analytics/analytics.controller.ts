@@ -14,7 +14,7 @@ export class AnalyticsController {
 
   @Get('dashboard')
   @Roles('admin', 'field_coordinator')
-  @ApiOperation({ summary: 'KPIs and every chart series in one payload, filtered by period / programme / city' })
+  @ApiOperation({ summary: 'KPIs and every chart series in one payload, filtered by period / program / city' })
   dashboard(
     @Query('period') period?: string,
     @Query('programId') programId?: string,

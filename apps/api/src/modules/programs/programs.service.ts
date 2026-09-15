@@ -42,7 +42,7 @@ export class ProgramsService {
     const rows = await qb.getMany();
     if (rows.length === 0) return { data: [] };
 
-    // One aggregate query for the per-programme counts the list cards show.
+    // One aggregate query for the per-program counts the list cards show.
     const stats = await this.dataSource.query(
       `SELECT a.program_id,
               COUNT(DISTINCT a.id) FILTER (WHERE a.status = 'active')::int AS active_activities,
@@ -159,7 +159,7 @@ export class ProgramsService {
   }
 
   /**
-   * BR-17: blocks new enrollment on every occurrence beneath the programme —
+   * BR-17: blocks new enrollment on every occurrence beneath the program —
    * via fn_is_event_enrollable — without cancelling anything or deleting
    * history. Cancelling scheduled occurrences stays a separate, explicit act
    * because it emails people (open question O1).

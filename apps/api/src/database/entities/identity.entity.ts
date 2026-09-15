@@ -108,7 +108,7 @@ export type AccessTokenPurpose =
 /**
  * Single-purpose signed links. This is how coordinators, who have no accounts,
  * submit event reports. Targets an Event — the dated occurrence — never an
- * activity or programme.
+ * activity or program.
  */
 @Entity('access_tokens')
 export class AccessToken {

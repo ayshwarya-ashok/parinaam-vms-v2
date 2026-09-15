@@ -16,13 +16,13 @@ export interface DashboardFilters {
  * One request, the whole dashboard.
  *
  * Every KPI and every series applies the same three predicates — period,
- * programme, city — as real SQL, so changing a filter re-queries everything
+ * program, city — as real SQL, so changing a filter re-queries everything
  * consistently instead of serving pre-baked per-filter datasets.
  *
  * Predicate semantics:
  *  - period  → lower bound on the metric's own date axis (event date,
  *              submission time, volunteer creation).
- *  - program → activity-derived metrics scope to that programme; volunteer
+ *  - program → activity-derived metrics scope to that program; volunteer
  *              population metrics scope to volunteers who enrolled in it.
  *  - city    → volunteer-derived metrics scope to volunteers from that city.
  */
@@ -49,7 +49,7 @@ export class AnalyticsService {
           JOIN activities a ON a.id = e.activity_id
           WHERE en.volunteer_id = v.id AND a.program_id = $2))`;
 
-    // Attendance joined up to programme + volunteer, the hours/impact spine.
+    // Attendance joined up to program + volunteer, the hours/impact spine.
     const ATT = `
       SELECT ar.*, e.date AS event_date, a.program_id
       FROM attendance_records ar

@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-09-15 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across twenty-six review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across twenty-seven review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -669,6 +669,21 @@ the first attempt got "waitlisted" because the client team was enrolling into Re
 Rise through the funnel at that very moment and genuinely filled it — the capacity rules
 doing their job with real concurrent users. Authz matrix: **81 endpoints × 4 roles =
 324 checks**, green.
+
+---
+
+## Round 27 — "Program", everywhere; the filter bar learns to wrap  (2026-09-15)
+
+- **Programme → Program** across the application: 77 occurrences in 35 files — UI labels,
+  toasts, email templates (certificate, invite, feedback, session details), the certificate
+  PDF text, export column headers, and Swagger summaries. Newly issued certificates and
+  freshly sent emails carry the new spelling; existing PDFs and sent mail are history and
+  keep theirs. (The docs corpus keeps its original prose — this rename is the product's
+  voice, not the changelog's.)
+- **Filter groups wrap now.** The FilterBar's outer bar always wrapped whole groups, but a
+  single group's chips ran on one unwrappable line — with one chip per program, Metrics and
+  Field Execution walked off the right edge of the screen. The group container itself is
+  flex-wrapped, so the chips break to new lines with the viewport.
 
 ---
 

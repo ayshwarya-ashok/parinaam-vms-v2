@@ -28,7 +28,7 @@ export function useBreadcrumbTrail(): Crumb[] {
 
 /**
  * For pages whose logical parent isn't in the URL — e.g. an activity's
- * programme. The items render as extra clickable crumbs before the current
+ * program. The items render as extra clickable crumbs before the current
  * page's own crumb, and clear automatically on unmount.
  */
 export function useDynamicCrumbs(items: Crumb[] | null): void {

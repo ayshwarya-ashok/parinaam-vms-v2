@@ -4,7 +4,7 @@ import { DataSource } from 'typeorm';
 import { Roles } from '../../common/decorators/auth.decorators';
 
 /**
- * Admin hub tile counts. The full filterable dashboard (period / programme /
+ * Admin hub tile counts. The full filterable dashboard (period / program /
  * city as real SQL predicates) is Phase 7 — this serves the Phase 2 hub only.
  */
 @ApiTags('analytics')

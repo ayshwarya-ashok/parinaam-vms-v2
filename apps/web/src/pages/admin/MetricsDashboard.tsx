@@ -70,7 +70,7 @@ export function MetricsDashboard() {
   return (
     <PageShell
       title="Metrics Dashboard"
-      description="Every figure below is a live query. Change period, programme or city and the whole board re-computes consistently."
+      description="Every figure below is a live query. Change period, program or city and the whole board re-computes consistently."
     >
       <FilterBar
         groups={[
@@ -87,11 +87,11 @@ export function MetricsDashboard() {
             ],
           },
           {
-            label: 'Programme',
+            label: 'Program',
             value: programId || 'all',
             onChange: (v) => setProgramId(v === 'all' ? '' : v),
             options: [
-              { value: 'all', label: 'All programmes' },
+              { value: 'all', label: 'All programs' },
               ...(programs ?? []).map((p) => ({ value: p.id, label: p.name })),
             ],
           },
@@ -232,7 +232,7 @@ export function MetricsDashboard() {
         <ChartCard
           title="Attendance: enrolled vs attended"
           rows={c?.attendanceByProgram}
-          cols={['Programme', 'Enrolled', 'Attended']}
+          cols={['Program', 'Enrolled', 'Attended']}
           of={(r) => [r.label, r.enrolled, r.attended]}
           wide
         >

@@ -18,7 +18,7 @@ export type EventStatus = 'draft' | 'upcoming' | 'inprogress' | 'completed' | 'c
 
 /**
  * A long-running initiative. Has no dates.
- * Discontinuing a programme blocks new enrollment on every occurrence beneath
+ * Discontinuing a program blocks new enrollment on every occurrence beneath
  * it (BR-17) without deleting history.
  */
 @Entity('programs')
@@ -69,7 +69,7 @@ export class Program {
 }
 
 /**
- * A repeatable unit of work inside a programme. Has no dates of its own;
+ * A repeatable unit of work inside a program. Has no dates of its own;
  * each scheduled occurrence is a row in `events`.
  */
 @Entity('activities')
@@ -223,7 +223,7 @@ export class EventOccurrence {
 }
 
 /**
- * A broadcast. `event_id` NULL means it covers the whole programme; set means it
+ * A broadcast. `event_id` NULL means it covers the whole program; set means it
  * announces one specific occurrence.
  */
 @Entity('announcements')

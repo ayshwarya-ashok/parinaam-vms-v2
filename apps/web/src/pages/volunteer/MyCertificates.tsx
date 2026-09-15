@@ -20,7 +20,7 @@ export function MyCertificates() {
   return (
     <PageShell
       title="My Certificates"
-      description="One certificate per programme, with your hours summed across every session you attended. Each was also emailed to you when it was issued."
+      description="One certificate per program, with your hours summed across every session you attended. Each was also emailed to you when it was issued."
       maxWidth="lg"
     >
       {!isLoading && data?.length === 0 && (

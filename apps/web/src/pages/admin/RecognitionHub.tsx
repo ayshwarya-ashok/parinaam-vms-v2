@@ -40,8 +40,8 @@ export function RecognitionHub() {
         <Paper variant="outlined" sx={{ p: 3, borderRadius: 3 }}>
           <Typography variant="h5" sx={{ mb: 1 }}>🏆 Certificates</Typography>
           <Typography color="text.secondary" sx={{ mb: 2, fontSize: '0.9rem' }}>
-            One certificate per volunteer per programme, hours summed across every
-            session attended. Issue individually or for a whole programme at once —
+            One certificate per volunteer per program, hours summed across every
+            session attended. Issue individually or for a whole program at once —
             the PDF is emailed automatically.
           </Typography>
           <Button variant="pill" component={RouterLink} to="/admin/recognition/certificates">

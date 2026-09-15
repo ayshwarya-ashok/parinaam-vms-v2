@@ -73,7 +73,7 @@ export class CertificatesService {
   ) {}
 
   /**
-   * Admin list — every (volunteer, programme) pair with attended hours, merged
+   * Admin list — every (volunteer, program) pair with attended hours, merged
    * with whatever certificate row already exists for it. "Eligible but not
    * issued" is a row with certificate: null or issued: false.
    */
@@ -143,7 +143,7 @@ export class CertificatesService {
   }
 
   /**
-   * Issue (or re-issue) the certificate for one volunteer in one programme:
+   * Issue (or re-issue) the certificate for one volunteer in one program:
    * recompute the figures, render the PDF, store it, and email it with the
    * document attached. Idempotent on the already-issued case unless reissue.
    */
@@ -157,7 +157,7 @@ export class CertificatesService {
     if (!participation || participation.events_attended === 0) {
       throw new BusinessException(
         'NOT_ELIGIBLE',
-        'No attended sessions in this programme — nothing to certify.',
+        'No attended sessions in this program — nothing to certify.',
         409,
       );
     }
@@ -172,7 +172,7 @@ export class CertificatesService {
       `SELECT name FROM programs WHERE id = $1`,
       [programId],
     );
-    if (program.length === 0) throw new NotFoundException('Programme not found');
+    if (program.length === 0) throw new NotFoundException('Program not found');
     const programName = program[0].name;
 
     let cert = await this.certs.findOne({ where: { volunteerId, programId } });

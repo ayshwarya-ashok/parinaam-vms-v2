@@ -46,7 +46,7 @@ export function ReportsPage() {
   const volunteers = useTableSort(rows, {
     volunteer: (r) => r.volunteer_name,
     category: (r) => `${r.category} ${r.phase}`,
-    programmes: (r) => r.programs_joined,
+    programs: (r) => r.programs_joined,
     hours: (r) => Number(r.total_hours),
     attendance: (r) => Number(r.attendance_pct),
     trainings: (r) => r.trainings_passed,
@@ -76,7 +76,7 @@ export function ReportsPage() {
 
   /** The one-click list exports — each is a whole dataset, always as Excel. */
   const LIST_EXPORTS = [
-    { type: 'programs', label: 'Programmes' },
+    { type: 'programs', label: 'Programs' },
     { type: 'activities', label: 'Activities' },
     { type: 'volunteer_directory', label: 'Volunteers' },
     { type: 'volunteer_activities', label: 'Volunteer–activity' },
@@ -115,7 +115,7 @@ export function ReportsPage() {
   return (
     <PageShell
       title="Reports"
-      description="The volunteer summary — programmes, sessions, hours, attendance, trainings and certificates per person. All three exports contain exactly the rows below."
+      description="The volunteer summary — programs, sessions, hours, attendance, trainings and certificates per person. All three exports contain exactly the rows below."
       actions={
         <>
           {(['CSV', 'Excel', 'PDF'] as const).map((format) => (
@@ -205,7 +205,7 @@ export function ReportsPage() {
             <TableRow>
               <SortableCell sortKey="volunteer" sort={volunteers.sort} onSort={volunteers.toggle}>Volunteer</SortableCell>
               <SortableCell sortKey="category" sort={volunteers.sort} onSort={volunteers.toggle}>Category / phase</SortableCell>
-              <SortableCell sortKey="programmes" sort={volunteers.sort} onSort={volunteers.toggle} align="right">Programmes</SortableCell>
+              <SortableCell sortKey="programs" sort={volunteers.sort} onSort={volunteers.toggle} align="right">Programs</SortableCell>
               <SortableCell sortKey="hours" sort={volunteers.sort} onSort={volunteers.toggle} align="right">Hours</SortableCell>
               <SortableCell sortKey="attendance" sort={volunteers.sort} onSort={volunteers.toggle} sx={{ minWidth: 140 }}>Attendance</SortableCell>
               <SortableCell sortKey="trainings" sort={volunteers.sort} onSort={volunteers.toggle} align="right">Trainings</SortableCell>

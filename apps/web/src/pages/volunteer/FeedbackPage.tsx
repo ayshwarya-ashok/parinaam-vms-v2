@@ -44,7 +44,7 @@ export function FeedbackPage() {
   return (
     <PageShell
       title="Share Your Experience"
-      description="Feedback is per session and goes straight to the programme team. Nothing you write is published without an administrator explicitly clearing it."
+      description="Feedback is per session and goes straight to the program team. Nothing you write is published without an administrator explicitly clearing it."
       maxWidth="lg"
     >
       {selected ? (

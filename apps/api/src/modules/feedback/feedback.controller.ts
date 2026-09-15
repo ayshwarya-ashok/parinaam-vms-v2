@@ -97,7 +97,7 @@ export class FeedbackController {
 
   @Get()
   @Roles('admin', 'field_coordinator')
-  @ApiOperation({ summary: 'All submissions, filterable by programme / occurrence / rating' })
+  @ApiOperation({ summary: 'All submissions, filterable by program / occurrence / rating' })
   async list(
     @Query('programId') programId?: string,
     @Query('eventId') eventId?: string,

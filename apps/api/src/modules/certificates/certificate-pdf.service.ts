@@ -144,13 +144,13 @@ export class CertificatePdfService {
       data.certType === 'corporate'
         ? [
             `representing ${data.organizationName ?? 'their organization'}, in recognition of their generous`,
-            `contribution of time and resources to the ${data.programName} programme,`,
+            `contribution of time and resources to the ${data.programName} program,`,
             `attending ${sessions} ${period} and contributing ${data.hours} hours`,
             'of dedicated service towards building stronger communities.',
           ]
         : [
             'has demonstrated exceptional dedication and commitment by volunteering in the',
-            `${data.programName} programme, attending ${sessions} ${period}`,
+            `${data.programName} program, attending ${sessions} ${period}`,
             `and contributing ${data.hours} hours of impactful service to the community.`,
           ];
 
@@ -163,7 +163,7 @@ export class CertificatePdfService {
     // ── Footer: signature rules, seal, verification ──────────────────────────
     const footerY = 108;
     page.drawLine({ start: { x: 110, y: footerY }, end: { x: 300, y: footerY }, thickness: 0.8, color: INK });
-    page.drawText('Programme Director', { x: 110, y: footerY - 18, size: 11, font: sans, color: MUTED });
+    page.drawText('Program Director', { x: 110, y: footerY - 18, size: 11, font: sans, color: MUTED });
 
     // Star seal
     const sealX = W / 2;

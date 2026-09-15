@@ -22,7 +22,7 @@ function localIso(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-/** Stable colour per programme, so a series reads as one band across the month. */
+/** Stable colour per program, so a series reads as one band across the month. */
 function programColor(programId: string): string {
   let hash = 0;
   for (const ch of programId) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;

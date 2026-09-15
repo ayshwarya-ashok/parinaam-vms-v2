@@ -46,7 +46,13 @@ export function FilterBar({ search, groups = [] }: FilterBarProps) {
         />
       )}
       {groups.map((group) => (
-        <Box key={group.label} sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+        // flexWrap matters here, not just on the bar: a group with many chips
+        // (every program, say) must wrap WITHIN itself, or it walks off the
+        // right edge of the screen while the bar happily wraps whole groups.
+        <Box
+          key={group.label}
+          sx={{ display: 'flex', gap: 0.5, rowGap: 0.75, alignItems: 'center', flexWrap: 'wrap', minWidth: 0 }}
+        >
           <Typography
             sx={{
               fontSize: '0.72rem',

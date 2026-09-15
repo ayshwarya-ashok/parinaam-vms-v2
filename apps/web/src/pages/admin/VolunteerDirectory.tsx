@@ -1172,7 +1172,7 @@ function VolunteerDetailDrawer({
             <Field label="Compliance report read" value={v.consentSigned ? 'Consent signed' : 'Consent not signed'} />
             <Field
               label="Contribution"
-              value={`${Number(v.participation.total_hours)} hours · ${v.participation.events_attended} session(s) · ${v.participation.programs} programme(s)`}
+              value={`${Number(v.participation.total_hours)} hours · ${v.participation.events_attended} session(s) · ${v.participation.programs} program(s)`}
             />
             <Field label="Registered" value={fmtDate(v.createdAt)} />
             {v.reviewedAt && (

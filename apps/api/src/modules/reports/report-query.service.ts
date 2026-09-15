@@ -80,7 +80,7 @@ export class ReportQueryService {
         { key: 'location', label: 'City' },
         { key: 'category', label: 'Category' },
         { key: 'phase', label: 'Phase' },
-        { key: 'programs_joined', label: 'Programmes', align: 'right' },
+        { key: 'programs_joined', label: 'Programs', align: 'right' },
         { key: 'events_enrolled', label: 'Sessions', align: 'right' },
         { key: 'total_hours', label: 'Hours', align: 'right' },
         { key: 'attendance_pct', label: 'Attendance %', align: 'right' },
@@ -111,10 +111,10 @@ export class ReportQueryService {
     );
 
     return {
-      title: 'Programme Summary',
+      title: 'Program Summary',
       columns: [
         { key: 'code', label: 'Code' },
-        { key: 'name', label: 'Programme' },
+        { key: 'name', label: 'Program' },
         { key: 'status', label: 'Status' },
         { key: 'activities', label: 'Activities', align: 'right' },
         { key: 'events_total', label: 'Sessions', align: 'right' },
@@ -128,7 +128,7 @@ export class ReportQueryService {
     };
   }
 
-  /** Every activity with its programme, status and session tallies. */
+  /** Every activity with its program, status and session tallies. */
   async activities(): Promise<ReportData> {
     const rows = await this.dataSource.query(
       `SELECT p.name AS program, a.name AS activity, a.type::text AS type,
@@ -148,7 +148,7 @@ export class ReportQueryService {
     return {
       title: 'Activities',
       columns: [
-        { key: 'program', label: 'Programme' },
+        { key: 'program', label: 'Program' },
         { key: 'activity', label: 'Activity' },
         { key: 'type', label: 'Type' },
         { key: 'status', label: 'Status' },
@@ -243,7 +243,7 @@ export class ReportQueryService {
       columns: [
         { key: 'volunteer', label: 'Volunteer' },
         { key: 'email', label: 'Email' },
-        { key: 'program', label: 'Programme' },
+        { key: 'program', label: 'Program' },
         { key: 'activity', label: 'Activity' },
         { key: 'activity_status', label: 'Activity status' },
         { key: 'sessions_enrolled', label: 'Enrolled', align: 'right' },
@@ -287,7 +287,7 @@ export class ReportQueryService {
       columns: [
         { key: 'month', label: 'Month' },
         { key: 'date', label: 'Date' },
-        { key: 'program', label: 'Programme' },
+        { key: 'program', label: 'Program' },
         { key: 'activity', label: 'Activity' },
         { key: 'session', label: 'Session' },
         { key: 'status', label: 'Status' },

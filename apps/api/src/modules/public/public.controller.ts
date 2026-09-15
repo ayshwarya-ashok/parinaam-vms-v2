@@ -15,7 +15,7 @@ export class PublicController {
   @ApiOperation({
     summary: 'Public impact aggregates — cached, rate-limited, no personal data',
     description:
-      'Headline stats, per-programme impact, public gallery and published testimonials only. ' +
+      'Headline stats, per-program impact, public gallery and published testimonials only. ' +
       'Attribution is first name + last initial; nothing else about a volunteer leaves the system here.',
   })
   impact() {

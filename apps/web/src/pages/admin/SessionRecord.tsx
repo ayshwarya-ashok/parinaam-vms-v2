@@ -308,7 +308,7 @@ export function SessionRecord() {
       enqueueSnackbar(
         res.queued === 0
           ? 'No enrolled volunteers to email'
-          : `${type === 'details' ? 'Programme details' : 'Reminder'} email queued to ${res.queued} volunteer${res.queued === 1 ? '' : 's'}`,
+          : `${type === 'details' ? 'Program details' : 'Reminder'} email queued to ${res.queued} volunteer${res.queued === 1 ? '' : 's'}`,
         { variant: res.queued === 0 ? 'info' : 'success' },
       );
     },

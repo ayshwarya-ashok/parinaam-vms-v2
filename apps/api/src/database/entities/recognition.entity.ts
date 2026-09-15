@@ -17,7 +17,7 @@ export type VolAgain = 'Definitely' | 'Probably' | 'Not sure' | 'Unlikely';
 
 /**
  * BR-18: one certificate per volunteer PER PROGRAMME. Hours are summed across
- * every occurrence attended within that programme (see v_program_participation).
+ * every occurrence attended within that program (see v_program_participation).
  */
 @Entity('certificates')
 @Index(['volunteerId', 'programId'], { unique: true })
