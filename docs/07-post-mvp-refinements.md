@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-09-15 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across twenty-five review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across twenty-six review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -649,6 +649,26 @@ capacity figure anyone else sees is a view over the same rows (BR-06: `spots_lef
 never stored). Verified live as a FIELD COORDINATOR: enroll 201 and visible in the
 volunteer's own session list, double-enroll 409, pending volunteer 400, confirmation
 email sent to the volunteer. Authz matrix: **80 endpoints × 4 roles = 320 checks**, green.
+
+---
+
+## Round 26 — Staff unenroll volunteers too  (2026-09-15)
+
+The mirror of Round 25: every upcoming roster row on the session record gained **Remove**
+(with a confirm dialog), for admins and field coordinators. `DELETE
+/events/:id/enrollments/:volunteerId` reuses the self-withdrawal transaction — so the DB
+trigger promotes the waitlist head exactly as if the volunteer had withdrawn themselves,
+and every other login's capacity moves because capacity is a view. Unlike a
+self-withdrawal, the volunteer did not click this, so they are TOLD: a new
+**enrollment_removed** email (new template — remember templates load at boot; api+worker
+restarted) goes to them. Audited as `enrollment.staff_removed`.
+
+Verified live as a field coordinator: enroll then remove on Snow City — 200, gone from
+the volunteer's own login, the email sent, second remove 404. A nice accident en route:
+the first attempt got "waitlisted" because the client team was enrolling into Read to
+Rise through the funnel at that very moment and genuinely filled it — the capacity rules
+doing their job with real concurrent users. Authz matrix: **81 endpoints × 4 roles =
+324 checks**, green.
 
 ---
 

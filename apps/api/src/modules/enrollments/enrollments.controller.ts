@@ -125,6 +125,20 @@ export class EnrollmentsController {
     return this.enrollments.adminEnroll(user, id, dto.volunteerId);
   }
 
+  @Delete('events/:id/enrollments/:volunteerId')
+  @Roles('admin', 'field_coordinator')
+  @ApiOperation({
+    summary:
+      'Staff remove a volunteer from a roster — same waitlist promotion as a self-withdrawal; the volunteer is emailed; audited.',
+  })
+  staffUnenroll(
+    @CurrentUser() user: AuthPrincipal,
+    @Param('id', UuidPipe) id: string,
+    @Param('volunteerId', UuidPipe) volunteerId: string,
+  ) {
+    return this.enrollments.adminUnenroll(user, id, volunteerId);
+  }
+
   @Delete('events/:id/enroll')
   @Roles('volunteer')
   @ApiOperation({ summary: 'Withdraw — the DB trigger promotes the waitlist head (BR-10)' })

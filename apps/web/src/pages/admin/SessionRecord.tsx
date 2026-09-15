@@ -25,6 +25,7 @@ import { useParams } from 'react-router-dom';
 import { api, asApiError } from '@/api/client';
 import { useDynamicCrumbs } from '@/app/breadcrumbs';
 import {
+  ConfirmDialog,
   EmptyState,
   PageShell,
   SortableCell,
@@ -256,6 +257,24 @@ export function SessionRecord() {
       enqueueSnackbar(asApiError(err)?.message ?? 'Could not enroll the volunteer', { variant: 'error' }),
   });
 
+  const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null);
+  const staffUnenroll = useMutation({
+    mutationFn: async (volunteerId: string) =>
+      (await api.delete<{ withdrawn: boolean; promoted: number }>(`/events/${id}/enrollments/${volunteerId}`)).data,
+    onSuccess: (res) => {
+      void queryClient.invalidateQueries({ queryKey: ['session-record', id] });
+      setRemoveTarget(null);
+      enqueueSnackbar(
+        res.promoted > 0
+          ? 'Removed — the volunteer has been emailed, and the waitlist head took the seat'
+          : 'Removed — the volunteer has been emailed',
+        { variant: 'success' },
+      );
+    },
+    onError: (err) =>
+      enqueueSnackbar(asApiError(err)?.message ?? 'Could not remove the volunteer', { variant: 'error' }),
+  });
+
   const [sponsorOpen, setSponsorOpen] = useState(false);
   const [sponsorEmail, setSponsorEmail] = useState('');
   const [sponsorOrg, setSponsorOrg] = useState('');
@@ -379,6 +398,16 @@ export function SessionRecord() {
           This session was cancelled{event.cancel_reason ? `: ${event.cancel_reason}` : '.'}
         </Alert>
       )}
+
+      <ConfirmDialog
+        open={removeTarget !== null}
+        title="Remove from this session?"
+        danger
+        message={`${removeTarget?.name ?? ''} will be unenrolled and emailed about it. If anyone is waiting, the waitlist head takes the seat automatically.`}
+        confirmLabel="Remove"
+        onCancel={() => setRemoveTarget(null)}
+        onConfirm={() => removeTarget && staffUnenroll.mutate(removeTarget.id)}
+      />
 
       {/* Staff enrollment on a volunteer's behalf: full session -> waitlist,
           conflicts auto-acknowledged, training gate not enforced (the
@@ -577,6 +606,7 @@ export function SessionRecord() {
                   <SortableCell sortKey="enrolledAt" sort={roster.sort} onSort={roster.toggle}>Enrolled on</SortableCell>
                   <SortableCell sortKey="skills" sort={roster.sort} onSort={roster.toggle}>Skills offered</SortableCell>
                   <TableCell align="center">Route</TableCell>
+                  <TableCell align="right">Action</TableCell>
                 </>
               ) : (
                 <>
@@ -616,6 +646,12 @@ export function SessionRecord() {
                       ) : (
                         <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>direct</Typography>
                       )}
+                    </TableCell>
+                    <TableCell align="right">
+                      <Button size="small" variant="pillOutlined" sx={{ px: 1.5, py: 0.25, color: tokens.accentStrong }}
+                        onClick={() => setRemoveTarget({ id: r.volunteer_id, name: `${r.first_name} ${r.last_name}` })}>
+                        Remove
+                      </Button>
                     </TableCell>
                   </>
                 ) : (

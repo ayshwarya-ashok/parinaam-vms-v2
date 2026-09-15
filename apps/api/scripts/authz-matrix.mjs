@@ -65,6 +65,7 @@ const MATRIX = [
   ['POST',   `/volunteers/${UUID}/welcome-back`,        'D', 'D', 'D', 'A'],
   ['POST',   `/events/${UUID}/sponsor-pack`,            'D', 'D', 'A', 'A'],
   ['POST',   `/events/${UUID}/enrollments`,           'D', 'D', 'A', 'A'],
+  ['DELETE', `/events/${UUID}/enrollments/${UUID}`,     'D', 'D', 'A', 'A'],
   ['PATCH',  `/volunteers/${UUID}/registration`,        'D', 'D', 'D', 'A'],
   ['POST',   `/volunteers/${UUID}/approve`,             'D', 'D', 'D', 'A'],
   ['POST',   `/volunteers/${UUID}/reject`,              'D', 'D', 'D', 'A'],

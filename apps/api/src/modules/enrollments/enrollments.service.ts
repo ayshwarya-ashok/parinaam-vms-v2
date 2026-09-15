@@ -299,12 +299,66 @@ export class EnrollmentsService {
 
   async withdraw(principal: AuthPrincipal, eventId: string) {
     const volunteer = await this.volunteerOf(principal);
+    return this.withdrawAs(volunteer, eventId, 'You are not enrolled in this session.');
+  }
 
+  /**
+   * Staff (admin or field coordinator) remove a volunteer from a roster.
+   * Same transaction as self-withdrawal — the DB trigger promotes the
+   * waitlist head either way, so everyone else's capacity moves at once.
+   * Unlike a self-withdrawal, the volunteer did not click this themselves,
+   * so they are TOLD: an enrollment_removed email goes to them. Audited.
+   */
+  async adminUnenroll(principal: AuthPrincipal, eventId: string, volunteerId: string) {
+    const volunteer = await this.volunteers.findOne({
+      where: { id: volunteerId },
+      relations: { user: true },
+    });
+    if (!volunteer) throw new NotFoundException('Volunteer not found');
+
+    const result = await this.withdrawAs(
+      volunteer,
+      eventId,
+      'This volunteer is not enrolled in this session.',
+    );
+
+    const [event] = await this.dataSource.query(
+      `SELECT COALESCE(e.name, a.name) AS display_name, e.date, a.program_id, p.name AS program_name
+       FROM events e JOIN activities a ON a.id = e.activity_id JOIN programs p ON p.id = a.program_id
+       WHERE e.id = $1`,
+      [eventId],
+    );
+    if (event && volunteer.user?.email) {
+      await this.notifications.queueEmail({
+        templateKey: 'enrollment_removed',
+        to: volunteer.user.email,
+        recipientType: 'volunteer',
+        volunteerId: volunteer.id,
+        eventId,
+        programId: event.program_id,
+        context: {
+          firstName: volunteer.firstName,
+          eventName: event.display_name,
+          eventDate: fmtDate(event.date),
+          programName: event.program_name,
+        },
+      });
+    }
+    await this.audit.record(principal, {
+      action: 'enrollment.staff_removed',
+      entity: 'event_enrollments',
+      entityId: eventId,
+      after: { volunteerId, volunteerName: volunteer.fullName, promoted: result.promoted },
+    });
+    return result;
+  }
+
+  private async withdrawAs(volunteer: Volunteer, eventId: string, notFoundMessage: string) {
     const promotedIds: string[] = await this.dataSource.transaction(async (mgr) => {
       const enrollment = await mgr.findOne(EventEnrollment, {
         where: { volunteerId: volunteer.id, eventId, status: 'enrolled' },
       });
-      if (!enrollment) throw new NotFoundException('You are not enrolled in this session.');
+      if (!enrollment) throw new NotFoundException(notFoundMessage);
 
       // Snapshot the head of the queue: the DB trigger promotes on this update,
       // and the service's job afterwards is only to email whoever moved up.
