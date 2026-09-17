@@ -19,7 +19,7 @@ export default defineConfig({
     // Vite rejects unknown Host headers (DNS-rebinding protection). Allow the
     // hostnames the dev server legitimately serves behind Caddy: tailnet
     // machine names and Cloudflare quick-tunnel URLs.
-    allowedHosts: ['.ts.net', '.trycloudflare.com'],
+    allowedHosts: ['.trycloudflare.com', 'vms.parinaam.ai'],
   },
   build: {
     sourcemap: true,

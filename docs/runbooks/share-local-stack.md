@@ -1,3 +1,11 @@
+> **RETIRED 2026-09-17.** The funnel is OFF, the serve config reset, and every tailnet
+> value is out of `.env` and `vite.config.ts` — sharing moves to the Parinaam VM at
+> `vms.parinaam.ai` (see `deploy.md`). This document stays as the recipe: re-enabling is
+> `tailscale funnel --bg 8090`, the `PUBLIC_WEB_URL` flip below, the funnel origins back
+> into `CORS_ORIGINS`, and `.ts.net` back into Vite's `allowedHosts`. The one-time tailnet
+> grants (HTTPS certs, funnel approval) are still active in the Tailscale admin console;
+> revoke them there if the retirement is permanent.
+
 # Runbook — Sharing the local stack (Caddy + Tailscale Funnel)
 
 *Set up 2026-08-25. The laptop-hosted stack is reachable by the client team at a public
