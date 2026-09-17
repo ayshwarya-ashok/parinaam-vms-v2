@@ -422,6 +422,18 @@ export function VolunteerDirectory() {
         ]}
       />
 
+      {/* Pagination sits ABOVE the table (client preference, Round 27 era):
+          you should not have to scroll a long page to find the page controls. */}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <TablePagination
+          component="div"
+          count={data?.meta.total ?? 0}
+          page={page}
+          onPageChange={(_, p) => setPage(p)}
+          rowsPerPage={limit}
+          rowsPerPageOptions={[limit]}
+        />
+      </Box>
       <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3 }}>
         <Table size="small">
           <TableHead>
@@ -558,16 +570,6 @@ export function VolunteerDirectory() {
         </Table>
       </TableContainer>
 
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <TablePagination
-          component="div"
-          count={data?.meta.total ?? 0}
-          page={page}
-          onPageChange={(_, p) => setPage(p)}
-          rowsPerPage={limit}
-          rowsPerPageOptions={[limit]}
-        />
-      </Box>
 
       <VolunteerDetailDrawer
         id={openId}
