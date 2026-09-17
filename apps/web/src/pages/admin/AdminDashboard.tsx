@@ -97,12 +97,14 @@ export function AdminDashboard() {
       {/* Awaiting your review — the day's actionable backlog, each card a link. */}
       {(() => {
         const review = [
-          {
+          // Approving registrations is admin-only — a coordinator cannot act
+          // on this card, so they do not get it.
+          ...(readOnly ? [] : [{
             count: s?.pending_registrations,
             label: 'Registrations awaiting review',
             hint: 'approve or reject new volunteers',
             to: '/admin/volunteers?registration=pending',
-          },
+          }]),
           {
             count: s?.sessions_to_close,
             label: 'Sessions past their date to close',

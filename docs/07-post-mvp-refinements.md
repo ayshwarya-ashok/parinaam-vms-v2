@@ -704,7 +704,7 @@ the action happens:
 
 | Card | Counts | Lands on |
 |---|---|---|
-| Registrations awaiting review | `registration_status = pending` | Volunteers, **pre-filtered to pending** (`?registration=pending`) |
+| Registrations awaiting review (**admin only** — a coordinator cannot approve, so no card) | `registration_status = pending` | Volunteers, **pre-filtered to pending** (`?registration=pending`) |
 | Sessions past their date to close | upcoming, unphased, date ≤ today | Field Execution |
 | Certificates ready to issue | attended hours, no issued certificate, erased excluded | Recognition → Certificates |
 
