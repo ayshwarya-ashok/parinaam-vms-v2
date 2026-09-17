@@ -36,6 +36,12 @@ internet ──443──▶ host Caddy (systemd, /etc/caddy/Caddyfile)
   until DNS resolves, backs up `/etc/caddy/Caddyfile`, appends the site block,
   **`caddy validate` before `systemctl reload caddy`** (a typo must never take down
   v1), then smoke-tests both hostnames.
+- **Interim public hostname (live since 2026-09-17)**: `https://parinaam-vms.duckdns.org` —
+  a free DuckDNS record pointing at the VM, served by the SAME host-Caddy site-block
+  pattern as the future `vms.parinaam.ai` (automatic Let's Encrypt cert). `PUBLIC_WEB_URL`
+  and `PUBLIC_API_URL` point at it until the real record lands; the cutover is: run
+  `vm-go-public.sh`, flip both env vars, recreate api+worker, optionally remove the
+  DuckDNS block.
 - **Reaching the stack before DNS** (or the loopback-only surfaces after):
   `ssh -i vm-ssh-key -L 18090:127.0.0.1:8090 volunteer@164.52.223.64`, then open
   `http://localhost:18090`. Same trick for n8n (5679), Adminer (8082), Postgres (5433).
