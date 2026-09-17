@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
-| **Period** | 2026-08-20 → 2026-09-15 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across twenty-seven review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Period** | 2026-08-20 → 2026-09-17 (ongoing) |
+| **Driver** | Hands-on testing by the product owner across twenty-eight review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -693,6 +693,26 @@ doing their job with real concurrent users. Authz matrix: **81 endpoints × 4 ro
   single group's chips ran on one unwrappable line — with one chip per program, Metrics and
   Field Execution walked off the right edge of the screen. The group container itself is
   flex-wrapped, so the chips break to new lines with the viewport.
+
+---
+
+## Round 28 — "Awaiting your review" on the staff dashboard  (2026-09-17)
+
+The admin/coordinator dashboard gained a section between the KPI row and the module cards:
+three amber CLICKABLE cards, each a live count of actionable backlog, each a link to where
+the action happens:
+
+| Card | Counts | Lands on |
+|---|---|---|
+| Registrations awaiting review | `registration_status = pending` | Volunteers, **pre-filtered to pending** (`?registration=pending`) |
+| Sessions past their date to close | upcoming, unphased, date ≤ today | Field Execution |
+| Certificates ready to issue | attended hours, no issued certificate, erased excluded | Recognition → Certificates |
+
+Cards with a zero count disappear; all-clear shows "✓ Nothing waiting on you right now."
+The counts ride the existing /analytics/summary call (one round trip, both roles already
+authorized). Verified in headless Chrome: section renders for admin and coordinator with
+live counts (1 / 7 / 12 on the demo data), and clicking the registrations card lands on
+the directory filtered to exactly the pending row.
 
 ---
 

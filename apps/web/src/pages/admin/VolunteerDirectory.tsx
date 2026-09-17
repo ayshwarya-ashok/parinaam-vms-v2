@@ -21,6 +21,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
 import { useEffect, useState } from 'react';
@@ -115,7 +116,9 @@ export function VolunteerDirectory() {
   const readOnly = useAuth().user?.role === 'field_coordinator';
 
   const [q, setQ] = useState('');
-  const [registrationStatus, setRegistrationStatus] = useState('all');
+  // The dashboard review card links here with ?registration=pending.
+  const [searchParams] = useSearchParams();
+  const [registrationStatus, setRegistrationStatus] = useState(searchParams.get('registration') ?? 'all');
   const [category, setCategory] = useState('all');
   const [page, setPage] = useState(0);
   const [openId, setOpenId] = useState<string | null>(null);

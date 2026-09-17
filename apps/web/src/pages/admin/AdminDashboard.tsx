@@ -1,4 +1,4 @@
-import { Box, Button, Grid2 as Grid, Paper, Typography } from '@mui/material';
+import { Box, Button, ButtonBase, Grid2 as Grid, Paper, Typography } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { useSummary } from '@/api/admin';
 import { PageShell, StatTile } from '@/components';
@@ -93,6 +93,76 @@ export function AdminDashboard() {
           />
         </Grid>
       </Grid>
+
+      {/* Awaiting your review — the day's actionable backlog, each card a link. */}
+      {(() => {
+        const review = [
+          {
+            count: s?.pending_registrations,
+            label: 'Registrations awaiting review',
+            hint: 'approve or reject new volunteers',
+            to: '/admin/volunteers?registration=pending',
+          },
+          {
+            count: s?.sessions_to_close,
+            label: 'Sessions past their date to close',
+            hint: 'record attendance, then mark completed',
+            to: '/admin/field-execution',
+          },
+          {
+            count: s?.certificates_pending,
+            label: 'Certificates ready to issue',
+            hint: 'attended hours with no issued certificate',
+            to: '/admin/recognition/certificates',
+          },
+        ];
+        const open = review.filter((r) => (r.count ?? 0) > 0);
+        return (
+          <Box sx={{ mb: 3 }}>
+            <Typography sx={{ fontWeight: 700, mb: 1.25 }}>Awaiting your review</Typography>
+            {open.length === 0 ? (
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.6)' }}>
+                <Typography sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>
+                  ✓ Nothing waiting on you right now.
+                </Typography>
+              </Paper>
+            ) : (
+              <Grid container spacing={2}>
+                {open.map((r) => (
+                  <Grid key={r.label} size={{ xs: 12, sm: 6, md: 4 }}>
+                    <ButtonBase
+                      component={RouterLink}
+                      to={r.to}
+                      sx={{ display: 'block', width: '100%', textAlign: 'left', borderRadius: 3 }}
+                    >
+                      <Paper
+                        variant="outlined"
+                        sx={{
+                          p: 2,
+                          borderRadius: 3,
+                          height: '100%',
+                          bgcolor: 'rgba(255,208,54,0.12)',
+                          borderColor: 'rgba(179,126,0,0.35)',
+                          transition: 'transform 120ms ease, box-shadow 120ms ease',
+                          '&:hover': { transform: 'translateY(-2px)', boxShadow: 3 },
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+                          <Typography sx={{ fontSize: '1.5rem', fontWeight: 800 }}>{r.count}</Typography>
+                          <Typography sx={{ fontWeight: 700, fontSize: '0.92rem' }}>{r.label}</Typography>
+                        </Box>
+                        <Typography sx={{ color: 'text.secondary', fontSize: '0.82rem', mt: 0.5 }}>
+                          {r.hint} →
+                        </Typography>
+                      </Paper>
+                    </ButtonBase>
+                  </Grid>
+                ))}
+              </Grid>
+            )}
+          </Box>
+        );
+      })()}
 
       <Grid container spacing={2}>
         {visibleTiles.map((tile) => (

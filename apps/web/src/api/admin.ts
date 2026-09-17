@@ -93,6 +93,9 @@ export interface Summary {
   volunteers_this_week: number;
   active_trainings: number;
   mail_in_flight: number;
+  pending_registrations: number;
+  sessions_to_close: number;
+  certificates_pending: number;
 }
 
 // ── Queries ───────────────────────────────────────────────────────────────────
