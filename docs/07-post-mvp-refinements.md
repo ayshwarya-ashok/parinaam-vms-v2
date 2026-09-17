@@ -696,6 +696,29 @@ doing their job with real concurrent users. Authz matrix: **81 endpoints × 4 ro
 
 ---
 
+## Aside — v2 on the Parinaam VM, A/B beside v1  (2026-09-17)
+
+The Tailscale funnel retired and v2 deployed to Parinaam's own VM (`volunteer@164.52.223.64`)
+as a fully self-contained stack at `/opt/parinaam-vms-v2` — v1 untouched at
+volunteer.parinaam.ai, every v2 port loopback-bound, the host (systemd) Caddy the only
+public door. Waiting on one thing: the `vms.parinaam.ai` A record (Cloudflare access
+pending) — `scripts/vm-go-public.sh` then adds the validated site block in two minutes.
+Until then the stack is reachable over an SSH tunnel (`-L 18090:127.0.0.1:8090`).
+
+The deployment earned its keep by exercising the FIRST FRESH BOOT since Round 1, which
+found three latent seed bugs no laptop could ever hit (the local DB predates them all):
+the all-NULL `slides` VALUES column typing as text and killing S002 midway; the attendance
+`ON CONFLICT` targeting the pre-V015 UNIQUE that V015 split into partial indexes; and
+every volunteer landing `pending` because V011's approved-backfill is a migration that
+runs before seeds exist. All three fixed in the seeds, proven by a throwaway-postgres dry
+run of the whole bootstrap (zero errors), and the anita.rao pending registration the README
+promises is now genuinely seeded. Verified on the VM: health green (db/redis/n8n), the
+**324-check authz matrix**, a real email through n8n into Mailpit, and a headless-browser
+admin login through the tunnel — 21 volunteers, 1 awaiting review. Full topology and the
+first-boot gotchas: `runbooks/deploy.md`.
+
+---
+
 ## Round 28 — "Awaiting your review" on the staff dashboard  (2026-09-17)
 
 The admin/coordinator dashboard gained a section between the KPI row and the module cards:
