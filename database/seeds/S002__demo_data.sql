@@ -199,7 +199,9 @@ SELECT seed_question('t5', 3, 'Self-care for volunteers is:', 2,
 -- (run once after first boot; it renders each document and fixes sizes/hashes)
 -- -----------------------------------------------------------------------------
 INSERT INTO training_materials (training_id, name, file_type, file_path, file_size_text, pages, slides, duration_text, sort_order)
-SELECT t.id, m.name, m.ftype::material_file_type, m.path, m.size_text, m.pages, m.slides, m.dur, m.sort
+-- m.slides is NULL in every row, so the VALUES column has no type to infer and
+-- lands as text — the cast keeps a fresh boot from failing the whole seed here.
+SELECT t.id, m.name, m.ftype::material_file_type, m.path, m.size_text, m.pages, m.slides::int, m.dur, m.sort
 FROM (VALUES
   ('t1','Volunteer Handbook.pdf',              'pdf','seed/t1-handbook.pdf',   '3.2 MB', 24,  NULL, NULL, 1),
   ('t1','Welcome to Parinaam.pdf',             'pdf','seed/t1-welcome.pdf',    '1.6 KB', 1,   NULL, NULL, 2),
@@ -391,7 +393,9 @@ FROM (VALUES
 JOIN events e     ON e.code = m.ecode
 JOIN users u      ON u.email = m.email
 JOIN volunteers v ON v.user_id = u.id
-ON CONFLICT (event_id, volunteer_id) DO NOTHING;
+-- V015 split the old UNIQUE into partial indexes; these are unphased rows,
+-- so the conflict target must name the partial index predicate.
+ON CONFLICT (event_id, volunteer_id) WHERE phase_id IS NULL DO NOTHING;
 
 -- -----------------------------------------------------------------------------
 -- Coordinator occurrence reports (source of the beneficiary KPI)
