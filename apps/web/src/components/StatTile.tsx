@@ -10,7 +10,9 @@ interface StatTileProps {
 /** The prototype's info-stat tile: uppercase label, large value, muted sub-line. */
 export function StatTile({ label, value, sub }: StatTileProps) {
   return (
-    <Paper variant="outlined" sx={{ p: 2, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.75)' }}>
+    // height: '100%' — grid/flex cells stretch, but the Paper didn't fill
+    // them, so tiles with a sub-line towered over tiles without one.
+    <Paper variant="outlined" sx={{ p: 2, borderRadius: 3, height: '100%', bgcolor: 'rgba(255,255,255,0.75)' }}>
       <Typography
         sx={{
           fontSize: '0.75rem',
