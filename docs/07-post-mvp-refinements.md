@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
-| **Period** | 2026-08-20 → 2026-09-17 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across twenty-eight review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Period** | 2026-08-20 → 2026-09-25 (ongoing) |
+| **Driver** | Hands-on testing by the product owner across twenty-nine review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -736,6 +736,26 @@ The counts ride the existing /analytics/summary call (one round trip, both roles
 authorized). Verified in headless Chrome: section renders for admin and coordinator with
 live counts (1 / 7 / 12 on the demo data), and clicking the registrations card lands on
 the directory filtered to exactly the pending row.
+
+---
+
+## Round 29 — Certificates became the client's official artwork  (2026-09-25)
+
+Parinaam supplied their real Certificate of Appreciation PDFs (individual and corporate
+variants — teal frame, letterspaced title, Mallika Ghosh's signature, the Goodhearts
+mark). Instead of redrawing an approximation, the renderer now loads the client's PDF AS
+the page and overlays only the dynamic text: the recipient's name auto-sized onto the
+presentation line, one quiet caption with the system facts (certificate number, `via
+<organization>` on the corporate variant, program, sessions, hours — the figures the
+stale-reissue logic compares), and the issue date on the date line. Pixel-fidelity is by
+construction. Per-template overlay coordinates were measured by rendering a ruler grid
+onto each PDF (the corporate layout sits ~10pt higher — its body runs four lines). The
+legacy drawn certificate remains as the fallback when template assets are missing.
+
+All seven issued demo certificates were reissued so their stored PDFs carry the official
+artwork; a reissued corporate certificate was downloaded and visually verified. The VM
+needs nothing reissued (no certificates issued there yet) — new issues use the new
+renderer after the code sync.
 
 ---
 

@@ -69,7 +69,101 @@ export class CertificatePdfService {
     return this.logoBytes;
   }
 
+  /** The client's official artwork, read once per variant. */
+  private templateBytes: Partial<Record<'individual' | 'corporate', Buffer | null>> = {};
+
+  private loadTemplate(type: 'individual' | 'corporate'): Buffer | null {
+    if (this.templateBytes[type] !== undefined) return this.templateBytes[type]!;
+    const name = `certificate-template-${type}.pdf`;
+    const candidates = [
+      join(__dirname, '../../assets/', name),
+      join(process.cwd(), 'src/assets/', name),
+      join(process.cwd(), 'dist/assets/', name),
+    ];
+    const found = candidates.find((c) => existsSync(c));
+    this.templateBytes[type] = found ? readFileSync(found) : null;
+    if (!found) this.logger.warn(`${name} not found — falling back to the drawn certificate`);
+    return this.templateBytes[type]!;
+  }
+
+  /**
+   * Certificates ARE the client's sample PDFs (2026-09-25): the official
+   * artwork is loaded as the page itself — border, logo, wording, Mallika
+   * Ghosh's signature, the Goodhearts mark all pixel-identical — and only the
+   * dynamic text is overlaid: the recipient's name on the presentation line,
+   * one small caption with the system facts (certificate number, program,
+   * sessions, hours — the figures reissue logic compares), and the issue
+   * date on the date line. The legacy drawn layout remains as the fallback
+   * when the template assets are missing.
+   */
   async render(data: CertificateData): Promise<Buffer> {
+    const tpl = this.loadTemplate(data.certType);
+    if (!tpl) return this.renderLegacy(data);
+
+    const doc = await PDFDocument.load(tpl);
+    const page = doc.getPage(0);
+    const { width } = page.getSize(); // 792 x 612 (Letter landscape)
+    const sans = await doc.embedFont(StandardFonts.Helvetica);
+    const sansBold = await doc.embedFont(StandardFonts.HelveticaBold);
+    const sansItalic = await doc.embedFont(StandardFonts.HelveticaOblique);
+    const centerX = width / 2;
+
+    // The two templates place their fields a little differently (the corporate
+    // body runs four lines) — coordinates measured with a ruler overlay
+    // rendered onto each template, in points from the bottom-left.
+    const GEOM = {
+      individual: { captionY: 302, whiteout: { y: 299.5, h: 13 }, nameY: 322, dateY: 141.5 },
+      corporate: { captionY: 310, whiteout: { y: 307.5, h: 14 }, nameY: 331, dateY: 135.5 },
+    }[data.certType];
+
+    // The template prints a field label under the name line; the issued
+    // certificate replaces it with the facts caption, so paint it out first
+    // (the band stops short of the rule above it).
+    page.drawRectangle({
+      x: centerX - 165, y: GEOM.whiteout.y, width: 330, height: GEOM.whiteout.h, color: rgb(1, 1, 1),
+    });
+
+    // Recipient name, auto-sized to stay on the line.
+    let nameSize = 24;
+    while (nameSize > 12 && sansBold.widthOfTextAtSize(data.volunteerName, nameSize) > 380) nameSize -= 1;
+    page.drawText(data.volunteerName, {
+      x: centerX - sansBold.widthOfTextAtSize(data.volunteerName, nameSize) / 2,
+      y: GEOM.nameY,
+      size: nameSize,
+      font: sansBold,
+      color: INK,
+    });
+
+    // The system facts, in the quiet style of the label they replace.
+    const sessions = `${data.eventsAttended} session${data.eventsAttended === 1 ? '' : 's'}`;
+    const caption = [
+      data.certificateNumber,
+      data.certType === 'corporate' && data.organizationName ? `via ${data.organizationName}` : null,
+      data.programName,
+      `${sessions} · ${data.hours} volunteer hours`,
+    ].filter(Boolean).join('  ·  ');
+    page.drawText(caption, {
+      x: centerX - sansItalic.widthOfTextAtSize(caption, 8.5) / 2,
+      y: GEOM.captionY,
+      size: 8.5,
+      font: sansItalic,
+      color: MUTED,
+    });
+
+    // Issue date on the date line (right-hand rule beside the signature).
+    const dateText = fmtDate(data.issuedOn);
+    page.drawText(dateText, {
+      x: 562 - sans.widthOfTextAtSize(dateText, 10.5) / 2,
+      y: GEOM.dateY,
+      size: 10.5,
+      font: sans,
+      color: INK,
+    });
+
+    return Buffer.from(await doc.save());
+  }
+
+  private async renderLegacy(data: CertificateData): Promise<Buffer> {
     const doc = await PDFDocument.create();
     const page = doc.addPage([W, H]);
 
