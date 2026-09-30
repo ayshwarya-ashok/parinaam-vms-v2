@@ -368,7 +368,9 @@ export function SessionRecord() {
               ✓ Mark completed
             </Button>
           )}
-          {event.status === 'upcoming' && (
+          {/* Enrollment closes when the date passes (BR-17) — the server
+              would refuse anyway, so don't offer a dead-end button. */}
+          {event.status === 'upcoming' && String(event.date).slice(0, 10) >= todayIsoLocal() && (
             <Button variant="pillOutlined" onClick={() => { setEnrollVolunteer(null); setEnrollOpen(true); }}>
               ＋ Enroll volunteer
             </Button>
@@ -385,6 +387,13 @@ export function SessionRecord() {
       {event.status === 'cancelled' && (
         <Alert severity="warning" sx={{ mb: 2, borderRadius: 3 }}>
           This session was cancelled{event.cancel_reason ? `: ${event.cancel_reason}` : '.'}
+        </Alert>
+      )}
+
+      {event.status === 'upcoming' && String(event.date).slice(0, 10) < todayIsoLocal() && (
+        <Alert severity="info" sx={{ mb: 2, borderRadius: 3 }}>
+          This session&apos;s date has passed, so enrollment is closed. Mark it completed, then
+          record anyone who attended unenrolled as a walk-in.
         </Alert>
       )}
 
@@ -552,7 +561,23 @@ export function SessionRecord() {
               label="Slots left"
               value={event.max_slots !== null ? Math.max(0, event.max_slots - summary.enrolled) : '—'}
             />
-            <StatTile label="Status" value={event.status === 'draft' ? 'Draft' : 'Open'} sub={event.status === 'draft' ? 'not visible to volunteers' : 'accepting enrolments'} />
+            <StatTile
+              label="Status"
+              value={
+                event.status === 'draft'
+                  ? 'Draft'
+                  : String(event.date).slice(0, 10) < todayIsoLocal()
+                    ? 'Closed'
+                    : 'Open'
+              }
+              sub={
+                event.status === 'draft'
+                  ? 'not visible to volunteers'
+                  : String(event.date).slice(0, 10) < todayIsoLocal()
+                    ? 'date has passed'
+                    : 'accepting enrolments'
+              }
+            />
           </>
         ) : (
           <>

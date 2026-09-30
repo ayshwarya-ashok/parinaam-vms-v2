@@ -130,7 +130,9 @@ export class EnrollmentsService {
       // Lock the occurrence row: two concurrent enrollments must serialise on
       // the capacity check, or the last seat gets sold twice.
       const [event] = await mgr.query(
-        `SELECT e.*, COALESCE(e.name, a.name) AS display_name, a.program_id, p.name AS program_name
+        `SELECT e.*, COALESCE(e.name, a.name) AS display_name, a.program_id, p.name AS program_name,
+                a.status AS activity_status, p.status AS program_status,
+                (e.date < CURRENT_DATE) AS date_passed
          FROM events e
          JOIN activities a ON a.id = e.activity_id
          JOIN programs p ON p.id = a.program_id
@@ -141,12 +143,25 @@ export class EnrollmentsService {
       if (!event) throw new NotFoundException('Session not found');
 
       // 1 — BR-17 cascade in one call: event status, activity status,
-      //     program status, past date.
+      //     program status, past date. The verdict is the function's; the
+      //     message names which leg failed instead of a generic "not open".
       const [{ fn_is_event_enrollable: enrollable }] = await mgr.query(
         'SELECT fn_is_event_enrollable($1)',
         [eventId],
       );
-      if (!enrollable) throw BusinessErrors.eventNotEnrollable();
+      if (!enrollable) {
+        throw BusinessErrors.eventNotEnrollable(
+          event.status !== 'upcoming'
+            ? `This session is ${event.status}, so enrollment is closed.`
+            : event.date_passed
+              ? 'This session’s date has already passed, so enrollment is closed.'
+              : event.activity_status !== 'active'
+                ? `Enrollment is paused because the activity is ${event.activity_status}.`
+                : event.program_status !== 'active'
+                  ? `Enrollment is paused because the program is ${event.program_status}.`
+                  : undefined,
+        );
+      }
 
       // 2 — no double state
       const existing = await mgr.findOne(EventEnrollment, {

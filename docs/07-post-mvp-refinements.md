@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
-| **Period** | 2026-08-20 → 2026-09-30 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across thirty-two review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Period** | 2026-08-20 → 2026-10-01 (ongoing) |
+| **Driver** | Hands-on testing by the product owner across thirty-three review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -807,6 +807,25 @@ select, so it got the same picker; the lazy hundred-row candidates query is gone
 entirely. Browser-verified end to end: "kav" narrows to Kavya Hegde alone, "kiran"
 (Kiran Rao is already enrolled) shows the roster-hidden empty state, and selecting the
 match enables Enroll.
+
+---
+
+## Round 33 — A dead-end button on past-dated sessions  (2026-10-01)
+
+Enrolling a volunteer into the 26 September Coat Collection Point session (date passed,
+but never marked completed, so still "upcoming") walked the staff member all the way
+through the picker and then refused with the generic "This session is not open for
+enrollment." Two fixes. The session record no longer offers the dead end: once the date
+passes, "＋ Enroll volunteer" disappears, the Status tile flips to **Closed — date has
+passed** (it said "Open — accepting enrolments", contradicting reality), and an info
+banner spells out the actual path — mark the session completed, then record anyone who
+attended unenrolled as a walk-in. And for any route that still reaches the server gate
+(a stale tab, a program paused mid-dialog), `EVENT_NOT_ENROLLABLE` now names which BR-17
+leg failed instead of the catch-all: "This session's date has already passed…", "This
+session is completed/cancelled…", or "Enrollment is paused because the activity/program
+is on-hold/…". Browser-verified on both sides of the line: the past session shows the
+banner, the Closed tile, Mark completed and no enroll button; a future session still
+offers Enroll as before.
 
 ---
 

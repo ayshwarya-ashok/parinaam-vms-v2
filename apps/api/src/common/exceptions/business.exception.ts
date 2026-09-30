@@ -50,9 +50,8 @@ export const BusinessErrors = {
   eventNotEnrollable: (reason?: string) =>
     new BusinessException(
       'EVENT_NOT_ENROLLABLE',
-      'This session is not open for enrollment.',
+      reason ?? 'This session is not open for enrollment.',
       HttpStatus.CONFLICT,
-      reason ? { reason } : undefined,
     ),
 
   consentRequired: () =>
