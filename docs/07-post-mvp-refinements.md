@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-10-01 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across thirty-three review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across thirty-four review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -826,6 +826,21 @@ session is completed/cancelled…", or "Enrollment is paused because the activit
 is on-hold/…". Browser-verified on both sides of the line: the past session shows the
 banner, the Closed tile, Mark completed and no enroll button; a future session still
 offers Enroll as before.
+
+---
+
+## Round 34 — An October worth testing in  (2026-10-01)
+
+The three flagship programs had almost nothing on the calendar for the month the client
+team is actually testing in: AAP's next session was mid-November, Chote Kadam's only
+event was September's Hosur Road renovation, and Activity-Based Volunteering had nothing
+upcoming at all. Seed `S008` adds seven enrollable October 2026 sessions — two Read to
+Rise circles and an Infosys BPM exposure visit (AAP), an anganwadi repainting and a
+school library setup (Chote Kadam), and two corporate day outings (ABV) — all future-
+dated 'upcoming' with a beneficiary-community link each (the V013 rule), codes continuing
+the seed block (`EVT-2026-0206…0212`, clear of the app's count-based generator). Applied
+to the running local and VM databases and verified through the volunteer browse API:
+every one lists as enrollable.
 
 ---
 
