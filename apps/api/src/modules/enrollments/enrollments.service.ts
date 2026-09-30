@@ -223,16 +223,36 @@ export class EnrollmentsService {
         });
       }
 
-      // 6 — the seat
-      const enrollment = await mgr.save(
-        mgr.create(EventEnrollment, {
-          volunteerId: volunteer.id,
-          eventId,
-          status: 'enrolled',
-          skills: opts.skills ?? volunteer.skills ?? null,
-          conflictAcknowledged: conflicts.length > 0,
-        }),
-      );
+      // 6 — the seat. The unique key spans ALL statuses, so a volunteer who
+      // withdrew still owns a 'cancelled' row for this session — re-enrolling
+      // REVIVES that row rather than inserting a duplicate (which used to hit
+      // the constraint and surface as a baffling generic 409).
+      const withdrawn = await mgr.findOne(EventEnrollment, {
+        where: { volunteerId: volunteer.id, eventId, status: 'cancelled' },
+      });
+      let enrollment: EventEnrollment;
+      if (withdrawn) {
+        withdrawn.status = 'enrolled';
+        withdrawn.cancelledAt = null;
+        withdrawn.promotedFromWaitlist = false;
+        withdrawn.skills = opts.skills ?? volunteer.skills ?? null;
+        withdrawn.conflictAcknowledged = conflicts.length > 0;
+        enrollment = await mgr.save(withdrawn);
+        // enrolled_at is a create-date column TypeORM won't touch on update —
+        // set the re-enrollment moment explicitly or the roster shows the
+        // original date from before the withdrawal.
+        await mgr.query('UPDATE event_enrollments SET enrolled_at = now() WHERE id = $1', [withdrawn.id]);
+      } else {
+        enrollment = await mgr.save(
+          mgr.create(EventEnrollment, {
+            volunteerId: volunteer.id,
+            eventId,
+            status: 'enrolled',
+            skills: opts.skills ?? volunteer.skills ?? null,
+            conflictAcknowledged: conflicts.length > 0,
+          }),
+        );
+      }
 
       // 7 — confirmation, written to the outbox in this same transaction
       await this.queueConfirmation(mgr, volunteer, event, confirmationEmail);

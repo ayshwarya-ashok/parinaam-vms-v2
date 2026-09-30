@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-09-30 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across thirty review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across thirty-one review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -772,6 +772,23 @@ official-artwork certificate rendered in-app. On review, the viewer's own toolba
 suppressed (`#toolbar=0&navpanes=0`) so the dialog's Download button is the single way
 out — and the zoomed preview exposed faint tips of the painted-out template label, so the
 white-out band grew a couple of points and all seven certificates were reissued once more.
+
+---
+
+## Round 31 — Withdraw, then come back  (2026-09-30)
+
+Reported as a confusing message ("The request conflicts with an existing record or a
+business rule" on double-enrolling), diagnosed as a functional bug: the enrollment unique
+key spans ALL statuses, and withdrawal keeps the row as 'cancelled' — so a volunteer who
+withdrew could NEVER re-join that session; the insert hit the constraint and the generic
+409 leaked out (the friendly ALREADY_ENROLLED check only looks at live rows, correctly).
+The demo data even held evidence of a team member hitting exactly this. Re-enrolling now
+REVIVES the cancelled row — status back to enrolled, cancelled_at cleared, enrolled_at
+reset to the re-enrollment moment (a raw update: it is a create-date column TypeORM
+refuses to touch), waitlist-promotion flag and skills refreshed. Verified live through
+the whole cycle: enroll → friendly ALREADY_ENROLLED on the dup → withdraw → re-enroll
+201 → friendly dup again. Staff enroll/unenroll share the same code paths, so they
+inherit the fix.
 
 ---
 
