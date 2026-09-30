@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
-| **Period** | 2026-08-20 → 2026-09-25 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across twenty-nine review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Period** | 2026-08-20 → 2026-09-30 (ongoing) |
+| **Driver** | Hands-on testing by the product owner across thirty review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -756,6 +756,19 @@ All seven issued demo certificates were reissued so their stored PDFs carry the 
 artwork; a reissued corporate certificate was downloaded and visually verified. The VM
 needs nothing reissued (no certificates issued there yet) — new issues use the new
 renderer after the code sync.
+
+---
+
+## Round 30 — Certificate preview in the app  (2026-09-30)
+
+Both certificate surfaces gained 👁 **Preview**: the volunteer wallet and the admin
+certificates table open the PDF inline (a shared `CertificatePreviewDialog` — the blob
+renders in the browser's own viewer, never leaving the page) with **Download** right in
+the dialog, so seeing what was issued no longer means a detour through the downloads
+folder. The download helper was refactored into `fetchCertificateBlob` used by both
+paths; blob URLs are revoked on close. Verified in headless Chrome as a volunteer:
+dialog opens, viewer carries a blob: source, Download enabled, screenshot showing the
+official-artwork certificate rendered in-app.
 
 ---
 

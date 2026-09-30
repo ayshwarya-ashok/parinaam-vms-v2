@@ -26,7 +26,7 @@ import {
   openCertificate,
   useCertificateCandidates,
 } from '@/api/recognition';
-import { ConfirmDialog, FilterBar, PageShell, SortableCell, useTableSort } from '@/components';
+import { CertificatePreviewDialog,ConfirmDialog, FilterBar, PageShell, SortableCell, useTableSort } from '@/components';
 import { tokens } from '@/theme';
 
 function fmtDate(iso: string | null): string {
@@ -40,6 +40,7 @@ function fmtDate(iso: string | null): string {
 
 /** BR-18 console: who has earned what, per program, and what has gone out. */
 export function CertificatesAdmin() {
+  const [previewId, setPreviewId] = useState<string | null>(null);
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('all');
   const [programId, setProgramId] = useState('');
@@ -213,6 +214,10 @@ export function CertificatesAdmin() {
                         ⬇ PDF
                       </Button>
                       <Button size="small" variant="pillOutlined" sx={{ px: 1.25, py: 0.3, mr: 0.5 }}
+                        onClick={() => setPreviewId(c.certificate!.id)}>
+                        👁 Preview
+                      </Button>
+                      <Button size="small" variant="pillOutlined" sx={{ px: 1.25, py: 0.3, mr: 0.5 }}
                         disabled={resend.isPending}
                         onClick={() => resend.mutate(c.certificate!.id)}>
                         ✉ Resend
@@ -284,6 +289,7 @@ export function CertificatesAdmin() {
         onConfirm={() => bulk.mutate()}
         onCancel={() => setBulkOpen(false)}
       />
+      <CertificatePreviewDialog certificateId={previewId} onClose={() => setPreviewId(null)} />
     </PageShell>
   );
 }

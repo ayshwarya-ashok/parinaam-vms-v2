@@ -1,7 +1,8 @@
 import { Box, Button, Paper, Typography } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
+import { useState } from 'react';
 import { openCertificate, useMyCertificates } from '@/api/recognition';
-import { EmptyState, PageShell } from '@/components';
+import { CertificatePreviewDialog, EmptyState, PageShell } from '@/components';
 import { tokens } from '@/theme';
 
 function fmtDate(iso: string | null): string {
@@ -15,6 +16,7 @@ function fmtDate(iso: string | null): string {
 
 /** The volunteer's wallet — every issued certificate, downloadable any time. */
 export function MyCertificates() {
+  const [previewId, setPreviewId] = useState<string | null>(null);
   const { data, isLoading } = useMyCertificates();
 
   return (
@@ -85,13 +87,20 @@ export function MyCertificates() {
               <Typography sx={{ fontSize: '0.78rem', color: 'text.secondary' }}>
                 {cert.certificateNumber} · issued {fmtDate(cert.issuedAt)}
               </Typography>
-              <Button size="small" variant="pill" sx={{ px: 1.75, py: 0.5 }} onClick={() => void openCertificate(cert.id)}>
-                ⬇ Download PDF
-              </Button>
+              <Box sx={{ display: 'flex', gap: 0.75 }}>
+                <Button size="small" variant="pillOutlined" sx={{ px: 1.5, py: 0.5 }} onClick={() => setPreviewId(cert.id)}>
+                  👁 Preview
+                </Button>
+                <Button size="small" variant="pill" sx={{ px: 1.75, py: 0.5 }} onClick={() => void openCertificate(cert.id)}>
+                  ⬇ Download PDF
+                </Button>
+              </Box>
             </Box>
           </Paper>
         ))}
       </Box>
+
+      <CertificatePreviewDialog certificateId={previewId} onClose={() => setPreviewId(null)} />
     </PageShell>
   );
 }

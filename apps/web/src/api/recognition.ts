@@ -70,13 +70,17 @@ export const useMyCertificates = () =>
  * (<volunteerId>-<certificateNumber>.pdf); we save under that rather than
  * window.open()ing the blob, which would name the file after a browser GUID.
  */
-export async function openCertificate(id: string): Promise<void> {
+export async function fetchCertificateBlob(id: string): Promise<{ blob: Blob; filename: string }> {
   const res = await api.get(`/certificates/${id}/download`, { responseType: 'blob' });
-
   const disposition = String(res.headers['content-disposition'] ?? '');
   const filename = /filename="?([^";]+)"?/.exec(disposition)?.[1] ?? `certificate-${id}.pdf`;
+  return { blob: res.data as Blob, filename };
+}
 
-  const url = URL.createObjectURL(res.data as Blob);
+export async function openCertificate(id: string): Promise<void> {
+  const { blob, filename } = await fetchCertificateBlob(id);
+
+  const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
   link.download = filename;
