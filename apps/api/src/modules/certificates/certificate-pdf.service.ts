@@ -112,8 +112,8 @@ export class CertificatePdfService {
     // body runs four lines) — coordinates measured with a ruler overlay
     // rendered onto each template, in points from the bottom-left.
     const GEOM = {
-      individual: { captionY: 302, whiteout: { y: 299.5, h: 13 }, nameY: 322, dateY: 141.5 },
-      corporate: { captionY: 310, whiteout: { y: 307.5, h: 14 }, nameY: 331, dateY: 135.5 },
+      individual: { captionY: 302, whiteout: { y: 299, h: 15.8 }, nameY: 322, dateY: 141.5 },
+      corporate: { captionY: 310, whiteout: { y: 307, h: 17 }, nameY: 331, dateY: 135.5 },
     }[data.certType];
 
     // The template prints a field label under the name line; the issued

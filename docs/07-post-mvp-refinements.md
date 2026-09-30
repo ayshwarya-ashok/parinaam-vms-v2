@@ -768,7 +768,10 @@ the dialog, so seeing what was issued no longer means a detour through the downl
 folder. The download helper was refactored into `fetchCertificateBlob` used by both
 paths; blob URLs are revoked on close. Verified in headless Chrome as a volunteer:
 dialog opens, viewer carries a blob: source, Download enabled, screenshot showing the
-official-artwork certificate rendered in-app.
+official-artwork certificate rendered in-app. On review, the viewer's own toolbar was
+suppressed (`#toolbar=0&navpanes=0`) so the dialog's Download button is the single way
+out — and the zoomed preview exposed faint tips of the painted-out template label, so the
+white-out band grew a couple of points and all seven certificates were reissued once more.
 
 ---
 

@@ -66,9 +66,13 @@ export function CertificatePreviewDialog({ certificateId, title, onClose }: Cert
             {error}
           </Alert>
         ) : url ? (
+          // #toolbar=0 hides the viewer chrome (its own download/print/zoom) so the
+          // dialog's Download button is the one way out; #navpanes=0 drops the
+          // thumbnail rail a one-page certificate has no use for. (Chromium/Edge
+          // honor these; Firefox's viewer shows its toolbar regardless.)
           <Box
             component="iframe"
-            src={url}
+            src={url + '#toolbar=0&navpanes=0'}
             title={title ?? 'Certificate preview'}
             sx={{ border: 0, width: '100%', height: '100%' }}
           />
