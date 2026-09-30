@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-09-30 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across thirty-one review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across thirty-two review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -789,6 +789,24 @@ refuses to touch), waitlist-promotion flag and skills refreshed. Verified live t
 the whole cycle: enroll → friendly ALREADY_ENROLLED on the dup → withdraw → re-enroll
 201 → friendly dup again. Staff enroll/unenroll share the same code paths, so they
 inherit the fix.
+
+---
+
+## Round 32 — Finding the volunteer, not scrolling for them  (2026-09-30)
+
+The staff "Enroll a volunteer" dialog offered the whole approved directory as a plain
+select — scroll until the name goes by, capped at the first hundred rows. Replaced with a
+shared type-ahead picker (`VolunteerPicker`): the search runs SERVER-side against the
+same matching the directory uses (name, email or phone digits), debounced 300 ms, capped
+at 20 suggestions, with everyone already on the roster hidden — enrolling a person twice
+is never what the staff member means. Option rows carry the full identity (bold name,
+email, category chip) instead of one crammed line, and the empty states explain
+themselves: "Type a name, email or phone number…" before a query, and a note that
+roster members are hidden when a search finds nobody. The walk-in dialog shared the old
+select, so it got the same picker; the lazy hundred-row candidates query is gone
+entirely. Browser-verified end to end: "kav" narrows to Kavya Hegde alone, "kiran"
+(Kiran Rao is already enrolled) shows the roster-hidden empty state, and selecting the
+match enables Enroll.
 
 ---
 

@@ -32,7 +32,9 @@ import {
   StatTile,
   StatusPill,
   useTableSort,
+  VolunteerPicker,
 } from '@/components';
+import type { PickerVolunteer } from '@/components';
 import { tokens } from '@/theme';
 import { PhasesPanel, type PhaseRow, type VisitRow } from './PhasesPanel';
 
@@ -165,8 +167,8 @@ export function SessionRecord() {
   const [edit, setEdit] = useState<EditState | null>(null);
   const [walkInOpen, setWalkInOpen] = useState(false);
   const [enrollOpen, setEnrollOpen] = useState(false);
-  const [enrollVolunteer, setEnrollVolunteer] = useState('');
-  const [walkInVolunteer, setWalkInVolunteer] = useState('');
+  const [enrollVolunteer, setEnrollVolunteer] = useState<PickerVolunteer | null>(null);
+  const [walkInVolunteer, setWalkInVolunteer] = useState<PickerVolunteer | null>(null);
   const [walkInHours, setWalkInHours] = useState('');
   const queryClient = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
@@ -196,28 +198,15 @@ export function SessionRecord() {
     source: (r) => r.source,
   });
 
-  // Active, approved volunteers — the only people an admin may record as
-  // walk-ins. Fetched lazily: most sessions never need it.
-  const { data: activeVolunteers } = useQuery({
-    queryKey: ['walk-in-candidates'],
-    queryFn: async () =>
-      (
-        await api.get<{ data: Array<{ id: string; firstName: string; lastName: string; email: string }> }>(
-          '/volunteers',
-          { params: { registrationStatus: 'approved', limit: 100 } },
-        )
-      ).data.data,
-    enabled: walkInOpen || enrollOpen,
-  });
-
+  // People already on the roster are hidden from both pickers — enrolling or
+  // recording them again is never what the staff member means.
   const rosterIds = new Set((data?.roster ?? []).map((r) => r.volunteer_id));
-  const walkInCandidates = (activeVolunteers ?? []).filter((v) => !rosterIds.has(v.id));
 
   const recordWalkIn = useMutation({
     mutationFn: async () =>
       (
         await api.post(`/events/${id}/attendance`, {
-          volunteerId: walkInVolunteer,
+          volunteerId: walkInVolunteer?.id,
           attended: true,
           hoursContributed: Number(walkInHours),
           notes: 'Walk-in recorded by admin.',
@@ -227,7 +216,7 @@ export function SessionRecord() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['session-record', id] });
       setWalkInOpen(false);
-      setWalkInVolunteer('');
+      setWalkInVolunteer(null);
       setWalkInHours('');
       enqueueSnackbar('Walk-in recorded', { variant: 'success' });
     },
@@ -239,13 +228,13 @@ export function SessionRecord() {
       (
         await api.post<{ state: 'enrolled' | 'waitlisted'; waitlistPosition?: number }>(
           `/events/${id}/enrollments`,
-          { volunteerId: enrollVolunteer },
+          { volunteerId: enrollVolunteer?.id },
         )
       ).data,
     onSuccess: (res) => {
       void queryClient.invalidateQueries({ queryKey: ['session-record', id] });
       setEnrollOpen(false);
-      setEnrollVolunteer('');
+      setEnrollVolunteer(null);
       enqueueSnackbar(
         res.state === 'enrolled'
           ? 'Enrolled — the volunteer sees it on their dashboard and got the confirmation email'
@@ -380,7 +369,7 @@ export function SessionRecord() {
             </Button>
           )}
           {event.status === 'upcoming' && (
-            <Button variant="pillOutlined" onClick={() => { setEnrollVolunteer(''); setEnrollOpen(true); }}>
+            <Button variant="pillOutlined" onClick={() => { setEnrollVolunteer(null); setEnrollOpen(true); }}>
               ＋ Enroll volunteer
             </Button>
           )}
@@ -416,21 +405,15 @@ export function SessionRecord() {
         <DialogTitle>Enroll a volunteer</DialogTitle>
         <DialogContent sx={{ display: 'grid', gap: 2, pt: '8px !important' }}>
           <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>
-            Active, approved volunteers who are not already on this roster. They get the usual
-            confirmation email, and if the session is full they join the waitlist.
+            Search across every active, approved volunteer. They get the usual confirmation
+            email, and if the session is full they join the waitlist.
           </Typography>
-          <TextField
-            select
-            label="Volunteer"
+          <VolunteerPicker
             value={enrollVolunteer}
-            onChange={(e) => setEnrollVolunteer(e.target.value)}
-          >
-            {walkInCandidates.map((v) => (
-              <MenuItem key={v.id} value={v.id}>
-                {v.firstName} {v.lastName} — {v.email}
-              </MenuItem>
-            ))}
-          </TextField>
+            onChange={setEnrollVolunteer}
+            excludeIds={rosterIds}
+            autoFocus
+          />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button variant="pillOutlined" onClick={() => setEnrollOpen(false)}>
@@ -828,19 +811,12 @@ export function SessionRecord() {
             For someone who attended without enrolling. Only active, approved volunteers can be
             recorded; the entry is marked as an admin action in the audit trail.
           </Alert>
-          <TextField
-            select
-            label="Volunteer"
+          <VolunteerPicker
             value={walkInVolunteer}
-            onChange={(e) => setWalkInVolunteer(e.target.value)}
-            helperText={walkInCandidates.length === 0 ? 'Every active volunteer is already on this roster.' : undefined}
-          >
-            {walkInCandidates.map((v) => (
-              <MenuItem key={v.id} value={v.id}>
-                {v.firstName} {v.lastName} — {v.email}
-              </MenuItem>
-            ))}
-          </TextField>
+            onChange={setWalkInVolunteer}
+            excludeIds={rosterIds}
+            autoFocus
+          />
           <TextField
             label="Hours contributed"
             type="number"
