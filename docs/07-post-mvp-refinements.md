@@ -1008,6 +1008,11 @@ across every table-bearing page — directory, field execution, reports (both ta
 scheduled reports, certificates, assessments, activity sessions, session-record roster —
 reports `scrollWidth === clientWidth` (zero overflow) on all of them.
 
+Addendum, same day: the directory's Sub-category column was removed to buy the Actions
+column more room — a student volunteer now shows "Student" as the Category chip's label
+(Student is Individual plus a sub-category, so one chip carries both), and the detail
+drawer keeps the full breakdown.
+
 ---
 
 ## Conventions the refinements established

@@ -336,7 +336,6 @@ export function VolunteerDirectory() {
             q: q || undefined,
             registrationStatus: joined('registration'),
             category: joined('category'),
-            subCategory: joined('subCategory'),
             isActive: colSel.account?.length
               ? colSel.account.map((a) => (a === 'Active' ? 'true' : 'false')).join(',')
               : undefined,
@@ -421,7 +420,6 @@ export function VolunteerDirectory() {
     name: (r) => `${r.firstName} ${r.lastName}`,
     email: (r) => r.email,
     category: (r) => r.category,
-    subCategory: (r) => r.subCategory ?? '',
     registration: (r) => r.registrationStatus,
     account: (r) => r.isActive,
     registered: (r) => r.createdAt,
@@ -530,7 +528,6 @@ export function VolunteerDirectory() {
               <SortableCell sortKey="name" sort={sort} onSort={toggle}>Volunteer</SortableCell>
               <SortableCell sortKey="email" sort={sort} onSort={toggle}>Contact</SortableCell>
               <SortableCell sortKey="category" sort={sort} onSort={toggle} filter={filterFor('category', facets?.categories)}>Category</SortableCell>
-              <SortableCell sortKey="subCategory" sort={sort} onSort={toggle} filter={filterFor('subCategory', facets?.subCategories)}>Sub-category</SortableCell>
               <SortableCell sortKey="registered" sort={sort} onSort={toggle}>Registered</SortableCell>
               <SortableCell sortKey="registration" sort={sort} onSort={toggle} filter={filterFor('registration', facets?.registrationStatuses)}>Registration</SortableCell>
               <SortableCell sortKey="account" sort={sort} onSort={toggle} filter={filterFor('account', facets?.accounts)}>Account</SortableCell>
@@ -567,11 +564,13 @@ export function VolunteerDirectory() {
                   )}
                 </TableCell>
                 <TableCell>
-                  <Chip label={v.category} size="small" variant="outlined" />
-                </TableCell>
-                <TableCell>
-                  {/* "Student" for as-a-student registrations; blank for everyone else. */}
-                  {v.subCategory ?? ''}
+                  {/* "Student" rides along as the chip label — the dedicated
+                      sub-category column made way for the Actions column. */}
+                  <Chip
+                    label={v.subCategory === 'Student' ? 'Student' : v.category}
+                    size="small"
+                    variant="outlined"
+                  />
                 </TableCell>
                 <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.82rem' }}>
                   {fmtDate(v.createdAt)}
@@ -669,7 +668,7 @@ export function VolunteerDirectory() {
             ))}
             {data && data.data.length === 0 && (
               <TableRow>
-                <TableCell colSpan={9} sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                <TableCell colSpan={8} sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
                   No volunteers match your filters.
                 </TableCell>
               </TableRow>
