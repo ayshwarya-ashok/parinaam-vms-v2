@@ -232,7 +232,9 @@ export function SortableCell({
       {...cellProps}
       sortDirection={active ? (sort.direction as 'asc' | 'desc') : false}
     >
-      <Box sx={{ display: 'inline-flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
+      {/* The label may wrap to a second line; long headers ("Coordinator
+          email") must not dictate the column's width. */}
+      <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
         <TableSortLabel
           active={active}
           direction={active ? (sort.direction as 'asc' | 'desc') : 'asc'}

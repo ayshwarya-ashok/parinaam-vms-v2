@@ -598,13 +598,13 @@ export function VolunteerDirectory() {
                     {v.phase}
                   </Typography>
                 </TableCell>
-                <TableCell align="right" onClick={(e) => e.stopPropagation()} sx={{ minWidth: 150 }}>
+                <TableCell align="right" onClick={(e) => e.stopPropagation()} sx={{ whiteSpace: 'nowrap' }}>
                   {readOnly ? null : v.registrationStatus === 'pending' ? (
                     <>
                       <Button
                         size="small"
                         variant="pill"
-                        sx={{ px: 1.5, py: 0.3, mr: 0.5 }}
+                        sx={{ px: 1.1, py: 0.2, mr: 0.5, fontSize: '0.72rem' }}
                         disabled={review.isPending}
                         onClick={() => review.mutate({ id: v.id, decision: 'approve' })}
                       >
@@ -613,7 +613,7 @@ export function VolunteerDirectory() {
                       <Button
                         size="small"
                         variant="pillOutlined"
-                        sx={{ px: 1.5, py: 0.3, color: tokens.accentStrong }}
+                        sx={{ px: 1.1, py: 0.2, color: tokens.accentStrong, fontSize: '0.72rem' }}
                         onClick={() => { setRejecting(v); setRejectReason(''); }}
                       >
                         ✕ Reject
@@ -624,7 +624,7 @@ export function VolunteerDirectory() {
                     <Button
                       size="small"
                       variant="pillOutlined"
-                      sx={{ px: 1.5, py: 0.3 }}
+                      sx={{ px: 1.1, py: 0.2, fontSize: '0.72rem' }}
                       disabled={welcomeBack.isPending}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -636,7 +636,7 @@ export function VolunteerDirectory() {
                     <Button
                       size="small"
                       variant="pillOutlined"
-                      sx={{ px: 1.5, py: 0.3, color: tokens.accentStrong }}
+                      sx={{ px: 1.1, py: 0.2, color: tokens.accentStrong, fontSize: '0.72rem' }}
                       onClick={() => setDeactivating(v)}
                     >
                       Inactivate
@@ -646,7 +646,7 @@ export function VolunteerDirectory() {
                     <Button
                       size="small"
                       variant="pillOutlined"
-                      sx={{ px: 1.5, py: 0.3 }}
+                      sx={{ px: 1.1, py: 0.2, fontSize: '0.72rem' }}
                       disabled={setActive.isPending}
                       onClick={() => setActive.mutate({ id: v.id, isActive: true })}
                     >
@@ -657,7 +657,7 @@ export function VolunteerDirectory() {
                     <Button
                       size="small"
                       variant="pillOutlined"
-                      sx={{ px: 1.5, py: 0.3, ml: 0.5, color: '#8B1A1A', borderColor: 'rgba(139,26,26,0.4)' }}
+                      sx={{ px: 1.1, py: 0.2, ml: 0.5, color: '#8B1A1A', borderColor: 'rgba(139,26,26,0.4)', fontSize: '0.72rem' }}
                       onClick={() => setDeleting(v)}
                     >
                       Delete

@@ -182,8 +182,8 @@ export const theme = createTheme({
     // read without a horizontal scrollbar on a laptop width.
     MuiTableCell: {
       styleOverrides: {
-        root: { padding: '6px 8px' },
-        sizeSmall: { padding: '5px 8px' },
+        root: { padding: '6px 7px' },
+        sizeSmall: { padding: '5px 7px' },
       },
     },
   },

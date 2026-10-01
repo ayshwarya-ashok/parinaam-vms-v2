@@ -999,14 +999,17 @@ the directory's Registration funnel multi-selects pending+rejected server-side (
 ## Round 40 — Tables fit the screen  (2026-10-01)
 
 The nine-column tables (directory, field execution) needed a horizontal scroll on a
-laptop. Fixed globally rather than per page: the theme's `MuiTableCell` override tightens
-cell padding (MUI's default 16px gutters → 8px) and the heavyweight action cells
-(directory's Approve/Reject/Welcome-back/Inactivate/Delete, field execution's
-Record/Send) wrap within their cell instead of forcing width ("✉ Send emails" shortened
-to "✉ Send"). Verified by measurement, not eyeballing: a headless sweep at 1366×768
-across every table-bearing page — directory, field execution, reports (both tables),
-scheduled reports, certificates, assessments, activity sessions, session-record roster —
-reports `scrollWidth === clientWidth` (zero overflow) on all of them.
+laptop. Fixed by UNIFORM COMPACTION, never by confining a column (the first cut wrapped
+the action buttons onto two lines inside a capped Actions cell — reverted on review):
+the theme's `MuiTableCell` override tightens every cell's padding (MUI's 16px gutters →
+7px), in-table action buttons went one size down (0.72rem, slimmer pills) while keeping
+their full labels on a single line, column headers may wrap to a second line so a long
+header ("Coordinator email") never dictates its column's width, and the sent-badges
+drop the year the Date column already shows. Verified by measurement, not eyeballing:
+a headless sweep across every table-bearing page — directory, field execution, reports
+(both tables), scheduled reports, certificates, assessments, activity sessions,
+session-record roster — reports `scrollWidth === clientWidth` (zero overflow) on every
+table at BOTH 1366×768 and 1280×800.
 
 Addendum, same day: the directory's Sub-category column was removed to buy the Actions
 column more room — a student volunteer now shows "Student" as the Category chip's label

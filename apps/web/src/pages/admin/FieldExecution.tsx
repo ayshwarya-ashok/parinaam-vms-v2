@@ -59,9 +59,14 @@ function SentBadge({ state }: { state: { sent: boolean; sentAt: string | null; c
   if (!state.sent) {
     return <Typography sx={{ fontSize: '0.8rem', color: tokens.accentStrong }}>● Not sent</Typography>;
   }
+  // Day + month only — the year is on the Date column, and the badge column
+  // must stay narrow enough for the table to fit a laptop screen.
+  const compact = state.sentAt
+    ? new Date(state.sentAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+    : '';
   return (
     <Typography sx={{ fontSize: '0.8rem', color: tokens.success, fontWeight: 600 }}>
-      ✓ Sent{state.sentAt ? ` ${fmtDate(state.sentAt)}` : ''}
+      ✓ Sent{compact ? ` ${compact}` : ''}
       {state.count > 1 ? ` (×${state.count})` : ''}
     </Typography>
   );
@@ -207,26 +212,24 @@ export function FieldExecution() {
                     <Typography sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>—</Typography>
                   )}
                 </TableCell>
-                <TableCell align="right" sx={{ minWidth: 120 }}>
-                  <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                    <Button
-                      size="small"
-                      variant="pillOutlined"
-                      sx={{ px: 1.25, py: 0.3 }}
-                      component={RouterLink}
-                      to={`/admin/sessions/${row.id}`}
-                    >
-                      Record ↗
-                    </Button>
-                    <Button
-                      size="small"
-                      variant={row.volunteerEmail.sent && row.coordinatorEmail.sent ? 'pillOutlined' : 'pill'}
-                      sx={{ px: 1.25, py: 0.3 }}
-                      onClick={() => openModal.mutate(row)}
-                    >
-                      {row.volunteerEmail.sent && row.coordinatorEmail.sent ? '↻ Resend' : '✉ Send'}
-                    </Button>
-                  </Box>
+                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                  <Button
+                    size="small"
+                    variant="pillOutlined"
+                    sx={{ px: 1.25, py: 0.25, mr: 0.5, fontSize: '0.72rem' }}
+                    component={RouterLink}
+                    to={`/admin/sessions/${row.id}`}
+                  >
+                    Record ↗
+                  </Button>
+                  <Button
+                    size="small"
+                    variant={row.volunteerEmail.sent && row.coordinatorEmail.sent ? 'pillOutlined' : 'pill'}
+                    sx={{ px: 1.25, py: 0.25, fontSize: '0.72rem' }}
+                    onClick={() => openModal.mutate(row)}
+                  >
+                    {row.volunteerEmail.sent && row.coordinatorEmail.sent ? '↻ Resend' : '✉ Send emails'}
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}
