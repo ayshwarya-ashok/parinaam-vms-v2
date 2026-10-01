@@ -79,6 +79,7 @@ export class AttendanceService {
     const rows = await this.dataSource.query(
       `SELECT e.id, e.code, COALESCE(e.name, a.name) AS name, e.date, e.start_time,
               e.location, e.status,
+              a.id AS activity_id, a.name AS activity_name,
               p.id AS program_id, p.name AS program_name,
               c.name AS coordinator_name, c.email AS coordinator_email,
               d.volunteer_email_sent, d.volunteer_email_sent_at, d.volunteer_send_count,
@@ -94,7 +95,7 @@ export class AttendanceService {
        JOIN v_event_capacity cap ON cap.event_id = e.id
        LEFT JOIN attendance_dispatches d ON d.event_id = e.id
        WHERE e.status IN ('upcoming', 'inprogress', 'completed')
-         AND ($1::text IS NULL OR COALESCE(e.name, a.name) ILIKE $1 OR p.name ILIKE $1)
+         AND ($1::text IS NULL OR COALESCE(e.name, a.name) ILIKE $1 OR p.name ILIKE $1 OR a.name ILIKE $1)
          AND ($2::uuid IS NULL OR p.id = $2)
        ORDER BY e.date DESC, e.start_time DESC
        LIMIT 200`,
@@ -110,6 +111,7 @@ export class AttendanceService {
       location: r.location,
       status: r.status,
       program: { id: r.program_id, name: r.program_name },
+      activity: { id: r.activity_id, name: r.activity_name },
       coordinator: { name: r.coordinator_name, email: r.coordinator_email },
       volunteerEmail: {
         sent: r.volunteer_email_sent === true,
@@ -641,8 +643,11 @@ export class AttendanceService {
       volunteerId: string;
       attended: boolean;
       hoursContributed?: number;
+      arrivalTime?: string;
+      departureTime?: string;
       notes?: string;
       absenceReason?: string;
+      absenceDetail?: string;
       /** Explicit flag for someone who was never enrolled but showed up. */
       walkIn?: boolean;
     },
@@ -687,10 +692,16 @@ export class AttendanceService {
       }
     }
 
-    if (dto.attended && dto.hoursContributed === undefined) {
+    // Hours come from arrival/departure when both are given (the same math as
+    // the volunteer's own form), else from the explicit hours field.
+    const bothTimes = Boolean(dto.arrivalTime && dto.departureTime);
+    const hours = bothTimes
+      ? this.hoursBetween(dto.arrivalTime!, dto.departureTime!)
+      : dto.hoursContributed;
+    if (dto.attended && hours === undefined) {
       throw new BusinessException(
         'HOURS_REQUIRED',
-        'Enter the hours contributed when marking a volunteer present.',
+        'Enter arrival and departure times (or the hours contributed) when marking a volunteer present.',
         400,
       );
     }
@@ -700,11 +711,14 @@ export class AttendanceService {
         eventId,
         volunteerId: dto.volunteerId,
         attended: dto.attended,
-        hoursContributed: dto.attended ? String(dto.hoursContributed) : '0',
+        hoursContributed: dto.attended ? String(hours) : '0',
+        arrivalTime: dto.attended && bothTimes ? dto.arrivalTime! : null,
+        departureTime: dto.attended && bothTimes ? dto.departureTime! : null,
         notes: dto.notes ?? null,
         absenceReason: dto.attended
           ? null
           : ((dto.absenceReason as AttendanceRecord['absenceReason']) ?? null),
+        absenceDetail: dto.attended ? null : (dto.absenceDetail ?? null),
         source: 'admin',
         recordedBy: principal.sub,
       }),
@@ -728,13 +742,24 @@ export class AttendanceService {
     if (!record) throw new NotFoundException('Attendance record not found');
 
     const before = { attended: record.attended, hours: record.hoursContributed };
+    // Arrival/departure, when both given, define the hours — the same rule the
+    // volunteer's own form applies.
+    const bothTimes = Boolean(dto.arrivalTime && dto.departureTime);
     Object.assign(record, {
       ...(dto.attended !== undefined && { attended: dto.attended }),
-      ...(dto.hoursContributed !== undefined && { hoursContributed: String(dto.hoursContributed) }),
+      ...(dto.hoursContributed !== undefined && !bothTimes && {
+        hoursContributed: String(dto.hoursContributed),
+      }),
+      ...(bothTimes && {
+        arrivalTime: dto.arrivalTime,
+        departureTime: dto.departureTime,
+        hoursContributed: String(this.hoursBetween(dto.arrivalTime!, dto.departureTime!)),
+      }),
       ...(dto.notes !== undefined && { notes: dto.notes }),
       ...(dto.absenceReason !== undefined && {
         absenceReason: dto.absenceReason as AttendanceRecord['absenceReason'],
       }),
+      ...(dto.absenceDetail !== undefined && { absenceDetail: dto.absenceDetail }),
       source: 'admin' as const,
       recordedBy: principal.sub,
     });

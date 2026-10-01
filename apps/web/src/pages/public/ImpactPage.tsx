@@ -480,7 +480,7 @@ export function ImpactPage() {
               to="/login"
               sx={{ minWidth: '12rem', fontSize: '1rem' }}
             >
-              ✎ Submit Feedback
+              ✏️ Submit Feedback
             </Button>
             <Typography sx={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.85rem' }}>
               Sign in to rate a session you attended

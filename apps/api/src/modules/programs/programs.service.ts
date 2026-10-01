@@ -236,20 +236,29 @@ export class ProgramsService {
       [id, principal.sub, `Program deleted: ${dto.reason}`],
     );
 
+    // …and so do the not-yet-completed sessions: cancelled with the reason on
+    // record. Deliberately NO emails — the explicit per-session cancel is the
+    // flow that notifies people; a catalog delete is bookkeeping.
+    // (TypeORM returns [rows, affected] for UPDATE … RETURNING on postgres.)
+    const [cancelledRows] = await this.dataSource.query(
+      `UPDATE events e SET status = 'cancelled', cancelled_at = now(), cancelled_by = $2,
+              cancel_reason = $3
+       FROM activities a
+       WHERE a.id = e.activity_id AND a.program_id = $1
+         AND e.status IN ('draft', 'upcoming', 'inprogress')
+       RETURNING e.id`,
+      [id, principal.sub, `Program deleted: ${dto.reason}`],
+    );
+    const sessionsCancelled = Array.isArray(cancelledRows) ? cancelledRows.length : 0;
+
     await this.audit.record(principal, {
       action: 'program.deleted',
       entity: 'programs',
       entityId: id,
-      after: { reason: dto.reason },
+      after: { reason: dto.reason, sessionsCancelled },
     });
 
-    const [{ count }] = await this.dataSource.query(
-      `SELECT COUNT(*)::int AS count FROM events e
-       JOIN activities a ON a.id = e.activity_id
-       WHERE a.program_id = $1 AND e.status = 'upcoming' AND e.date >= CURRENT_DATE`,
-      [id],
-    );
-    return { deleted: true, upcomingEventsBlocked: Number(count) };
+    return { deleted: true, sessionsCancelled };
   }
 
   async reactivate(principal: AuthPrincipal, id: string) {
@@ -416,19 +425,25 @@ export class ProgramsService {
     activity.deleteReason = dto.reason;
     await this.activities.save(activity);
 
+    // Its not-yet-completed sessions are cancelled with the reason on record
+    // (no emails — the explicit per-session cancel is the flow that notifies).
+    const [cancelledRows] = await this.dataSource.query(
+      `UPDATE events SET status = 'cancelled', cancelled_at = now(), cancelled_by = $2,
+              cancel_reason = $3
+       WHERE activity_id = $1 AND status IN ('draft', 'upcoming', 'inprogress')
+       RETURNING id`,
+      [id, principal.sub, `Activity deleted: ${dto.reason}`],
+    );
+    const sessionsCancelled = Array.isArray(cancelledRows) ? cancelledRows.length : 0;
+
     await this.audit.record(principal, {
       action: 'activity.deleted',
       entity: 'activities',
       entityId: id,
-      after: { reason: dto.reason },
+      after: { reason: dto.reason, sessionsCancelled },
     });
 
-    const [{ count }] = await this.dataSource.query(
-      `SELECT COUNT(*)::int AS count FROM events
-       WHERE activity_id = $1 AND status = 'upcoming' AND date >= CURRENT_DATE`,
-      [id],
-    );
-    return { deleted: true, upcomingEventsBlocked: Number(count) };
+    return { deleted: true, sessionsCancelled };
   }
 
   async reactivateActivity(principal: AuthPrincipal, id: string) {

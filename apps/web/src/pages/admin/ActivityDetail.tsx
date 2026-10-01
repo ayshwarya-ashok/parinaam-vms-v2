@@ -114,7 +114,7 @@ export function ActivityDetail() {
   const deleteActivity = useMutation({
     mutationFn: async () =>
       (
-        await api.delete<{ deleted: true; upcomingEventsBlocked: number }>(`/activities/${id}`, {
+        await api.delete<{ deleted: true; sessionsCancelled: number }>(`/activities/${id}`, {
           data: { reason: deleteReason.trim() },
         })
       ).data,
@@ -122,7 +122,7 @@ export function ActivityDetail() {
       setDeleteOpen(false);
       refetch();
       enqueueSnackbar(
-        `Activity deleted${res.upcomingEventsBlocked > 0 ? ` — ${res.upcomingEventsBlocked} upcoming session(s) no longer accept enrollment` : ''}`,
+        `Activity deleted${res.sessionsCancelled > 0 ? ` — ${res.sessionsCancelled} scheduled session(s) cancelled` : ''}`,
         { variant: 'warning' },
       );
     },
@@ -165,7 +165,7 @@ export function ActivityDetail() {
           <StatusPill status={activity.status} />
           {!readOnly && activity.status !== 'deleted' && (<>
           <Button component={RouterLink} to={`/admin/activities/${id}/edit`} variant="pillOutlined" size="small">
-            ✎ Edit
+            ✏️ Edit
           </Button>
           <Button
             variant="pillOutlined"
@@ -378,8 +378,9 @@ export function ActivityDetail() {
         <DialogContent sx={{ display: 'grid', gap: 2 }}>
           <Alert severity="error" sx={{ borderRadius: 2 }}>
             This is a <strong>hard delete and cannot be reversed</strong>. {activity.name} becomes
-            permanently <strong>Deleted</strong> — no edits, no reactivation, no new enrollment on
-            its sessions. Recorded history (sessions, hours, certificates) stays in reports.
+            permanently <strong>Deleted</strong>, its not-yet-completed sessions are{' '}
+            <strong>cancelled</strong> (volunteers are not emailed), and no new sessions can be
+            scheduled under it. Completed history (sessions, hours, certificates) stays in reports.
           </Alert>
           <TextField
             label={`Type "${activity.name}" to confirm`}
@@ -399,7 +400,7 @@ export function ActivityDetail() {
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button variant="pillOutlined" onClick={() => setDeleteOpen(false)}>
-            Keep activity
+            Cancel
           </Button>
           <Button
             variant="pill"

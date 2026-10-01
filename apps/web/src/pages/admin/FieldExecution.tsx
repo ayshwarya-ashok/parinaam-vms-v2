@@ -31,6 +31,7 @@ interface DispatchRow {
   location: string | null;
   status: 'upcoming' | 'completed';
   program: { id: string; name: string };
+  activity: { id: string; name: string };
   coordinator: { name: string; email: string };
   volunteerEmail: { sent: boolean; sentAt: string | null; count: number };
   coordinatorEmail: { sent: boolean; sentAt: string | null; count: number };
@@ -69,6 +70,8 @@ function SentBadge({ state }: { state: { sent: boolean; sentAt: string | null; c
 export function FieldExecution() {
   const [q, setQ] = useState('');
   const [sendStatus, setSendStatus] = useState('all');
+  const [programFilter, setProgramFilter] = useState('all');
+  const [activityFilter, setActivityFilter] = useState('all');
   const [modal, setModal] = useState<{ row: DispatchRow; volunteer: Preview; coordinator: Preview } | null>(null);
   const queryClient = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
@@ -114,7 +117,25 @@ export function FieldExecution() {
     onError: (err) => enqueueSnackbar(asApiError(err)?.message ?? 'Send failed', { variant: 'error' }),
   });
 
-  const { sorted, sort, toggle } = useTableSort(data, {
+  // Program/activity filters are client-side over the loaded rows; the
+  // activity list narrows to the chosen program so the two stay coherent.
+  const programOptions = [...new Set((data ?? []).map((r) => r.program.name))].sort();
+  const activityOptions = [
+    ...new Set(
+      (data ?? [])
+        .filter((r) => programFilter === 'all' || r.program.name === programFilter)
+        .map((r) => r.activity.name),
+    ),
+  ].sort();
+  const filtered = (data ?? []).filter(
+    (r) =>
+      (programFilter === 'all' || r.program.name === programFilter) &&
+      (activityFilter === 'all' || r.activity.name === activityFilter),
+  );
+
+  const { sorted, sort, toggle } = useTableSort(filtered, {
+    program: (r) => r.program.name,
+    activity: (r) => r.activity.name,
     session: (r) => r.name,
     date: (r) => `${String(r.date).slice(0, 10)} ${r.startTime}`,
     volunteerEmail: (r) => r.volunteerEmail.sent,
@@ -129,8 +150,26 @@ export function FieldExecution() {
       description="Send attendance links per session — one email lets volunteers self-report, the other lets the coordinator file the occurrence report. Open any session's record to see what was logged and correct it."
     >
       <FilterBar
-        search={{ value: q, onChange: setQ, placeholder: 'Search session or program…' }}
+        search={{ value: q, onChange: setQ, placeholder: 'Search session, activity or program…' }}
         groups={[
+          {
+            label: 'Program',
+            value: programFilter,
+            onChange: (v) => { setProgramFilter(v); setActivityFilter('all'); },
+            options: [
+              { value: 'all', label: 'All' },
+              ...programOptions.map((name) => ({ value: name, label: name })),
+            ],
+          },
+          {
+            label: 'Activity',
+            value: activityFilter,
+            onChange: setActivityFilter,
+            options: [
+              { value: 'all', label: 'All' },
+              ...activityOptions.map((name) => ({ value: name, label: name })),
+            ],
+          },
           {
             label: 'Email status',
             value: sendStatus,
@@ -148,6 +187,8 @@ export function FieldExecution() {
         <Table size="small">
           <TableHead>
             <TableRow>
+              <SortableCell sortKey="program" sort={sort} onSort={toggle}>Program</SortableCell>
+              <SortableCell sortKey="activity" sort={sort} onSort={toggle}>Activity</SortableCell>
               <SortableCell sortKey="session" sort={sort} onSort={toggle}>Session</SortableCell>
               <SortableCell sortKey="date" sort={sort} onSort={toggle}>Date & time</SortableCell>
               <SortableCell sortKey="volunteerEmail" sort={sort} onSort={toggle}>Volunteer email</SortableCell>
@@ -160,6 +201,8 @@ export function FieldExecution() {
           <TableBody>
             {sorted.map((row) => (
               <TableRow key={row.id} hover>
+                <TableCell sx={{ fontSize: '0.85rem' }}>{row.program.name}</TableCell>
+                <TableCell sx={{ fontSize: '0.85rem' }}>{row.activity.name}</TableCell>
                 <TableCell>
                   <Typography
                     component={RouterLink}
@@ -175,7 +218,7 @@ export function FieldExecution() {
                     {row.name}
                   </Typography>
                   <Typography sx={{ fontSize: '0.78rem', color: 'text.secondary' }}>
-                    {row.program.name} · {row.coordinator.name}
+                    {row.coordinator.name}
                   </Typography>
                 </TableCell>
                 <TableCell sx={{ whiteSpace: 'nowrap' }}>
@@ -222,9 +265,9 @@ export function FieldExecution() {
                 </TableCell>
               </TableRow>
             ))}
-            {data?.length === 0 && (
+            {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                <TableCell colSpan={9} sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
                   No sessions match your filters.
                 </TableCell>
               </TableRow>

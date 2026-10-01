@@ -152,21 +152,20 @@ INSERT INTO reference_values (category, code, label, sort_order) VALUES
   ('LANGUAGE',        'mr',              'Marathi',                     6),
   ('LANGUAGE',        'ml',              'Malayalam',                   7),
   ('LANGUAGE',        'bn',              'Bengali',                     8),
-  ('AREA_OF_INTEREST','education',       'Teaching & education',        1),
-  ('AREA_OF_INTEREST','health',          'Health & wellbeing',          2),
-  ('AREA_OF_INTEREST','child_welfare',   'Child welfare',               3),
-  ('AREA_OF_INTEREST','women_empower',   'Women empowerment',           4),
-  ('AREA_OF_INTEREST','environment',     'Environment & sustainability',5),
-  ('AREA_OF_INTEREST','livelihood',      'Livelihood & skills training',6),
-  ('AREA_OF_INTEREST','elderly_care',    'Elderly care',                7),
-  ('AREA_OF_INTEREST','disaster_relief', 'Disaster relief',             8),
-  ('AREA_OF_INTEREST','fundraising',     'Fundraising & events',        9),
-  ('AREA_OF_INTEREST','admin_support',   'Administrative support',     10),
-  ('AVAILABILITY',    'weekday_morning', 'Weekday mornings',            1),
-  ('AVAILABILITY',    'weekday_evening', 'Weekday evenings',            2),
-  ('AVAILABILITY',    'saturday',        'Saturdays',                   3),
-  ('AVAILABILITY',    'sunday',          'Sundays',                     4),
-  ('AVAILABILITY',    'flexible',        'Flexible / on request',       5)
+  -- V023 option sets: areas of help (multi) and volunteering frequency (single).
+  ('AREA_OF_INTEREST','education',          'Education & literacy',     1),
+  ('AREA_OF_INTEREST','health',             'Health & wellbeing',       2),
+  ('AREA_OF_INTEREST','livelihood',         'Livelihoods & skilling',   3),
+  ('AREA_OF_INTEREST','community_outreach', 'Community outreach',       4),
+  ('AREA_OF_INTEREST','events_campaigns',   'Events & campaigns',       5),
+  ('AREA_OF_INTEREST','admin_support',      'Administrative support',   6),
+  ('AREA_OF_INTEREST','fundraising',        'Fundraising',              7),
+  ('AREA_OF_INTEREST','other',              'Other',                    8),
+  ('AVAILABILITY',    'weekly',             'Weekly',                   1),
+  ('AVAILABILITY',    'monthly',            'Monthly',                  2),
+  ('AVAILABILITY',    'quarterly',          'Quarterly',                3),
+  ('AVAILABILITY',    'occasionally',       'Occasionally',             4),
+  ('AVAILABILITY',    'other',              'Other',                    5)
 ON CONFLICT (category, code) DO NOTHING;
 
 -- -----------------------------------------------------------------------------

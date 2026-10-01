@@ -101,6 +101,15 @@ export class EventsAdminService {
       relations: { program: true },
     });
     if (!activity) throw new NotFoundException('Activity not found');
+    // A deleted activity (or program) is terminal — nothing new is scheduled
+    // beneath it (Round 37).
+    if (activity.status === 'deleted' || activity.program?.status === 'deleted') {
+      throw new BusinessException(
+        'CATALOG_DELETED',
+        'This activity has been deleted — no new sessions can be scheduled under it.',
+        409,
+      );
+    }
 
     const coordinatorId = dto.coordinatorId ?? activity.program?.defaultCoordinatorId;
     if (!coordinatorId) {

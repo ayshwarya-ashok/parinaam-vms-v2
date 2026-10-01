@@ -107,7 +107,7 @@ export function TrainingView() {
         }}
       >
         <Tab label={`📄 Materials (${training.materials.length})`} value="materials" />
-        <Tab label={`✎ Quiz (${training.questions.length})`} value="quiz" />
+        <Tab label={`✏️ Quiz (${training.questions.length})`} value="quiz" />
       </Tabs>
 
       {error && (
@@ -199,7 +199,7 @@ export function TrainingView() {
 
       {tab === 'quiz' && phase.step === 'idle' && !training.myStatus?.currentlyPassed && (
         <Paper variant="outlined" sx={{ p: 5, borderRadius: 4, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.7)' }}>
-          <Typography sx={{ fontSize: '2rem' }}>✎</Typography>
+          <Typography sx={{ fontSize: '2rem' }}>✏️</Typography>
           <Typography variant="h3" sx={{ fontSize: '1.4rem', mb: 1 }}>
             Ready to take the quiz?
           </Typography>

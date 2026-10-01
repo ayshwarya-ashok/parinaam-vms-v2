@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-10-01 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across thirty-six review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across thirty-seven review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -901,6 +901,48 @@ Seven refinements in one round, mostly identity and lifecycle (migration `V022`)
 Browser-verified end to end: Karnataka filters on "karn", its cities unlock, Others shows
 the free-text field; the profile shows VOL-0001; the directory shows the new columns,
 filters and per-row Delete; the program delete dialog gates on name + reason.
+
+---
+
+## Round 37 — Field execution columns, manual attendance parity, the help questions  (2026-10-01)
+
+Fixes on Round 36 plus three refinements (migration `V023`):
+
+- **Volunteer code is searchable.** The directory's one search box now also matches
+  `v.code` — typing `VOL-0012` finds the person (the phone-digit fallback may add
+  coincidental rows whose numbers contain the same digits; the code match itself is exact).
+- **The pencil leans forward.** Every ✎ across the app became ✏️ (nine call sites).
+- **Delete modal: "Keep program" → "Cancel"** (and "Keep activity" likewise).
+- **Deleting an activity now deletes its future.** Not-yet-completed sessions under a
+  deleted activity (or a deleted program, via the cascade) are CANCELLED with the reason
+  on record — deliberately without emails; the explicit per-session cancel remains the
+  flow that notifies people — and scheduling anything new under a deleted activity
+  answers `CATALOG_DELETED` 409. Completed sessions stay untouched for reporting.
+- **Field Execution grew real columns.** Program, Activity and Session are separate
+  sortable columns; Program and Activity are filter groups (the activity list narrows to
+  the chosen program), and the search box matches all three. The dispatch endpoint now
+  returns the activity.
+- **Manual attendance captures what the emailed form captures.** The staff Log/Correct
+  dialog now takes arrival and departure times (hours derived with the same math as the
+  volunteer form; the plain hours field remains the fallback for records where only a
+  total is known) and, for an absence, the optional detail alongside the reason. The
+  OverrideDto/AdminRecordDto accept `arrivalTime`/`departureTime`/`absenceDetail`;
+  flipping to absent still zeroes hours and clears times. The quick "Add walk-in" keeps
+  its hours-only shape; photos remain exclusive to the volunteer's own emailed form.
+- **"How would you like to help?" on /register and Add Volunteer.** `V023` reshapes the
+  catalogs: AREA_OF_INTEREST → the eight requested options (checkboxes now, not chips);
+  AVAILABILITY → Weekly / Monthly / Quarterly / Occasionally / Other as a SINGLE radio
+  choice — "Other" opens a free-text field whose words are stored verbatim; the notes
+  textarea is relabelled ("Anything else you would like us to know?" / "…worth
+  recording?"). Retired options are deactivated, never deleted — stored answers still
+  resolve. Add Volunteer gains the whole section (admin-create DTO + service wired);
+  state and city were already mandatory in both flows via `validateProfile`.
+
+Verified: API-level (code search, dispatch activity, 2.5 h computed from 10:00–12:30,
+absence reason+detail round-trip, cascade-cancel + schedule refusal on a scratch
+activity, admin-create storing areas/frequency/notes) and in the browser (register
+checkboxes/radios/Other field, Field Execution filtering 49 rows → 3 Chote Kadam rows,
+the Correct dialog's time and absence-detail fields). Scratch data cleaned up after.
 
 ---
 

@@ -83,7 +83,10 @@ export function Register() {
     skills: '',
     languages: [] as string[],
     areasOfInterest: [] as string[],
-    availability: [] as string[],
+    // "How often would you like to volunteer?" — a single choice; "other"
+    // opens a free-text field whose value is what gets stored.
+    availability: '',
+    availabilityOther: '',
     availabilityNotes: '',
     complianceRead: false,
   });
@@ -127,7 +130,7 @@ export function Register() {
     setError(null);
   };
 
-  const toggle = (key: 'languages' | 'areasOfInterest' | 'availability', code: string) =>
+  const toggle = (key: 'languages' | 'areasOfInterest', code: string) =>
     setForm((f) => ({
       ...f,
       [key]: f[key].includes(code) ? f[key].filter((c) => c !== code) : [...f[key], code],
@@ -188,7 +191,13 @@ export function Register() {
     skills: form.skills || undefined,
     languages: form.languages.length ? form.languages : undefined,
     areasOfInterest: form.areasOfInterest.length ? form.areasOfInterest : undefined,
-    availability: form.availability.length ? form.availability : undefined,
+    availability: form.availability
+      ? [
+          form.availability === 'other' && form.availabilityOther.trim()
+            ? form.availabilityOther.trim()
+            : form.availability,
+        ]
+      : undefined,
     availabilityNotes: form.availabilityNotes || undefined,
     complianceRead: form.complianceRead,
     };
@@ -401,12 +410,27 @@ export function Register() {
               {/* ── How would you like to help? ───────────────────────────── */}
               <SectionTitle>How would you like to help?</SectionTitle>
 
-              <ChipPicker
-                label="What would you like to help with?"
-                options={options.AREA_OF_INTEREST ?? []}
-                selected={form.areasOfInterest}
-                onToggle={(code) => toggle('areasOfInterest', code)}
-              />
+              {/* Checkboxes, per the client's form spec (Round 37). */}
+              <Box>
+                <Typography sx={{ fontSize: '0.9rem', fontWeight: 600, mb: 0.5 }}>
+                  What would you like to help with?
+                </Typography>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+                  {(options.AREA_OF_INTEREST ?? []).map((o) => (
+                    <FormControlLabel
+                      key={o.code}
+                      control={
+                        <Checkbox
+                          size="small"
+                          checked={form.areasOfInterest.includes(o.code)}
+                          onChange={() => toggle('areasOfInterest', o.code)}
+                        />
+                      }
+                      label={<Typography sx={{ fontSize: '0.9rem' }}>{o.label}</Typography>}
+                    />
+                  ))}
+                </Box>
+              </Box>
 
               <ChipPicker
                 label="Which languages do you speak?"
@@ -415,22 +439,40 @@ export function Register() {
                 onToggle={(code) => toggle('languages', code)}
               />
 
-              {/*
-                The codes and the prose, both optional. The chips are what staff
-                can filter a roster on — "who can come on a Saturday?" — and the
-                box below carries what a fixed list cannot: term-time only,
-                needs a week's notice, alternate weekends.
-              */}
-              <ChipPicker
-                label="When are you usually free?"
-                hint="Tick any that suit. We will not hold you to it."
-                options={options.AVAILABILITY ?? []}
-                selected={form.availability}
-                onToggle={(code) => toggle('availability', code)}
-              />
+              {/* Frequency is one answer, not many — radios per the form spec. */}
+              <Box>
+                <Typography sx={{ fontSize: '0.9rem', fontWeight: 600, mb: 0.5 }}>
+                  How often would you like to volunteer with Parinaam?
+                </Typography>
+                <RadioGroup
+                  row
+                  value={form.availability}
+                  onChange={(e) => set('availability', e.target.value)}
+                >
+                  {(options.AVAILABILITY ?? []).map((o) => (
+                    <FormControlLabel
+                      key={o.code}
+                      value={o.code}
+                      control={<Radio size="small" />}
+                      label={<Typography sx={{ fontSize: '0.9rem' }}>{o.label}</Typography>}
+                    />
+                  ))}
+                </RadioGroup>
+                {form.availability === 'other' && (
+                  <TextField
+                    fullWidth
+                    size="small"
+                    sx={{ mt: 1 }}
+                    label="Tell us the rhythm that works for you"
+                    placeholder="For example: twice a year, around exams, festival seasons."
+                    value={form.availabilityOther}
+                    onChange={(e) => set('availabilityOther', e.target.value)}
+                  />
+                )}
+              </Box>
 
               <TextField
-                label="Anything we should know about your availability?"
+                label="Anything else you would like us to know?"
                 multiline
                 minRows={2}
                 placeholder="For example: term-time only, alternate weekends, or after 6pm."

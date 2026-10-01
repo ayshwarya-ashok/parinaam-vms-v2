@@ -46,7 +46,7 @@ export function ProgramDetail() {
   const deleteProgram = useMutation({
     mutationFn: async () =>
       (
-        await api.delete<{ deleted: true; upcomingEventsBlocked: number }>(`/programs/${id}`, {
+        await api.delete<{ deleted: true; sessionsCancelled: number }>(`/programs/${id}`, {
           data: { reason: deleteReason.trim() },
         })
       ).data,
@@ -55,7 +55,7 @@ export function ProgramDetail() {
       void queryClient.invalidateQueries({ queryKey: ['program', id] });
       void queryClient.invalidateQueries({ queryKey: ['programs'] });
       enqueueSnackbar(
-        `Program deleted${res.upcomingEventsBlocked > 0 ? ` — ${res.upcomingEventsBlocked} upcoming session(s) no longer accept enrollment` : ''}`,
+        `Program deleted${res.sessionsCancelled > 0 ? ` — ${res.sessionsCancelled} scheduled session(s) cancelled` : ''}`,
         { variant: 'warning' },
       );
     },
@@ -113,7 +113,7 @@ export function ProgramDetail() {
           <StatusPill status={program.status} />
           {!readOnly && !isDeleted && (<>
           <Button component={RouterLink} to={`/admin/programs/${id}/edit`} variant="pillOutlined" size="small">
-            ✎ Edit
+            ✏️ Edit
           </Button>
           {program.status === 'draft' && (
             <Button
@@ -328,9 +328,10 @@ export function ProgramDetail() {
         <DialogContent sx={{ display: 'grid', gap: 2 }}>
           <Alert severity="error" sx={{ borderRadius: 2 }}>
             This is a <strong>hard delete and cannot be reversed</strong>. {program.name} and every
-            activity under it become permanently <strong>Deleted</strong> — no edits, no
-            reactivation, no new enrollment. Recorded history (sessions, hours, certificates)
-            stays in reports.
+            activity under it become permanently <strong>Deleted</strong>, its not-yet-completed
+            sessions are <strong>cancelled</strong> (volunteers are not emailed), and nothing new
+            can be scheduled beneath it. Completed history (sessions, hours, certificates) stays
+            in reports.
           </Alert>
           <TextField
             label={`Type "${program.name}" to confirm`}
@@ -350,7 +351,7 @@ export function ProgramDetail() {
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button variant="pillOutlined" onClick={() => setDeleteOpen(false)}>
-            Keep program
+            Cancel
           </Button>
           <Button
             variant="pill"

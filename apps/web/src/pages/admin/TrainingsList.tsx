@@ -107,7 +107,7 @@ export function TrainingsList() {
                   </Typography>
                 )}
                 <Typography sx={{ color: 'text.secondary', fontSize: '0.82rem', mt: 0.5 }}>
-                  🕐 {t.duration} · {t.mode} · 📄 {t.materialCount ?? 0} materials · ✎{' '}
+                  🕐 {t.duration} · {t.mode} · 📄 {t.materialCount ?? 0} materials · ✏️{' '}
                   {t.questionCount ?? 0} questions · pass @ {t.passingScore}%
                   {t.isMandatory && ` · max ${t.maxAttempts} attempts · ${t.expiryMonths}-month validity`}
                 </Typography>

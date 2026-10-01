@@ -2,6 +2,7 @@ import {
   Autocomplete,
   Box,
   Button,
+  Checkbox,
   Chip,
   Dialog,
   DialogActions,
@@ -9,7 +10,10 @@ import {
   DialogTitle,
   Divider,
   Drawer,
+  FormControlLabel,
   MenuItem,
+  Radio,
+  RadioGroup,
   Paper,
   Table,
   TableBody,
@@ -144,6 +148,9 @@ export function VolunteerDirectory() {
     email: '', firstName: '', lastName: '', gender: '', ageGroup: '',
     city: '', state: '', phone: '', skills: '', occupation: '', password: '',
     category: 'Individual' as 'Individual' | 'CSR', organization: '',
+    // "How would they like to help?" — same catalogs as /register (Round 37).
+    areasOfInterest: [] as string[], availability: '', availabilityOther: '',
+    availabilityNotes: '',
   };
   const [addForm, setAddForm] = useState<typeof emptyAdd | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
@@ -239,6 +246,13 @@ export function VolunteerDirectory() {
           phone: phoneForApi(f.phone),
           skills: f.skills.trim() || undefined,
           occupation: f.occupation.trim() || undefined,
+          areasOfInterest: f.areasOfInterest.length ? f.areasOfInterest : undefined,
+          availability: f.availability
+            ? f.availability === 'other' && f.availabilityOther.trim()
+              ? f.availabilityOther.trim()
+              : f.availability
+            : undefined,
+          availabilityNotes: f.availabilityNotes.trim() || undefined,
           password: f.password || undefined,
           category: f.category,
           ...(f.organization.trim()
@@ -878,6 +892,78 @@ export function VolunteerDirectory() {
             <TextField label="Occupation (optional)" value={addForm?.occupation ?? ''}
               onChange={(e) => setAddForm((f) => (f ? { ...f, occupation: e.target.value } : f))} />
           </Box>
+
+          {/* ── How would they like to help? — mirrors /register (Round 37) ── */}
+          <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: tokens.accentStrong, mt: 0.5 }}>
+            How would they like to help?
+          </Typography>
+          <Box>
+            <Typography sx={{ fontSize: '0.88rem', fontWeight: 600, mb: 0.25 }}>
+              What would they like to help with?
+            </Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+              {(options.AREA_OF_INTEREST ?? []).map((o) => (
+                <FormControlLabel
+                  key={o.code}
+                  control={
+                    <Checkbox
+                      size="small"
+                      checked={addForm?.areasOfInterest.includes(o.code) ?? false}
+                      onChange={() =>
+                        setAddForm((f) =>
+                          f
+                            ? {
+                                ...f,
+                                areasOfInterest: f.areasOfInterest.includes(o.code)
+                                  ? f.areasOfInterest.filter((c) => c !== o.code)
+                                  : [...f.areasOfInterest, o.code],
+                              }
+                            : f,
+                        )
+                      }
+                    />
+                  }
+                  label={<Typography sx={{ fontSize: '0.88rem' }}>{o.label}</Typography>}
+                />
+              ))}
+            </Box>
+          </Box>
+          <Box>
+            <Typography sx={{ fontSize: '0.88rem', fontWeight: 600, mb: 0.25 }}>
+              How often would they like to volunteer?
+            </Typography>
+            <RadioGroup
+              row
+              value={addForm?.availability ?? ''}
+              onChange={(e) => setAddForm((f) => (f ? { ...f, availability: e.target.value } : f))}
+            >
+              {(options.AVAILABILITY ?? []).map((o) => (
+                <FormControlLabel
+                  key={o.code}
+                  value={o.code}
+                  control={<Radio size="small" />}
+                  label={<Typography sx={{ fontSize: '0.88rem' }}>{o.label}</Typography>}
+                />
+              ))}
+            </RadioGroup>
+            {addForm?.availability === 'other' && (
+              <TextField
+                fullWidth
+                size="small"
+                sx={{ mt: 1 }}
+                label="How often — in their words"
+                value={addForm?.availabilityOther ?? ''}
+                onChange={(e) => setAddForm((f) => (f ? { ...f, availabilityOther: e.target.value } : f))}
+              />
+            )}
+          </Box>
+          <TextField
+            label="Anything else worth recording?"
+            multiline
+            minRows={2}
+            value={addForm?.availabilityNotes ?? ''}
+            onChange={(e) => setAddForm((f) => (f ? { ...f, availabilityNotes: e.target.value } : f))}
+          />
           {/* Organization is a CSR concern only: Individuals are not asked (Round 36). */}
           <Box sx={{ display: 'grid', gridTemplateColumns: addForm?.category === 'CSR' ? '1fr 2fr' : '1fr', gap: 2 }}>
             <TextField select label="Category" value={addForm?.category ?? 'Individual'}
@@ -1164,7 +1250,7 @@ function VolunteerDetailDrawer({
                 admins and field coordinators alike; the API audits each edit. */}
             {!editing && (
               <Button variant="pillOutlined" size="small" sx={{ px: 2, ml: 'auto' }} onClick={startEditing}>
-                ✎ Edit details
+                ✏️ Edit details
               </Button>
             )}
           </Box>

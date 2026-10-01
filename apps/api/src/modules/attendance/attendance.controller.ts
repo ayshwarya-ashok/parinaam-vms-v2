@@ -72,6 +72,12 @@ class DispatchDto {
 class OverrideDto {
   @IsOptional() @IsBoolean() attended?: boolean;
   @IsOptional() @IsNumber() @Min(0) hoursContributed?: number;
+  // Same field set as the emailed volunteer form (Round 37): staff capturing
+  // attendance manually record arrival/departure (hours derived) and, for an
+  // absence, the optional detail alongside the reason.
+  @IsOptional() @IsMilitaryTime() arrivalTime?: string;
+  @IsOptional() @IsMilitaryTime() departureTime?: string;
+  @IsOptional() @IsString() @MaxLength(2000) absenceDetail?: string;
   @IsOptional() @IsString() @MaxLength(2000) notes?: string;
   @IsOptional()
   @IsIn(['Personal emergency', 'Medical / Health issue', 'Work / prior commitment', 'Transport issue', 'No longer available', 'Other'])

@@ -444,6 +444,7 @@ export class VolunteersService {
       const digits = query.q.replace(/[^0-9]/g, '').slice(-10);
       qb.andWhere(
         `(v.firstName ILIKE :q OR v.lastName ILIKE :q OR u.email::text ILIKE :q
+          OR v.code ILIKE :q
           OR (:digits <> '' AND regexp_replace(COALESCE(v.phone, ''), '[^0-9]', '', 'g') LIKE :phoneLike))`,
         { q: `%${query.q}%`, digits, phoneLike: `%${digits}%` },
       );
@@ -809,6 +810,8 @@ export class VolunteersService {
       ageGroup: string; city: string; state: string; phone: string;
       skills?: string | null; occupation?: string | null; password?: string | null;
       category?: 'Individual' | 'CSR'; organizationId?: string | null;
+      areasOfInterest?: string[]; availability?: string | null;
+      availabilityNotes?: string | null;
     },
   ): Promise<Volunteer> {
     const passwordHash = await this.passwords.hash(
@@ -830,6 +833,9 @@ export class VolunteersService {
           phone: data.phone,
           skills: data.skills?.trim() || null,
           occupation: data.occupation?.trim() || null,
+          areasOfInterest: data.areasOfInterest?.length ? data.areasOfInterest.join(',') : null,
+          availability: data.availability?.trim() || null,
+          availabilityNotes: data.availabilityNotes?.trim() || null,
           category: data.category ?? ('Individual' as const),
           organizationId: data.organizationId ?? null,
           complianceRead: false,

@@ -128,8 +128,21 @@ interface EditState {
   row: RosterRow;
   attended: boolean;
   hours: string;
+  arrivalTime: string;
+  departureTime: string;
   notes: string;
   absenceReason: string;
+  absenceDetail: string;
+}
+
+/** The same math the volunteer form's server side applies, for live preview. */
+function hoursBetween(arrival: string, departure: string): number | null {
+  if (!arrival || !departure) return null;
+  const [ah, am] = arrival.split(':').map(Number);
+  const [dh, dm] = departure.split(':').map(Number);
+  const minutes = dh * 60 + dm - (ah * 60 + am);
+  if (!Number.isFinite(minutes) || minutes <= 0) return null;
+  return Math.round((minutes / 60) * 100) / 100;
 }
 
 function fmtDate(iso: string): string {
@@ -322,11 +335,18 @@ export function SessionRecord() {
        * a stale value from the previous state must not survive into
        * certificate totals), and a reason travels only with Absent.
        */
+      const bothTimes = state.attended && state.arrivalTime !== '' && state.departureTime !== '';
       const body = {
         attended: state.attended,
-        hoursContributed: state.attended && state.hours !== '' ? Number(state.hours) : undefined,
+        // Arrival/departure define the hours when both are given (the email
+        // form's rule); the plain hours field is the fallback.
+        arrivalTime: bothTimes ? state.arrivalTime : undefined,
+        departureTime: bothTimes ? state.departureTime : undefined,
+        hoursContributed:
+          state.attended && !bothTimes && state.hours !== '' ? Number(state.hours) : undefined,
         notes: state.notes || undefined,
         absenceReason: !state.attended && state.absenceReason ? state.absenceReason : undefined,
+        absenceDetail: !state.attended && state.absenceDetail ? state.absenceDetail : undefined,
       };
       // An existing record is corrected; a missing one is created for the
       // volunteer who never submitted the form.
@@ -723,12 +743,15 @@ export function SessionRecord() {
                         row: r,
                         attended: r.attended ?? true,
                         hours: r.hours_contributed ? String(Number(r.hours_contributed)) : '',
+                        arrivalTime: r.arrival_time ? r.arrival_time.slice(0, 5) : '',
+                        departureTime: r.departure_time ? r.departure_time.slice(0, 5) : '',
                         notes: r.notes ?? '',
                         absenceReason: r.absence_reason ?? '',
+                        absenceDetail: r.absence_detail ?? '',
                       })
                     }
                   >
-                    {r.record_id ? '✎ Correct' : '+ Log'}
+                    {r.record_id ? '✏️ Correct' : '+ Log'}
                   </Button>
                 </TableCell>
                   </>
@@ -892,30 +915,70 @@ export function SessionRecord() {
               <MenuItem value="no">✕ Absent</MenuItem>
             </TextField>
             {edit.attended ? (
-              <TextField
-                label="Hours contributed"
-                type="number"
-                required
-                inputProps={{ min: 0, step: 0.25 }}
-                value={edit.hours}
-                onChange={(e) => setEdit({ ...edit, hours: e.target.value })}
-                error={edit.hours === ''}
-                helperText={edit.hours === '' ? 'Hours are required when marking present.' : undefined}
-              />
+              <>
+                {/* Same details as the emailed form: arrival and departure
+                    define the hours; the hours field is the fallback for a
+                    record where only a total is known. */}
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                  <TextField
+                    label="Arrival time"
+                    type="time"
+                    InputLabelProps={{ shrink: true }}
+                    value={edit.arrivalTime}
+                    onChange={(e) => setEdit({ ...edit, arrivalTime: e.target.value })}
+                  />
+                  <TextField
+                    label="Departure time"
+                    type="time"
+                    InputLabelProps={{ shrink: true }}
+                    value={edit.departureTime}
+                    onChange={(e) => setEdit({ ...edit, departureTime: e.target.value })}
+                  />
+                </Box>
+                <TextField
+                  label="Hours contributed"
+                  type="number"
+                  inputProps={{ min: 0, step: 0.25 }}
+                  value={
+                    edit.arrivalTime && edit.departureTime
+                      ? String(hoursBetween(edit.arrivalTime, edit.departureTime) ?? '')
+                      : edit.hours
+                  }
+                  disabled={Boolean(edit.arrivalTime && edit.departureTime)}
+                  onChange={(e) => setEdit({ ...edit, hours: e.target.value })}
+                  helperText={
+                    edit.arrivalTime && edit.departureTime
+                      ? hoursBetween(edit.arrivalTime, edit.departureTime) === null
+                        ? 'Departure must be after arrival.'
+                        : 'Derived from the arrival and departure times.'
+                      : 'Enter the times above, or the total hours directly.'
+                  }
+                />
+              </>
             ) : (
-              <TextField
-                select
-                label="Reason for absence"
-                value={edit.absenceReason}
-                onChange={(e) => setEdit({ ...edit, absenceReason: e.target.value })}
-              >
-                <MenuItem value="">Not stated</MenuItem>
-                {ABSENCE_REASONS.map((reason) => (
-                  <MenuItem key={reason} value={reason}>
-                    {reason}
-                  </MenuItem>
-                ))}
-              </TextField>
+              <>
+                <TextField
+                  select
+                  label="Reason for absence"
+                  value={edit.absenceReason}
+                  onChange={(e) => setEdit({ ...edit, absenceReason: e.target.value })}
+                >
+                  <MenuItem value="">Not stated</MenuItem>
+                  {ABSENCE_REASONS.map((reason) => (
+                    <MenuItem key={reason} value={reason}>
+                      {reason}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField
+                  label="Absence detail (optional)"
+                  multiline
+                  minRows={2}
+                  placeholder="Anything the volunteer said about why they could not come."
+                  value={edit.absenceDetail}
+                  onChange={(e) => setEdit({ ...edit, absenceDetail: e.target.value })}
+                />
+              </>
             )}
             <TextField
               label="Note"
@@ -933,7 +996,13 @@ export function SessionRecord() {
           </Button>
           <Button
             variant="pill"
-            disabled={save.isPending || (edit?.attended === true && edit.hours === '')}
+            disabled={
+              save.isPending ||
+              (edit?.attended === true &&
+                (edit.arrivalTime && edit.departureTime
+                  ? hoursBetween(edit.arrivalTime, edit.departureTime) === null
+                  : edit.hours === ''))
+            }
             onClick={() => edit && save.mutate(edit)}
           >
             {save.isPending ? 'Saving…' : 'Save attendance'}

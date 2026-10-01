@@ -204,6 +204,11 @@ export class AdminCreateVolunteerDto {
   @Matches(PHONE_PATTERN, { message: 'Enter a 10-digit mobile number' }) phone!: string;
   @IsOptional() @IsString() @MaxLength(255) skills?: string;
   @IsOptional() @IsString() @MaxLength(150) occupation?: string;
+  /** "How would they like to help?" (Round 37): same catalogs the public form uses. */
+  @IsOptional() @IsArray() @ArrayMaxSize(30) @IsString({ each: true }) areasOfInterest?: string[];
+  /** Frequency — a single code, or the free text typed under "Other". */
+  @IsOptional() @IsString() @MaxLength(120) availability?: string;
+  @IsOptional() @IsString() @MaxLength(2000) availabilityNotes?: string;
   @IsOptional() @IsIn(['Individual', 'CSR']) category?: 'Individual' | 'CSR';
   /** Pick an existing organization… */
   @IsOptional() @Matches(UUID_PATTERN, { message: 'must be a UUID' }) organizationId?: string;

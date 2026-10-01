@@ -219,7 +219,7 @@ export function ScheduledReportsPage() {
                           recipients: row.recipients,
                         })
                       }>
-                      ✎ Edit
+                      ✏️ Edit
                     </Button>
                     <Button size="small" variant="pillOutlined" sx={{ px: 1.25, py: 0.3, color: tokens.accentStrong }}
                       onClick={() => setDeleting(row)}>
