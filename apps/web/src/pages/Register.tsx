@@ -512,8 +512,9 @@ export function Register() {
                       ...f,
                       category: v === 'CSR' ? 'CSR' : 'Individual',
                       subCategory: v === 'Student' ? 'Student' : '',
-                      // A student names an institution, not an employer.
-                      organizationId: v === 'Student' ? '' : f.organizationId,
+                      // Only CSR names an organization; a student names an
+                      // institution instead, and Individuals are not asked.
+                      organizationId: v === 'CSR' ? f.organizationId : '',
                       institution: v === 'Student' ? f.institution : '',
                     }));
                   }}
@@ -543,35 +544,25 @@ export function Register() {
                     </MenuItem>
                   ))}
                 </TextField>
-              ) : (
+              ) : form.category === 'CSR' ? (
+                /* Organization is a CSR concern only — Individuals are not
+                   asked (Round 38; staff can still record an affiliation from
+                   the admin side if one applies). */
                 <TextField
                   select
-                  required={form.category === 'CSR'}
-                  label={
-                    form.category === 'CSR'
-                      ? 'Sponsoring organization'
-                      : 'Affiliated organization (optional)'
-                  }
+                  required
+                  label="Sponsoring organization"
                   value={form.organizationId}
                   onChange={(e) => set('organizationId', e.target.value)}
-                  helperText={
-                    form.category === 'CSR'
-                      ? 'CSR volunteers must name their organization'
-                      : 'Volunteering as an individual but representing your employer? Pick it here'
-                  }
+                  helperText="CSR volunteers must name their organization"
                 >
-                  {form.category !== 'CSR' && (
-                    <MenuItem value="">
-                      <em>Not affiliated</em>
-                    </MenuItem>
-                  )}
                   {organizations.map((org) => (
                     <MenuItem key={org.id} value={org.id}>
                       {org.name}
                     </MenuItem>
                   ))}
                 </TextField>
-              )}
+              ) : null}
 
               <Paper
                 variant="outlined"

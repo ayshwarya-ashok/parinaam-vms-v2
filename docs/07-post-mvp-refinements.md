@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-10-01 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across thirty-seven review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across thirty-eight review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -943,6 +943,17 @@ absence reason+detail round-trip, cascade-cancel + schedule refusal on a scratch
 activity, admin-create storing areas/frequency/notes) and in the browser (register
 checkboxes/radios/Other field, Field Execution filtering 49 rows → 3 Chote Kadam rows,
 the Correct dialog's time and absence-detail fields). Scratch data cleaned up after.
+
+---
+
+## Round 38 — /register stops asking Individuals for an organization  (2026-10-01)
+
+The same rule Add Volunteer adopted in Round 36, applied to the public form: the
+organization select now appears ONLY when "Through my employer (CSR)" is chosen (where it
+stays mandatory); "As an individual" is simply not asked, and switching away from CSR
+clears any organization already picked so it is never submitted silently. The V017
+individual-affiliation capability is untouched — staff can still record an affiliation
+from the admin side. Browser-verified across all three category switches.
 
 ---
 
