@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-10-01 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across thirty-four review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across thirty-five review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -841,6 +841,23 @@ dated 'upcoming' with a beneficiary-community link each (the V013 rule), codes c
 the seed block (`EVT-2026-0206…0212`, clear of the app's count-based generator). Applied
 to the running local and VM databases and verified through the volunteer browse API:
 every one lists as enrollable.
+
+---
+
+## Round 35 — The rest of the calendar  (2026-10-01)
+
+Round 34 filled October for the flagship programs; the other five active programs still
+had empty months. Seed `S009` adds fifteen enrollable sessions across October and
+November 2026 — four health-camp sessions (BP screenings, nutrition counselling, first
+aid), three Digital Literacy Zoom batches, three Youth Mentorship sessions, three Green
+Bengaluru drives (tree plantation, nursery setup, lake clean-up), and two Winter Coat
+Drive collection days. Two wrinkles of record: Environment Awareness got nothing on
+purpose (the program is still draft, so BR-17 would never open its sessions), and Winter
+Coat Drive was created through the UI with random UUIDs — it exists only in databases
+where someone made it — so its two sessions resolve the activity BY NAME and silently
+insert nothing where the program is absent (the VM today). Codes `EVT-2026-0213…0227`;
+every session carries a community link. Verified through the volunteer browse API:
+twenty-three enrollable sessions now span October–November.
 
 ---
 
