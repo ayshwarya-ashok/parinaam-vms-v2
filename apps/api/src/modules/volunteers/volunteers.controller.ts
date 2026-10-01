@@ -112,6 +112,7 @@ export class VolunteersController {
     @Query('category') category?: string,
     @Query('city') city?: string,
     @Query('registrationStatus') registrationStatus?: string,
+    @Query('subCategory') subCategory?: string,
     @Query('isActive') isActive?: string,
     @Query('registeredFrom') registeredFrom?: string,
     @Query('registeredTo') registeredTo?: string,
@@ -119,7 +120,7 @@ export class VolunteersController {
     @Query('offset') offset?: number,
   ) {
     return this.service.directory({
-      q, phase, category, city, registrationStatus,
+      q, phase, category, city, registrationStatus, subCategory,
       isActive, registeredFrom, registeredTo, limit, offset,
     });
   }

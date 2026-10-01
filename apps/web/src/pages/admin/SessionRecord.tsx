@@ -31,6 +31,7 @@ import {
   SortableCell,
   StatTile,
   StatusPill,
+  useColumnFilters,
   useTableSort,
   VolunteerPicker,
 } from '@/components';
@@ -202,7 +203,13 @@ export function SessionRecord() {
       : null,
   );
 
-  const roster = useTableSort(data?.roster, {
+  // Column funnels (Round 39) for the two categorical roster columns.
+  const rosterCf = useColumnFilters(data?.roster, {
+    attended: (r) =>
+      r.record_id === null ? 'Not submitted' : r.attended ? 'Present' : 'Absent',
+    source: (r) => (r.source ? SOURCE_LABEL[r.source] : '—'),
+  });
+  const roster = useTableSort(rosterCf.filtered, {
     volunteer: (r) => `${r.first_name} ${r.last_name}`,
     enrolledAt: (r) => r.enrolled_at,
     skills: (r) => r.enrollment_skills,
@@ -638,10 +645,10 @@ export function SessionRecord() {
                 </>
               ) : (
                 <>
-                  <SortableCell sortKey="attended" sort={roster.sort} onSort={roster.toggle} align="center">Attended</SortableCell>
+                  <SortableCell sortKey="attended" sort={roster.sort} onSort={roster.toggle} align="center" filter={rosterCf.filterFor('attended')}>Attended</SortableCell>
                   <TableCell align="center">Times</TableCell>
                   <SortableCell sortKey="hours" sort={roster.sort} onSort={roster.toggle} align="right">Hours</SortableCell>
-                  <SortableCell sortKey="source" sort={roster.sort} onSort={roster.toggle}>Logged by</SortableCell>
+                  <SortableCell sortKey="source" sort={roster.sort} onSort={roster.toggle} filter={rosterCf.filterFor('source')}>Logged by</SortableCell>
                   <TableCell>Notes</TableCell>
                   <TableCell align="right">Action</TableCell>
                 </>

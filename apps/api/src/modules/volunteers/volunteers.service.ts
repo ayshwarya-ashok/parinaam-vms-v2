@@ -408,6 +408,7 @@ export class VolunteersService {
     category?: string;
     city?: string;
     registrationStatus?: string;
+    subCategory?: string;
     isActive?: string;
     registeredFrom?: string;
     registeredTo?: string;
@@ -450,13 +451,29 @@ export class VolunteersService {
       );
     }
     if (query.phase) qb.andWhere('v.phase = :phase', { phase: query.phase });
-    if (query.registrationStatus) {
-      qb.andWhere('v.registrationStatus = :rs', { rs: query.registrationStatus });
+    // Multi-select filters (Round 39): each param may carry a comma list.
+    const list = (raw?: string) => (raw ?? '').split(',').map((v) => v.trim()).filter(Boolean);
+    const rs = list(query.registrationStatus);
+    if (rs.length) qb.andWhere('v.registrationStatus IN (:...rs)', { rs });
+    const cats = list(query.category);
+    if (cats.length) qb.andWhere('v.category IN (:...cats)', { cats });
+    // Sub-category: '—' selects the volunteers who have none.
+    const subs = list(query.subCategory);
+    if (subs.length) {
+      const named = subs.filter((s) => s !== '—');
+      const withBlank = subs.includes('—');
+      if (named.length && withBlank) {
+        qb.andWhere('(v.subCategory IN (:...subs) OR v.subCategory IS NULL)', { subs: named });
+      } else if (named.length) {
+        qb.andWhere('v.subCategory IN (:...subs)', { subs: named });
+      } else if (withBlank) {
+        qb.andWhere('v.subCategory IS NULL');
+      }
     }
-    if (query.category) qb.andWhere('v.category = :category', { category: query.category });
     if (query.city) qb.andWhere('v.city ILIKE :city', { city: query.city });
-    if (query.isActive === 'true' || query.isActive === 'false') {
-      qb.andWhere('u.is_active = :isActive', { isActive: query.isActive === 'true' });
+    const actives = list(query.isActive);
+    if (actives.length === 1) {
+      qb.andWhere('u.is_active = :isActive', { isActive: actives[0] === 'true' });
     }
     // Registration-date range, inclusive, on the local calendar date.
     if (query.registeredFrom && /^\d{4}-\d{2}-\d{2}$/.test(query.registeredFrom)) {
@@ -467,6 +484,20 @@ export class VolunteersService {
     }
 
     const [rows, total] = await qb.getManyAndCount();
+
+    // Facets for the column funnels — the distinct values the whole directory
+    // actually holds (not just this page), so the dropdowns are data-driven.
+    const [facetRows] = await Promise.all([
+      this.dataSource.query(
+        `SELECT
+           ARRAY(SELECT DISTINCT registration_status::text FROM volunteers ORDER BY 1) AS registration_statuses,
+           ARRAY(SELECT DISTINCT category::text FROM volunteers ORDER BY 1) AS categories,
+           ARRAY(SELECT DISTINCT COALESCE(sub_category, '—') FROM volunteers ORDER BY 1) AS sub_categories,
+           ARRAY(SELECT DISTINCT CASE WHEN u.is_active THEN 'Active' ELSE 'Inactive' END
+                 FROM volunteers v JOIN users u ON u.id = v.user_id ORDER BY 1) AS accounts`,
+      ),
+    ]);
+
     return {
       data: rows.map((v) => ({
         id: v.id,
@@ -487,7 +518,18 @@ export class VolunteersService {
         rejectionReason: v.rejectionReason,
         createdAt: v.createdAt,
       })),
-      meta: { total, limit, offset, pending: await this.pendingCount() },
+      meta: {
+        total,
+        limit,
+        offset,
+        pending: await this.pendingCount(),
+        facets: {
+          registrationStatuses: facetRows[0]?.registration_statuses ?? [],
+          categories: facetRows[0]?.categories ?? [],
+          subCategories: facetRows[0]?.sub_categories ?? [],
+          accounts: facetRows[0]?.accounts ?? [],
+        },
+      },
     };
   }
 

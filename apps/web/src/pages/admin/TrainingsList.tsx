@@ -16,11 +16,16 @@ export function TrainingsList() {
   const { enqueueSnackbar } = useSnackbar();
   const invalidate = useTrainingInvalidation();
 
-  const { data: trainings = [], isLoading } = useTrainingsList({
-    q: q || undefined,
-    category: category === 'all' ? undefined : category,
-    status: status === 'all' ? undefined : status,
-  });
+  // Load everything; the filter chips below are built from the DATA's own
+  // distinct categories/statuses (Round 39), never a hardcoded list.
+  const { data: allTrainings = [], isLoading } = useTrainingsList({ q: q || undefined });
+  const categories = [...new Set(allTrainings.map((t) => t.category))].sort();
+  const statuses = [...new Set(allTrainings.map((t) => t.status))].sort();
+  const trainings = allTrainings.filter(
+    (t) =>
+      (category === 'all' || t.category === category) &&
+      (status === 'all' || t.status === status),
+  );
 
   const toggle = useMutation({
     mutationFn: async (t: { id: string; status: string }) =>
@@ -55,8 +60,7 @@ export function TrainingsList() {
             onChange: setCategory,
             options: [
               { value: 'all', label: 'All' },
-              { value: 'compliance', label: 'Compliance' },
-              { value: 'activity', label: 'Activity' },
+              ...categories.map((c) => ({ value: c, label: c })),
             ],
           },
           {
@@ -65,8 +69,7 @@ export function TrainingsList() {
             onChange: setStatus,
             options: [
               { value: 'all', label: 'All' },
-              { value: 'active', label: 'Active' },
-              { value: 'inactive', label: 'Inactive' },
+              ...statuses.map((s) => ({ value: s, label: s })),
             ],
           },
         ]}

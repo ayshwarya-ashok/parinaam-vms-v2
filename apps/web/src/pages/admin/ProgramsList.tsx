@@ -21,7 +21,10 @@ export function ProgramsList() {
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('all');
   const navigate = useNavigate();
-  const { data: programs = [], isLoading } = usePrograms(q, status);
+  // Load all; the status options are the data's own distinct statuses (Round 39).
+  const { data: allPrograms = [], isLoading } = usePrograms(q, 'all');
+  const statuses = [...new Set(allPrograms.map((p) => p.status))].sort();
+  const programs = allPrograms.filter((p) => status === 'all' || p.status === status);
 
   return (
     <PageShell
@@ -43,10 +46,7 @@ export function ProgramsList() {
             onChange: setStatus,
             options: [
               { value: 'all', label: 'All' },
-              { value: 'active', label: 'Active' },
-              { value: 'draft', label: 'Draft' },
-              { value: 'discontinued', label: 'Discontinued' },
-              { value: 'deleted', label: 'Deleted' },
+              ...statuses.map((s) => ({ value: s, label: s[0].toUpperCase() + s.slice(1) })),
             ],
           },
         ]}

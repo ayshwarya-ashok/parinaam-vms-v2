@@ -26,7 +26,7 @@ import {
   openCertificate,
   useCertificateCandidates,
 } from '@/api/recognition';
-import { CertificatePreviewDialog,ConfirmDialog, FilterBar, PageShell, SortableCell, useTableSort } from '@/components';
+import { CertificatePreviewDialog,ConfirmDialog, FilterBar, PageShell, SortableCell, useColumnFilters, useTableSort } from '@/components';
 import { tokens } from '@/theme';
 
 function fmtDate(iso: string | null): string {
@@ -42,14 +42,26 @@ function fmtDate(iso: string | null): string {
 export function CertificatesAdmin() {
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [q, setQ] = useState('');
-  const [status, setStatus] = useState('all');
-  const [programId, setProgramId] = useState('');
   const [bulkOpen, setBulkOpen] = useState(false);
   const queryClient = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
 
-  const { data } = useCertificateCandidates({ q, programId, status });
+  const { data } = useCertificateCandidates({ q, programId: '', status: 'all' });
   const { data: programs } = usePrograms('', 'all');
+
+  // Column funnels (Round 39): program and issue-state filter client-side
+  // over the loaded rows; their option lists are the data's distinct values.
+  const cf = useColumnFilters(data, {
+    program: (r) => r.programName,
+    certificate: (r) => (r.certificate?.issued ? 'Issued' : 'Pending'),
+  });
+  // Bulk issue is per program: it arms when the Program funnel holds exactly one.
+  const selectedProgramName = cf.filterFor('program').selected.length === 1
+    ? cf.filterFor('program').selected[0]
+    : null;
+  const bulkProgramId = selectedProgramName
+    ? (programs ?? []).find((p) => p.name === selectedProgramName)?.id ?? ''
+    : '';
 
   const refresh = () => void queryClient.invalidateQueries({ queryKey: ['certificates'] });
 
@@ -94,7 +106,7 @@ export function CertificatesAdmin() {
 
   const bulk = useMutation({
     mutationFn: async () =>
-      (await api.post<{ issued: number; skipped: number }>('/certificates/issue-bulk', { programId })).data,
+      (await api.post<{ issued: number; skipped: number }>('/certificates/issue-bulk', { programId: bulkProgramId })).data,
     onSuccess: (result) => {
       refresh();
       setBulkOpen(false);
@@ -106,51 +118,31 @@ export function CertificatesAdmin() {
     onError: (err) => enqueueSnackbar(asApiError(err)?.message ?? 'Bulk issue failed', { variant: 'error' }),
   });
 
-  const { sorted, sort, toggle } = useTableSort(data, {
+  const { sorted, sort, toggle } = useTableSort(cf.filtered, {
     volunteer: (r) => r.volunteerName,
     program: (r) => r.programName,
     hours: (r) => Number(r.hours),
     certificate: (r) => r.certificate?.certificateNumber ?? null,
   });
 
-  const pendingInProgram = (data ?? []).filter((c) => !c.certificate?.issued).length;
-  const programName = programs?.find((p) => p.id === programId)?.name;
+  const pendingInProgram = cf.filtered.filter((c) => !c.certificate?.issued).length;
 
   return (
     <PageShell
       title="Issue Certificates"
       description="Every volunteer with attended hours, per program. Issuing renders the PDF, stores it, and emails it with the document attached."
       actions={
-        programId ? (
+        bulkProgramId ? (
           <Button variant="pill" disabled={pendingInProgram === 0} onClick={() => setBulkOpen(true)}>
             🏆 Issue all pending ({pendingInProgram})
           </Button>
         ) : undefined
       }
     >
+      {/* Program and issue-state filters live in the column funnels (Round 39);
+          filter to exactly one program to arm the bulk-issue button. */}
       <FilterBar
         search={{ value: q, onChange: setQ, placeholder: 'Search volunteer, email or program…' }}
-        groups={[
-          {
-            label: 'Status',
-            value: status,
-            onChange: setStatus,
-            options: [
-              { value: 'all', label: 'All' },
-              { value: 'pending', label: 'Pending' },
-              { value: 'issued', label: 'Issued' },
-            ],
-          },
-          {
-            label: 'Program',
-            value: programId || 'all',
-            onChange: (v) => setProgramId(v === 'all' ? '' : v),
-            options: [
-              { value: 'all', label: 'All programs' },
-              ...(programs ?? []).map((p) => ({ value: p.id, label: p.name })),
-            ],
-          },
-        ]}
       />
 
       <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3 }}>
@@ -158,9 +150,9 @@ export function CertificatesAdmin() {
           <TableHead>
             <TableRow>
               <SortableCell sortKey="volunteer" sort={sort} onSort={toggle}>Volunteer</SortableCell>
-              <SortableCell sortKey="program" sort={sort} onSort={toggle}>Program</SortableCell>
+              <SortableCell sortKey="program" sort={sort} onSort={toggle} filter={cf.filterFor('program')}>Program</SortableCell>
               <SortableCell sortKey="hours" sort={sort} onSort={toggle} align="center">Participation</SortableCell>
-              <SortableCell sortKey="certificate" sort={sort} onSort={toggle}>Certificate</SortableCell>
+              <SortableCell sortKey="certificate" sort={sort} onSort={toggle} filter={cf.filterFor('certificate')}>Certificate</SortableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -283,8 +275,8 @@ export function CertificatesAdmin() {
 
       <ConfirmDialog
         open={bulkOpen}
-        title={`Issue all pending certificates — ${programName ?? ''}`}
-        message={`This issues ${pendingInProgram} certificate(s) for ${programName ?? 'this program'}, each rendered and emailed with the PDF attached. Continue?`}
+        title={`Issue all pending certificates — ${selectedProgramName ?? ''}`}
+        message={`This issues ${pendingInProgram} certificate(s) for ${selectedProgramName ?? 'this program'}, each rendered and emailed with the PDF attached. Continue?`}
         confirmLabel={bulk.isPending ? 'Issuing…' : 'Issue all'}
         onConfirm={() => bulk.mutate()}
         onCancel={() => setBulkOpen(false)}

@@ -19,7 +19,7 @@ import {
   useVolunteerReport,
 } from '@/api/analytics';
 import { asApiError } from '@/api/client';
-import { FilterBar, PageShell, SortableCell, useTableSort } from '@/components';
+import { FilterBar, PageShell, SortableCell, useColumnFilters, useTableSort } from '@/components';
 import { tokens } from '@/theme';
 
 function fmtDateTime(iso: string): string {
@@ -34,25 +34,34 @@ function fmtDateTime(iso: string): string {
 /** Reports screen: the volunteer table with attendance bars, three export buttons, run history. */
 export function ReportsPage() {
   const [q, setQ] = useState('');
-  const [category, setCategory] = useState('all');
-  const [phase, setPhase] = useState('all');
   const [exporting, setExporting] = useState<string | null>(null);
   const { enqueueSnackbar } = useSnackbar();
 
-  const filters = { q, category, phase };
-  const { data: rows } = useVolunteerReport(filters);
+  const { data: rows } = useVolunteerReport({ q, category: 'all', phase: 'all' });
   const { data: runs, refetch: refetchRuns } = useReportRuns();
 
-  const volunteers = useTableSort(rows, {
+  // Column funnels (Round 39): distinct values straight from the rows.
+  const cf = useColumnFilters(rows, {
+    category: (r) => r.category,
+    phase: (r) => r.phase,
+  });
+  const volunteers = useTableSort(cf.filtered, {
     volunteer: (r) => r.volunteer_name,
-    category: (r) => `${r.category} ${r.phase}`,
+    category: (r) => r.category,
+    phase: (r) => r.phase,
     programs: (r) => r.programs_joined,
     hours: (r) => Number(r.total_hours),
     attendance: (r) => Number(r.attendance_pct),
     trainings: (r) => r.trainings_passed,
     certificates: (r) => r.certificates_issued,
   });
-  const runsSort = useTableSort(runs, {
+  const runsCf = useColumnFilters(runs, {
+    report: (r) => r.reportType,
+    format: (r) => r.format,
+    status: (r) => r.status,
+    source: (r) => (r.scheduledReportId ? 'scheduled' : 'manual'),
+  });
+  const runsSort = useTableSort(runsCf.filtered, {
     when: (r) => r.createdAt,
     report: (r) => r.reportType,
     format: (r) => r.format,
@@ -60,6 +69,12 @@ export function ReportsPage() {
     status: (r) => r.status,
     source: (r) => Boolean(r.scheduledReportId),
   });
+  // Exports mirror the funnels where the export API can express them (it takes
+  // one category/phase); a multi-selection exports the broader set.
+  const single = (key: string) => {
+    const sel = cf.filterFor(key).selected;
+    return sel.length === 1 ? sel[0] : undefined;
+  };
 
   const doCalendarExport = async () => {
     setExporting('Calendar');
@@ -100,8 +115,8 @@ export function ReportsPage() {
     try {
       await exportAndDownload('volunteers', format, {
         q: q || undefined,
-        category: category === 'all' ? undefined : category,
-        phase: phase === 'all' ? undefined : phase,
+        category: single('category'),
+        phase: single('phase'),
       });
       void refetchRuns();
       enqueueSnackbar(`${format} export downloaded`, { variant: 'success' });
@@ -171,40 +186,16 @@ export function ReportsPage() {
         ))}
       </Paper>
 
-      <FilterBar
-        search={{ value: q, onChange: setQ, placeholder: 'Search name or email…' }}
-        groups={[
-          {
-            label: 'Category',
-            value: category,
-            onChange: setCategory,
-            options: [
-              { value: 'all', label: 'All' },
-              { value: 'Individual', label: 'Individual' },
-              { value: 'CSR', label: 'CSR' },
-            ],
-          },
-          {
-            label: 'Phase',
-            value: phase,
-            onChange: setPhase,
-            options: [
-              { value: 'all', label: 'All' },
-              { value: 'Onboarding', label: 'Onboarding' },
-              { value: 'In Training', label: 'In Training' },
-              { value: 'Active', label: 'Active' },
-              { value: 'Inactive', label: 'Inactive' },
-            ],
-          },
-        ]}
-      />
+      {/* Category/Phase moved into their column funnels (Round 39). */}
+      <FilterBar search={{ value: q, onChange: setQ, placeholder: 'Search name or email…' }} />
 
       <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3, mb: 3 }}>
         <Table size="small">
           <TableHead>
             <TableRow>
               <SortableCell sortKey="volunteer" sort={volunteers.sort} onSort={volunteers.toggle}>Volunteer</SortableCell>
-              <SortableCell sortKey="category" sort={volunteers.sort} onSort={volunteers.toggle}>Category / phase</SortableCell>
+              <SortableCell sortKey="category" sort={volunteers.sort} onSort={volunteers.toggle} filter={cf.filterFor('category')}>Category</SortableCell>
+              <SortableCell sortKey="phase" sort={volunteers.sort} onSort={volunteers.toggle} filter={cf.filterFor('phase')}>Phase</SortableCell>
               <SortableCell sortKey="programs" sort={volunteers.sort} onSort={volunteers.toggle} align="right">Programs</SortableCell>
               <SortableCell sortKey="hours" sort={volunteers.sort} onSort={volunteers.toggle} align="right">Hours</SortableCell>
               <SortableCell sortKey="attendance" sort={volunteers.sort} onSort={volunteers.toggle} sx={{ minWidth: 140 }}>Attendance</SortableCell>
@@ -221,7 +212,8 @@ export function ReportsPage() {
                     {row.email}{row.location ? ` · ${row.location}` : ''}
                   </Typography>
                 </TableCell>
-                <TableCell sx={{ fontSize: '0.85rem' }}>{row.category} · {row.phase}</TableCell>
+                <TableCell sx={{ fontSize: '0.85rem' }}>{row.category}</TableCell>
+                <TableCell sx={{ fontSize: '0.85rem' }}>{row.phase}</TableCell>
                 <TableCell align="right">{row.programs_joined}</TableCell>
                 <TableCell align="right"><strong>{Number(row.total_hours)}</strong></TableCell>
                 <TableCell>
@@ -245,9 +237,9 @@ export function ReportsPage() {
                 <TableCell align="right">{row.certificates_issued}</TableCell>
               </TableRow>
             ))}
-            {rows?.length === 0 && (
+            {cf.filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                <TableCell colSpan={8} sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
                   No volunteers match your filters.
                 </TableCell>
               </TableRow>
@@ -262,11 +254,11 @@ export function ReportsPage() {
           <TableHead>
             <TableRow>
               <SortableCell sortKey="when" sort={runsSort.sort} onSort={runsSort.toggle}>When</SortableCell>
-              <SortableCell sortKey="report" sort={runsSort.sort} onSort={runsSort.toggle}>Report</SortableCell>
-              <SortableCell sortKey="format" sort={runsSort.sort} onSort={runsSort.toggle}>Format</SortableCell>
+              <SortableCell sortKey="report" sort={runsSort.sort} onSort={runsSort.toggle} filter={runsCf.filterFor('report')}>Report</SortableCell>
+              <SortableCell sortKey="format" sort={runsSort.sort} onSort={runsSort.toggle} filter={runsCf.filterFor('format')}>Format</SortableCell>
               <SortableCell sortKey="rowCount" sort={runsSort.sort} onSort={runsSort.toggle} align="right">Rows</SortableCell>
-              <SortableCell sortKey="status" sort={runsSort.sort} onSort={runsSort.toggle}>Status</SortableCell>
-              <SortableCell sortKey="source" sort={runsSort.sort} onSort={runsSort.toggle}>Source</SortableCell>
+              <SortableCell sortKey="status" sort={runsSort.sort} onSort={runsSort.toggle} filter={runsCf.filterFor('status')}>Status</SortableCell>
+              <SortableCell sortKey="source" sort={runsSort.sort} onSort={runsSort.toggle} filter={runsCf.filterFor('source')}>Source</SortableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -293,7 +285,7 @@ export function ReportsPage() {
                 </TableCell>
               </TableRow>
             ))}
-            {runs?.length === 0 && (
+            {runsCf.filtered.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6} sx={{ textAlign: 'center', py: 3, color: 'text.secondary' }}>
                   No exports yet.

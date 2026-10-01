@@ -17,7 +17,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '@/api/client';
 import { useAssessments, useTraining, useTrainingInvalidation } from '@/api/trainings';
-import { ConfirmDialog, FilterBar, PageShell, SortableCell, useTableSort } from '@/components';
+import { ConfirmDialog, PageShell, SortableCell, useColumnFilters, useTableSort } from '@/components';
 import { tokens } from '@/theme';
 
 function Pips({ used, max, passed }: { used: number; max: number | null; passed: boolean }) {
@@ -52,12 +52,15 @@ export function AssessmentsPage() {
   const { enqueueSnackbar } = useSnackbar();
   const invalidate = useTrainingInvalidation();
 
-  const [status, setStatus] = useState('all');
   const [resetTarget, setResetTarget] = useState<{ volunteerId: string; name: string } | null>(null);
 
   const { data: training } = useTraining(id);
-  const { data: rows = [] } = useAssessments(id!, status);
-  const { sorted, sort, toggle } = useTableSort(rows, {
+  // All rows load; the Status column's funnel filters them (Round 39).
+  const { data: rows = [] } = useAssessments(id!, 'all');
+  const cf = useColumnFilters(rows, {
+    status: (r) => (r.passed ? 'Passed' : r.exhausted ? 'Attempts exhausted' : 'Not passed'),
+  });
+  const { sorted, sort, toggle } = useTableSort(cf.filtered, {
     volunteer: (r) => r.name,
     attempts: (r) => r.attemptsUsed,
     best: (r) => (r.scores.length ? Math.max(...r.scores) : null),
@@ -92,22 +95,6 @@ export function AssessmentsPage() {
           : undefined
       }
     >
-      <FilterBar
-        groups={[
-          {
-            label: 'Status',
-            value: status,
-            onChange: setStatus,
-            options: [
-              { value: 'all', label: 'All' },
-              { value: 'passed', label: 'Passed' },
-              { value: 'failed', label: 'Not passed' },
-              { value: 'exhausted', label: 'Attempts exhausted' },
-            ],
-          },
-        ]}
-      />
-
       <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3 }}>
         <Table size="small">
           <TableHead>
@@ -115,7 +102,7 @@ export function AssessmentsPage() {
               <SortableCell sortKey="volunteer" sort={sort} onSort={toggle}>Volunteer</SortableCell>
               <SortableCell sortKey="attempts" sort={sort} onSort={toggle}>Attempts used</SortableCell>
               <SortableCell sortKey="best" sort={sort} onSort={toggle}>Scores</SortableCell>
-              <SortableCell sortKey="status" sort={sort} onSort={toggle}>Status</SortableCell>
+              <SortableCell sortKey="status" sort={sort} onSort={toggle} filter={cf.filterFor('status')}>Status</SortableCell>
               <SortableCell sortKey="validUntil" sort={sort} onSort={toggle}>Valid until</SortableCell>
               <TableCell align="right">Admin actions</TableCell>
             </TableRow>

@@ -21,7 +21,7 @@ import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 import { ScheduledReportRow, useScheduledReports } from '@/api/analytics';
 import { api, asApiError } from '@/api/client';
-import { ConfirmDialog, EmptyState, PageShell, SortableCell, useTableSort } from '@/components';
+import { ConfirmDialog, EmptyState, PageShell, SortableCell, useColumnFilters, useTableSort } from '@/components';
 import { tokens } from '@/theme';
 
 interface FormState {
@@ -61,7 +61,11 @@ export function ScheduledReportsPage() {
   const queryClient = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
   const { data } = useScheduledReports();
-  const { sorted, sort, toggle: sortBy } = useTableSort(data, {
+  const cf = useColumnFilters(data, {
+    cadence: (r) => r.frequency,
+    status: (r) => (r.isActive ? 'Active' : 'Paused'),
+  });
+  const { sorted, sort, toggle: sortBy } = useTableSort(cf.filtered, {
     name: (r) => r.name,
     cadence: (r) => `${r.frequency} ${r.sendTime}`,
     recipients: (r) => r.recipients,
@@ -151,10 +155,10 @@ export function ScheduledReportsPage() {
             <TableHead>
               <TableRow>
                 <SortableCell sortKey="name" sort={sort} onSort={sortBy}>Schedule</SortableCell>
-                <SortableCell sortKey="cadence" sort={sort} onSort={sortBy}>Cadence</SortableCell>
+                <SortableCell sortKey="cadence" sort={sort} onSort={sortBy} filter={cf.filterFor('cadence')}>Cadence</SortableCell>
                 <SortableCell sortKey="recipients" sort={sort} onSort={sortBy}>Recipients</SortableCell>
                 <SortableCell sortKey="nextRun" sort={sort} onSort={sortBy}>Next run</SortableCell>
-                <SortableCell sortKey="status" sort={sort} onSort={sortBy}>Status</SortableCell>
+                <SortableCell sortKey="status" sort={sort} onSort={sortBy} filter={cf.filterFor('status')}>Status</SortableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>

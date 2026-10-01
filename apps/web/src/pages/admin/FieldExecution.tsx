@@ -19,7 +19,7 @@ import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { api, asApiError } from '@/api/client';
-import { FilterBar, PageShell, SortableCell, StatusPill, useTableSort } from '@/components';
+import { FilterBar, PageShell, SortableCell, StatusPill, useColumnFilters, useTableSort } from '@/components';
 import { tokens } from '@/theme';
 
 interface DispatchRow {
@@ -69,19 +69,16 @@ function SentBadge({ state }: { state: { sent: boolean; sentAt: string | null; c
 
 export function FieldExecution() {
   const [q, setQ] = useState('');
-  const [sendStatus, setSendStatus] = useState('all');
-  const [programFilter, setProgramFilter] = useState('all');
-  const [activityFilter, setActivityFilter] = useState('all');
   const [modal, setModal] = useState<{ row: DispatchRow; volunteer: Preview; coordinator: Preview } | null>(null);
   const queryClient = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
 
   const { data } = useQuery({
-    queryKey: ['dispatches', q, sendStatus],
+    queryKey: ['dispatches', q],
     queryFn: async () =>
       (
         await api.get<{ data: DispatchRow[] }>('/attendance/dispatches', {
-          params: { q: q || undefined, sendStatus: sendStatus === 'all' ? undefined : sendStatus },
+          params: { q: q || undefined },
         })
       ).data.data,
   });
@@ -117,23 +114,17 @@ export function FieldExecution() {
     onError: (err) => enqueueSnackbar(asApiError(err)?.message ?? 'Send failed', { variant: 'error' }),
   });
 
-  // Program/activity filters are client-side over the loaded rows; the
-  // activity list narrows to the chosen program so the two stay coherent.
-  const programOptions = [...new Set((data ?? []).map((r) => r.program.name))].sort();
-  const activityOptions = [
-    ...new Set(
-      (data ?? [])
-        .filter((r) => programFilter === 'all' || r.program.name === programFilter)
-        .map((r) => r.activity.name),
-    ),
-  ].sort();
-  const filtered = (data ?? []).filter(
-    (r) =>
-      (programFilter === 'all' || r.program.name === programFilter) &&
-      (activityFilter === 'all' || r.activity.name === activityFilter),
-  );
+  // Per-column funnels (Round 39): the distinct lists come straight from the
+  // rows on screen, so they can never drift from the data.
+  const cf = useColumnFilters(data, {
+    program: (r) => r.program.name,
+    activity: (r) => r.activity.name,
+    volunteerEmail: (r) => (r.volunteerEmail.sent ? 'Sent' : 'Not sent'),
+    coordinatorEmail: (r) => (r.coordinatorEmail.sent ? 'Sent' : 'Not sent'),
+    report: (r) => (r.reportSubmitted ? 'Submitted' : 'Not submitted'),
+  });
 
-  const { sorted, sort, toggle } = useTableSort(filtered, {
+  const { sorted, sort, toggle } = useTableSort(cf.filtered, {
     program: (r) => r.program.name,
     activity: (r) => r.activity.name,
     session: (r) => r.name,
@@ -149,52 +140,24 @@ export function FieldExecution() {
       title="Field Execution & Attendance"
       description="Send attendance links per session — one email lets volunteers self-report, the other lets the coordinator file the occurrence report. Open any session's record to see what was logged and correct it."
     >
+      {/* Column funnels carry the program/activity/email filters now — the
+          bar keeps only the free-text search. */}
       <FilterBar
         search={{ value: q, onChange: setQ, placeholder: 'Search session, activity or program…' }}
-        groups={[
-          {
-            label: 'Program',
-            value: programFilter,
-            onChange: (v) => { setProgramFilter(v); setActivityFilter('all'); },
-            options: [
-              { value: 'all', label: 'All' },
-              ...programOptions.map((name) => ({ value: name, label: name })),
-            ],
-          },
-          {
-            label: 'Activity',
-            value: activityFilter,
-            onChange: setActivityFilter,
-            options: [
-              { value: 'all', label: 'All' },
-              ...activityOptions.map((name) => ({ value: name, label: name })),
-            ],
-          },
-          {
-            label: 'Email status',
-            value: sendStatus,
-            onChange: setSendStatus,
-            options: [
-              { value: 'all', label: 'All' },
-              { value: 'pending', label: 'Not sent' },
-              { value: 'sent', label: 'Sent' },
-            ],
-          },
-        ]}
       />
 
       <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3 }}>
         <Table size="small">
           <TableHead>
             <TableRow>
-              <SortableCell sortKey="program" sort={sort} onSort={toggle}>Program</SortableCell>
-              <SortableCell sortKey="activity" sort={sort} onSort={toggle}>Activity</SortableCell>
+              <SortableCell sortKey="program" sort={sort} onSort={toggle} filter={cf.filterFor('program')}>Program</SortableCell>
+              <SortableCell sortKey="activity" sort={sort} onSort={toggle} filter={cf.filterFor('activity')}>Activity</SortableCell>
               <SortableCell sortKey="session" sort={sort} onSort={toggle}>Session</SortableCell>
               <SortableCell sortKey="date" sort={sort} onSort={toggle}>Date & time</SortableCell>
-              <SortableCell sortKey="volunteerEmail" sort={sort} onSort={toggle}>Volunteer email</SortableCell>
-              <SortableCell sortKey="coordinatorEmail" sort={sort} onSort={toggle}>Coordinator email</SortableCell>
+              <SortableCell sortKey="volunteerEmail" sort={sort} onSort={toggle} filter={cf.filterFor('volunteerEmail')}>Volunteer email</SortableCell>
+              <SortableCell sortKey="coordinatorEmail" sort={sort} onSort={toggle} filter={cf.filterFor('coordinatorEmail')}>Coordinator email</SortableCell>
               <SortableCell sortKey="attendance" sort={sort} onSort={toggle} align="center">Attendance</SortableCell>
-              <SortableCell sortKey="report" sort={sort} onSort={toggle} align="center">Report</SortableCell>
+              <SortableCell sortKey="report" sort={sort} onSort={toggle} align="center" filter={cf.filterFor('report')}>Report</SortableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -265,7 +228,7 @@ export function FieldExecution() {
                 </TableCell>
               </TableRow>
             ))}
-            {filtered.length === 0 && (
+            {cf.filtered.length === 0 && (
               <TableRow>
                 <TableCell colSpan={9} sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
                   No sessions match your filters.

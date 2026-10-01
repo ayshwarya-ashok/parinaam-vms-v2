@@ -25,7 +25,7 @@ import { Link as RouterLink, useParams } from 'react-router-dom';
 import { useActivity } from '@/api/admin';
 import { useDynamicCrumbs } from '@/app/breadcrumbs';
 import { api, asApiError } from '@/api/client';
-import { ConfirmDialog, PageShell, SortableCell, StatusPill, useTableSort } from '@/components';
+import { ConfirmDialog, PageShell, SortableCell, StatusPill, useColumnFilters, useTableSort } from '@/components';
 import { useAuth } from '@/app/auth';
 
 function fmtDate(iso: string): string {
@@ -47,7 +47,11 @@ export function ActivityDetail() {
   // Local date, not UTC: "has this session's day arrived?" is a wall-clock question.
   const now = new Date();
   const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  const { sorted, sort, toggle } = useTableSort(activity?.events, {
+  const cf = useColumnFilters(activity?.events, {
+    status: (e) => e.status,
+    coordinator: (e) => e.coordinator_name,
+  });
+  const { sorted, sort, toggle } = useTableSort(cf.filtered, {
     code: (e) => e.code,
     date: (e) => `${String(e.date).slice(0, 10)} ${e.start_time}`,
     location: (e) => e.location,
@@ -231,9 +235,9 @@ export function ActivityDetail() {
               <SortableCell sortKey="code" sort={sort} onSort={toggle}>Code</SortableCell>
               <SortableCell sortKey="date" sort={sort} onSort={toggle}>Date & time</SortableCell>
               <SortableCell sortKey="location" sort={sort} onSort={toggle}>Location</SortableCell>
-              <SortableCell sortKey="coordinator" sort={sort} onSort={toggle}>Coordinator</SortableCell>
+              <SortableCell sortKey="coordinator" sort={sort} onSort={toggle} filter={cf.filterFor('coordinator')}>Coordinator</SortableCell>
               <SortableCell sortKey="seats" sort={sort} onSort={toggle} align="center">Seats</SortableCell>
-              <SortableCell sortKey="status" sort={sort} onSort={toggle}>Status</SortableCell>
+              <SortableCell sortKey="status" sort={sort} onSort={toggle} filter={cf.filterFor('status')}>Status</SortableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>

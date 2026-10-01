@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-10-01 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across thirty-eight review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across thirty-nine review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -954,6 +954,45 @@ stays mandatory); "As an individual" is simply not asked, and switching away fro
 clears any organization already picked so it is never submitted silently. The V017
 individual-affiliation capability is untouched — staff can still record an affiliation
 from the admin side. Browser-verified across all three category switches.
+
+---
+
+## Round 39 — Excel-style column funnels  (2026-10-01)
+
+The chip-button filter rows gave way to per-column funnels: every sortable table now
+carries a funnel icon beside the sort control, opening a multi-select checkbox dropdown
+of the column's DISTINCT values — derived from the data, never hardcoded — with a Clear
+action, the funnel tinted while active, and blanks filterable as "—". Built once in the
+shared `SortableCell` (+ `useColumnFilters` hook) and applied across the app:
+
+- **Field Execution** — Program, Activity, Volunteer email, Coordinator email, Report.
+- **Volunteer Directory** — Category, Sub-category, Registration, Account. This table is
+  server-paginated, so the funnels drive the API (the filter params now accept comma
+  lists and `IN (…)` server-side) and their option lists come from new `meta.facets` —
+  the distinct values the WHOLE directory holds, not just the visible page. The
+  dashboard's "awaiting review" deep-link and button now set the Registration funnel.
+- **Issue Certificates** — Program and Certificate (Issued/Pending) funnels; bulk issue
+  arms when the Program funnel holds exactly one program.
+- **Reports** — the combined "Category / phase" column split in two, each funneled; the
+  volunteer exports mirror a single-value funnel selection (the export API takes one
+  value — a multi-selection exports the broader set). The runs table gained funnels on
+  Report, Format, Status and Source.
+- **Assessments** — the status chips became the Status column's funnel (Passed / Not
+  passed / Attempts exhausted), with all rows loaded and filtered client-side.
+- **Activity detail** — Coordinator and Status funnels on the sessions table.
+- **Session record roster** — Attended and Logged-by funnels.
+- **Scheduled reports** — Cadence and Status funnels.
+
+Card-style pages keep the filter bar but lose their hardcoded lists: **Trainings** and
+**Programs** now derive category/status options from the loaded data (filtering moved
+client-side so retired values disappear and new ones appear by themselves). Already-
+dynamic lists (Feedback and Metrics program/city) and semantic toggles (rating buckets,
+time periods, archived-view, the volunteer Browse view) stay as they are — they are
+buckets and view modes, not value lists.
+
+Verified in the browser: Field Execution's Program funnel lists all nine programs from
+data, two ticks narrow 49 rows to 8 across exactly those programs, Clear restores all;
+the directory's Registration funnel multi-selects pending+rejected server-side (3 rows).
 
 ---
 

@@ -39,6 +39,7 @@ import {
   StateCityFields,
   StatusPill,
   useTableSort,
+  type ColumnFilter,
 } from '@/components';
 import { isUnchanged, useToast } from '@/app/toast';
 import {
@@ -125,9 +126,13 @@ export function VolunteerDirectory() {
   const [q, setQ] = useState('');
   // The dashboard review card links here with ?registration=pending.
   const [searchParams] = useSearchParams();
-  const [registrationStatus, setRegistrationStatus] = useState(searchParams.get('registration') ?? 'all');
-  const [category, setCategory] = useState('all');
-  const [account, setAccount] = useState('all');
+  // Column funnel selections (Round 39); empty array = no filter.
+  const [colSel, setColSel] = useState<Record<string, string[]>>(() => {
+    const initial: Record<string, string[]> = {};
+    const reg = searchParams.get('registration');
+    if (reg) initial.registration = [reg];
+    return initial;
+  });
   const [registeredFrom, setRegisteredFrom] = useState('');
   const [registeredTo, setRegisteredTo] = useState('');
   const [page, setPage] = useState(0);
@@ -310,16 +315,31 @@ export function VolunteerDirectory() {
   const queryClient = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
 
+  interface DirectoryMeta {
+    total: number;
+    pending: number;
+    facets: {
+      registrationStatuses: string[];
+      categories: string[];
+      subCategories: string[];
+      accounts: string[];
+    };
+  }
+
+  const joined = (key: string) => (colSel[key]?.length ? colSel[key].join(',') : undefined);
   const { data } = useQuery({
-    queryKey: ['directory', q, registrationStatus, category, account, registeredFrom, registeredTo, page],
+    queryKey: ['directory', q, colSel, registeredFrom, registeredTo, page],
     queryFn: async () =>
       (
-        await api.get<{ data: DirectoryRow[]; meta: { total: number; pending: number } }>('/volunteers', {
+        await api.get<{ data: DirectoryRow[]; meta: DirectoryMeta }>('/volunteers', {
           params: {
             q: q || undefined,
-            registrationStatus: registrationStatus === 'all' ? undefined : registrationStatus,
-            category: category === 'all' ? undefined : category,
-            isActive: account === 'all' ? undefined : account === 'active' ? 'true' : 'false',
+            registrationStatus: joined('registration'),
+            category: joined('category'),
+            subCategory: joined('subCategory'),
+            isActive: colSel.account?.length
+              ? colSel.account.map((a) => (a === 'Active' ? 'true' : 'false')).join(',')
+              : undefined,
             registeredFrom: registeredFrom || undefined,
             registeredTo: registeredTo || undefined,
             limit,
@@ -327,6 +347,15 @@ export function VolunteerDirectory() {
           },
         })
       ).data,
+  });
+
+  // The funnels' option lists come from server facets — the distinct values
+  // the whole directory holds, not just the visible page.
+  const facets = data?.meta.facets;
+  const filterFor = (key: string, values: string[] | undefined): ColumnFilter => ({
+    values: values ?? [],
+    selected: colSel[key] ?? [],
+    onChange: (next) => { setColSel((s) => ({ ...s, [key]: next })); setPage(0); },
   });
 
   const { data: options = {} } = useQuery({
@@ -422,9 +451,12 @@ export function VolunteerDirectory() {
           </>)}
           {pending > 0 && (
             <Button
-              variant={registrationStatus === 'pending' ? 'pill' : 'pillOutlined'}
+              variant={colSel.registration?.length === 1 && colSel.registration[0] === 'pending' ? 'pill' : 'pillOutlined'}
               onClick={() => {
-                setRegistrationStatus(registrationStatus === 'pending' ? 'all' : 'pending');
+                setColSel((s) => ({
+                  ...s,
+                  registration: s.registration?.[0] === 'pending' && s.registration.length === 1 ? [] : ['pending'],
+                }));
                 setPage(0);
               }}
             >
@@ -434,45 +466,14 @@ export function VolunteerDirectory() {
         </>
       }
     >
+      {/* Registration/Category/Account filters live in the column funnels now
+          (Round 39); the bar keeps the search box. */}
       <FilterBar
         search={{
           value: q,
           onChange: (v) => { setQ(v); setPage(0); },
-          placeholder: 'Search name, email or phone…',
+          placeholder: 'Search name, code, email or phone…',
         }}
-        groups={[
-          {
-            label: 'Registration',
-            value: registrationStatus,
-            onChange: (v) => { setRegistrationStatus(v); setPage(0); },
-            options: [
-              { value: 'all', label: 'All' },
-              { value: 'pending', label: 'Pending' },
-              { value: 'approved', label: 'Approved' },
-              { value: 'rejected', label: 'Rejected' },
-            ],
-          },
-          {
-            label: 'Category',
-            value: category,
-            onChange: (v) => { setCategory(v); setPage(0); },
-            options: [
-              { value: 'all', label: 'All' },
-              { value: 'Individual', label: 'Individual' },
-              { value: 'CSR', label: 'CSR' },
-            ],
-          },
-          {
-            label: 'Account',
-            value: account,
-            onChange: (v) => { setAccount(v); setPage(0); },
-            options: [
-              { value: 'all', label: 'All' },
-              { value: 'active', label: 'Active' },
-              { value: 'inactive', label: 'Inactive' },
-            ],
-          },
-        ]}
       />
 
       {/* Registration-date range — server-side, inclusive on both ends. */}
@@ -528,11 +529,11 @@ export function VolunteerDirectory() {
               <SortableCell sortKey="code" sort={sort} onSort={toggle}>Code</SortableCell>
               <SortableCell sortKey="name" sort={sort} onSort={toggle}>Volunteer</SortableCell>
               <SortableCell sortKey="email" sort={sort} onSort={toggle}>Contact</SortableCell>
-              <SortableCell sortKey="category" sort={sort} onSort={toggle}>Category</SortableCell>
-              <SortableCell sortKey="subCategory" sort={sort} onSort={toggle}>Sub-category</SortableCell>
+              <SortableCell sortKey="category" sort={sort} onSort={toggle} filter={filterFor('category', facets?.categories)}>Category</SortableCell>
+              <SortableCell sortKey="subCategory" sort={sort} onSort={toggle} filter={filterFor('subCategory', facets?.subCategories)}>Sub-category</SortableCell>
               <SortableCell sortKey="registered" sort={sort} onSort={toggle}>Registered</SortableCell>
-              <SortableCell sortKey="registration" sort={sort} onSort={toggle}>Registration</SortableCell>
-              <SortableCell sortKey="account" sort={sort} onSort={toggle}>Account</SortableCell>
+              <SortableCell sortKey="registration" sort={sort} onSort={toggle} filter={filterFor('registration', facets?.registrationStatuses)}>Registration</SortableCell>
+              <SortableCell sortKey="account" sort={sort} onSort={toggle} filter={filterFor('account', facets?.accounts)}>Account</SortableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
