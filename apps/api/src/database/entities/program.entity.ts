@@ -11,8 +11,8 @@ import {
 } from 'typeorm';
 import { Coordinator } from './people.entity';
 
-export type ProgramStatus = 'draft' | 'active' | 'discontinued';
-export type ActivityStatus = 'active' | 'discontinued';
+export type ProgramStatus = 'draft' | 'active' | 'discontinued' | 'deleted';
+export type ActivityStatus = 'active' | 'discontinued' | 'deleted';
 export type ActivityType = 'In person' | 'Online';
 export type EventStatus = 'draft' | 'upcoming' | 'inprogress' | 'completed' | 'cancelled';
 
@@ -36,7 +36,7 @@ export class Program {
   @Column({ type: 'text', nullable: true })
   description!: string | null;
 
-  @Column({ type: 'enum', enumName: 'program_status', enum: ['draft', 'active', 'discontinued'], default: 'draft' })
+  @Column({ type: 'enum', enumName: 'program_status', enum: ['draft', 'active', 'discontinued', 'deleted'], default: 'draft' })
   status!: ProgramStatus;
 
   @Column({ name: 'default_coordinator_id', type: 'uuid', nullable: true })
@@ -54,6 +54,16 @@ export class Program {
 
   @Column({ name: 'discontinue_reason', type: 'text', nullable: true })
   discontinueReason!: string | null;
+
+  // Terminal soft delete (V022): no reactivation path, reason mandatory.
+  @Column({ name: 'deleted_at', type: 'timestamptz', nullable: true })
+  deletedAt!: Date | null;
+
+  @Column({ name: 'deleted_by', type: 'uuid', nullable: true })
+  deletedBy!: string | null;
+
+  @Column({ name: 'delete_reason', type: 'text', nullable: true })
+  deleteReason!: string | null;
 
   @Column({ name: 'created_by', type: 'uuid', nullable: true })
   createdBy!: string | null;
@@ -113,7 +123,7 @@ export class Activity {
   @Column({ name: 'default_location', type: 'varchar', length: 255, nullable: true })
   defaultLocation!: string | null;
 
-  @Column({ type: 'enum', enumName: 'activity_status', enum: ['active', 'discontinued'], default: 'active' })
+  @Column({ type: 'enum', enumName: 'activity_status', enum: ['active', 'discontinued', 'deleted'], default: 'active' })
   status!: ActivityStatus;
 
   @Column({ name: 'sort_order', type: 'int', default: 0 })
@@ -127,6 +137,16 @@ export class Activity {
 
   @Column({ name: 'discontinue_reason', type: 'text', nullable: true })
   discontinueReason!: string | null;
+
+  // Terminal soft delete (V022): no reactivation path, reason mandatory.
+  @Column({ name: 'deleted_at', type: 'timestamptz', nullable: true })
+  deletedAt!: Date | null;
+
+  @Column({ name: 'deleted_by', type: 'uuid', nullable: true })
+  deletedBy!: string | null;
+
+  @Column({ name: 'delete_reason', type: 'text', nullable: true })
+  deleteReason!: string | null;
 
   @Column({ name: 'created_by', type: 'uuid', nullable: true })
   createdBy!: string | null;

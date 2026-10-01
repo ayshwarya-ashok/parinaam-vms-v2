@@ -31,6 +31,7 @@ import {
 } from '@/app/validation';
 import { tokens } from '@/theme';
 import { PasswordField } from '@/components/PasswordField';
+import { StateCityFields } from '@/components/StateCityFields';
 
 interface OrganizationOption {
   id: string;
@@ -373,24 +374,15 @@ export function Register() {
                 </TextField>
               </Box>
 
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                <TextField
-                  label="Current city"
-                  autoComplete="address-level2"
-                  value={form.city}
-                  onChange={(e) => set('city', e.target.value)}
-                  required
-                  error={Boolean(problems.city)}
-                  helperText={problems.city}
-                />
-                <TextField
-                  label="State"
-                  autoComplete="address-level1"
-                  value={form.state}
-                  onChange={(e) => set('state', e.target.value)}
-                  required
-                  error={Boolean(problems.state)}
-                  helperText={problems.state}
+              {/* State first, then its cities; "Others" opens a free-text field. */}
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                <StateCityFields
+                  state={form.state}
+                  city={form.city}
+                  onStateChange={(v) => set('state', v)}
+                  onCityChange={(v) => set('city', v)}
+                  stateError={problems.state}
+                  cityError={problems.city}
                 />
               </Box>
 

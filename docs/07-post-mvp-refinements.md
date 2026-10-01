@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-10-01 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across thirty-five review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across thirty-six review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -858,6 +858,49 @@ where someone made it — so its two sessions resolve the activity BY NAME and s
 insert nothing where the program is absent (the VM today). Codes `EVT-2026-0213…0227`;
 every session carries a community link. Verified through the volunteer browse API:
 twenty-three enrollable sessions now span October–November.
+
+---
+
+## Round 36 — Volunteer codes, staff editing, catalog deletes, India dropdowns  (2026-10-01)
+
+Seven refinements in one round, mostly identity and lifecycle (migration `V022`):
+
+- **Human-readable volunteer code.** `volunteers.code` (`VOL-0001`, …) — sequence-backed DB
+  DEFAULT so every insert path (self-registration, admin create, import, seeds) gets one;
+  existing volunteers numbered in registration order. Shown as the first (sortable) column
+  of the directory, in the detail drawer's overline, and on the volunteer's own profile
+  ("quote it when a coordinator asks who you are"). The UUID stays the real key.
+- **Edit details at any lifecycle stage.** The pending-only gate on
+  `PATCH /volunteers/:id/registration` is gone and the endpoint opened to field
+  coordinators; the drawer's "✎ Edit details" moved out of the pending panel and shows for
+  every volunteer, every status. Each edit still audited with before/after.
+- **Registered date, visible and filterable.** A sortable "Registered" column replaced the
+  subtitle date; new directory filters: Account (active/inactive, server-side on
+  `users.is_active`) and an inclusive registered-between date range.
+- **Add Volunteer asks less, validates more.** Organization appears ONLY when category is
+  CSR (where it stays mandatory); Individuals aren't asked. The phone field now runs the
+  shared 10-digit validation before the button enables.
+- **Delete a volunteer (admin).** A per-row Delete action wired to the existing
+  data-lifecycle erasure: identity (name, email, phone, sign-in) permanently stripped,
+  contributed aggregates kept — the dialog says exactly that and points to Inactivate for
+  the softer intent. Erased rows don't offer Delete again.
+- **Program and activity deletion (admin only).** `DELETE /programs/:id` and
+  `DELETE /activities/:id` — a terminal soft delete under a hard-delete contract: status
+  becomes **deleted** (new enum value), reason mandatory, who/when recorded, activities
+  under a deleted program cascade. No reactivation path; every further mutation answers
+  `CATALOG_DELETED` 409. The dialog demands the record's name typed back plus a reason.
+  Chosen over a row delete deliberately: `events.activity_id` cascades, so a real DELETE
+  would silently destroy sessions, hours and certificates under it. BR-17 blocks
+  enrollment with no function change. Authz matrix grew to 83 endpoints / 332 checks
+  (two new rows; the registration-edit row's fc verdict flipped to allowed).
+- **State → City dropdowns (India).** `india-locations.ts` hardcodes 36 states/UTs with
+  curated city lists; the shared `StateCityFields` renders two type-to-filter
+  autocompletes — city unlocked after state, "Others" always last, choosing it reveals a
+  free-text field whose value is stored. Used on /register and Add Volunteer.
+
+Browser-verified end to end: Karnataka filters on "karn", its cities unlock, Others shows
+the free-text field; the profile shows VOL-0001; the directory shows the new columns,
+filters and per-row Delete; the program delete dialog gates on name + reason.
 
 ---
 

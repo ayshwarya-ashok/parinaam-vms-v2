@@ -24,6 +24,7 @@ import {
   CreateEventSeriesDto,
   CreatePhaseDto,
   CreateProgramDto,
+  DeleteCatalogDto,
   DiscontinueDto,
   OverridePhaseDto,
   PreSessionEmailDto,
@@ -95,6 +96,22 @@ export class ProgramsController {
   @Roles('admin')
   reactivate(@CurrentUser() user: AuthPrincipal, @Param('id', UuidPipe) id: string) {
     return this.programs.reactivate(user, id);
+  }
+
+  @Delete('programs/:id')
+  @Roles('admin')
+  @ApiOperation({
+    summary: 'Terminal delete — status becomes "deleted" permanently; reason mandatory',
+    description:
+      'History beneath the program (sessions, hours, certificates) is kept, but there is no ' +
+      'reactivation path and every further mutation refuses. Enrollment is blocked by BR-17.',
+  })
+  deleteProgram(
+    @CurrentUser() user: AuthPrincipal,
+    @Param('id', UuidPipe) id: string,
+    @Body() dto: DeleteCatalogDto,
+  ) {
+    return this.programs.deleteProgram(user, id, dto);
   }
 
   @Put('programs/:id/trainings')
@@ -175,6 +192,17 @@ export class ProgramsController {
   @Roles('admin')
   reactivateActivity(@CurrentUser() user: AuthPrincipal, @Param('id', UuidPipe) id: string) {
     return this.programs.reactivateActivity(user, id);
+  }
+
+  @Delete('activities/:id')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Terminal delete — status becomes "deleted" permanently; reason mandatory' })
+  deleteActivity(
+    @CurrentUser() user: AuthPrincipal,
+    @Param('id', UuidPipe) id: string,
+    @Body() dto: DeleteCatalogDto,
+  ) {
+    return this.programs.deleteActivity(user, id, dto);
   }
 
   @Put('activities/:id/trainings')

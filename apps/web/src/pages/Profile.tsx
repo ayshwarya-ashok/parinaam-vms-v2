@@ -24,6 +24,7 @@ import { ChangePasswordCard, PageShell, StatusPill } from '@/components';
 
 interface Profile {
   id: string;
+  code: string;
   firstName: string;
   lastName: string;
   gender: string | null;
@@ -128,6 +129,7 @@ export function ProfilePage() {
     <PageShell
       title="My Profile"
       maxWidth="md"
+      description={`Volunteer code ${profile.code} — quote it when a coordinator asks who you are.`}
       actions={<StatusPill status={profile.phase === 'In Training' ? 'pending' : profile.phase === 'Active' ? 'active' : 'draft'} />}
     >
       {error && (

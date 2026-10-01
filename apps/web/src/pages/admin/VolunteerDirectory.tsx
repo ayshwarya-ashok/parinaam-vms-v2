@@ -32,12 +32,14 @@ import {
   FilterBar,
   PageShell,
   SortableCell,
+  StateCityFields,
   StatusPill,
   useTableSort,
 } from '@/components';
 import { isUnchanged, useToast } from '@/app/toast';
 import {
   firstProblem,
+  phoneError,
   phoneForApi,
   validateProfile,
   type ProfileErrors,
@@ -50,6 +52,7 @@ type RegistrationStatus = 'pending' | 'approved' | 'rejected';
 
 interface DirectoryRow {
   id: string;
+  code: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -120,11 +123,15 @@ export function VolunteerDirectory() {
   const [searchParams] = useSearchParams();
   const [registrationStatus, setRegistrationStatus] = useState(searchParams.get('registration') ?? 'all');
   const [category, setCategory] = useState('all');
+  const [account, setAccount] = useState('all');
+  const [registeredFrom, setRegisteredFrom] = useState('');
+  const [registeredTo, setRegisteredTo] = useState('');
   const [page, setPage] = useState(0);
   const [openId, setOpenId] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState<DirectoryRow | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [deactivating, setDeactivating] = useState<DirectoryRow | null>(null);
+  const [deleting, setDeleting] = useState<DirectoryRow | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
@@ -229,7 +236,7 @@ export function VolunteerDirectory() {
           ageGroup: f.ageGroup,
           city: f.city.trim(),
           state: f.state.trim(),
-          phone: f.phone.trim(),
+          phone: phoneForApi(f.phone),
           skills: f.skills.trim() || undefined,
           occupation: f.occupation.trim() || undefined,
           password: f.password || undefined,
@@ -290,7 +297,7 @@ export function VolunteerDirectory() {
   const { enqueueSnackbar } = useSnackbar();
 
   const { data } = useQuery({
-    queryKey: ['directory', q, registrationStatus, category, page],
+    queryKey: ['directory', q, registrationStatus, category, account, registeredFrom, registeredTo, page],
     queryFn: async () =>
       (
         await api.get<{ data: DirectoryRow[]; meta: { total: number; pending: number } }>('/volunteers', {
@@ -298,6 +305,9 @@ export function VolunteerDirectory() {
             q: q || undefined,
             registrationStatus: registrationStatus === 'all' ? undefined : registrationStatus,
             category: category === 'all' ? undefined : category,
+            isActive: account === 'all' ? undefined : account === 'active' ? 'true' : 'false',
+            registeredFrom: registeredFrom || undefined,
+            registeredTo: registeredTo || undefined,
             limit,
             offset: page * limit,
           },
@@ -333,6 +343,21 @@ export function VolunteerDirectory() {
     onError: fail,
   });
 
+  // "Delete" is the data-lifecycle erasure: the person's identity is stripped
+  // permanently, while the foundation's aggregates (hours, attendance,
+  // beneficiary numbers) keep their history. Irreversible by design.
+  const deleteVolunteer = useMutation({
+    mutationFn: async (id: string) => (await api.post(`/volunteers/${id}/erase`)).data,
+    onSuccess: () => {
+      refresh();
+      setDeleting(null);
+      enqueueSnackbar('Volunteer deleted — their identity has been permanently removed', {
+        variant: 'warning',
+      });
+    },
+    onError: fail,
+  });
+
   const setActive = useMutation({
     mutationFn: async (input: { id: string; isActive: boolean }) =>
       (await api.patch(`/volunteers/${input.id}`, { isActive: input.isActive })).data,
@@ -349,6 +374,7 @@ export function VolunteerDirectory() {
 
   // Sorting is over the page on screen — the directory is paginated server-side.
   const { sorted, sort, toggle } = useTableSort(data?.data, {
+    code: (r) => r.code,
     name: (r) => `${r.firstName} ${r.lastName}`,
     email: (r) => r.email,
     category: (r) => r.category,
@@ -422,8 +448,52 @@ export function VolunteerDirectory() {
               { value: 'CSR', label: 'CSR' },
             ],
           },
+          {
+            label: 'Account',
+            value: account,
+            onChange: (v) => { setAccount(v); setPage(0); },
+            options: [
+              { value: 'all', label: 'All' },
+              { value: 'active', label: 'Active' },
+              { value: 'inactive', label: 'Inactive' },
+            ],
+          },
         ]}
       />
+
+      {/* Registration-date range — server-side, inclusive on both ends. */}
+      <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap', mb: 1 }}>
+        <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: 'text.secondary' }}>
+          Registered between
+        </Typography>
+        <TextField
+          type="date"
+          size="small"
+          value={registeredFrom}
+          onChange={(e) => { setRegisteredFrom(e.target.value); setPage(0); }}
+          InputLabelProps={{ shrink: true }}
+          sx={{ width: 165 }}
+        />
+        <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>and</Typography>
+        <TextField
+          type="date"
+          size="small"
+          value={registeredTo}
+          onChange={(e) => { setRegisteredTo(e.target.value); setPage(0); }}
+          InputLabelProps={{ shrink: true }}
+          sx={{ width: 165 }}
+        />
+        {(registeredFrom || registeredTo) && (
+          <Button
+            size="small"
+            variant="pillOutlined"
+            sx={{ px: 1.5, py: 0.2 }}
+            onClick={() => { setRegisteredFrom(''); setRegisteredTo(''); setPage(0); }}
+          >
+            Clear dates
+          </Button>
+        )}
+      </Box>
 
       {/* Pagination sits ABOVE the table (client preference, Round 27 era):
           you should not have to scroll a long page to find the page controls. */}
@@ -441,10 +511,12 @@ export function VolunteerDirectory() {
         <Table size="small">
           <TableHead>
             <TableRow>
+              <SortableCell sortKey="code" sort={sort} onSort={toggle}>Code</SortableCell>
               <SortableCell sortKey="name" sort={sort} onSort={toggle}>Volunteer</SortableCell>
               <SortableCell sortKey="email" sort={sort} onSort={toggle}>Contact</SortableCell>
               <SortableCell sortKey="category" sort={sort} onSort={toggle}>Category</SortableCell>
               <SortableCell sortKey="subCategory" sort={sort} onSort={toggle}>Sub-category</SortableCell>
+              <SortableCell sortKey="registered" sort={sort} onSort={toggle}>Registered</SortableCell>
               <SortableCell sortKey="registration" sort={sort} onSort={toggle}>Registration</SortableCell>
               <SortableCell sortKey="account" sort={sort} onSort={toggle}>Account</SortableCell>
               <TableCell align="right">Actions</TableCell>
@@ -458,12 +530,17 @@ export function VolunteerDirectory() {
                 onClick={() => setOpenId(v.id)}
                 sx={{ cursor: 'pointer', opacity: v.isActive ? 1 : 0.6 }}
               >
+                <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                  <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+                    {v.code}
+                  </Typography>
+                </TableCell>
                 <TableCell>
                   <Typography sx={{ fontWeight: 600, fontSize: '0.9rem' }}>
                     {v.firstName} {v.lastName}
                   </Typography>
                   <Typography sx={{ fontSize: '0.76rem', color: 'text.secondary' }}>
-                    {v.organization ?? v.city ?? '—'} · registered {fmtDate(v.createdAt)}
+                    {v.organization ?? v.city ?? '—'}
                   </Typography>
                 </TableCell>
                 <TableCell>
@@ -480,6 +557,9 @@ export function VolunteerDirectory() {
                 <TableCell>
                   {/* "Student" for as-a-student registrations; blank for everyone else. */}
                   {v.subCategory ?? ''}
+                </TableCell>
+                <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.82rem' }}>
+                  {fmtDate(v.createdAt)}
                 </TableCell>
                 <TableCell>
                   <StatusPill status={statusPill[v.registrationStatus]} />
@@ -559,12 +639,22 @@ export function VolunteerDirectory() {
                       Activate
                     </Button>
                   )}
+                  {!readOnly && !v.firstName.startsWith('Erased') && (
+                    <Button
+                      size="small"
+                      variant="pillOutlined"
+                      sx={{ px: 1.5, py: 0.3, ml: 0.5, color: '#8B1A1A', borderColor: 'rgba(139,26,26,0.4)' }}
+                      onClick={() => setDeleting(v)}
+                    >
+                      Delete
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
             {data && data.data.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                <TableCell colSpan={9} sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
                   No volunteers match your filters.
                 </TableCell>
               </TableRow>
@@ -768,12 +858,18 @@ export function VolunteerDirectory() {
               ))}
             </TextField>
           </Box>
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
-            <TextField label="City" required value={addForm?.city ?? ''}
-              onChange={(e) => setAddForm((f) => (f ? { ...f, city: e.target.value } : f))} />
-            <TextField label="State" required value={addForm?.state ?? ''}
-              onChange={(e) => setAddForm((f) => (f ? { ...f, state: e.target.value } : f))} />
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+            <StateCityFields
+              state={addForm?.state ?? ''}
+              city={addForm?.city ?? ''}
+              onStateChange={(v) => setAddForm((f) => (f ? { ...f, state: v } : f))}
+              onCityChange={(v) => setAddForm((f) => (f ? { ...f, city: v } : f))}
+            />
             <TextField label="Phone" required value={addForm?.phone ?? ''}
+              error={Boolean(addForm?.phone.trim()) && phoneError(addForm?.phone, true) !== null}
+              helperText={
+                addForm?.phone.trim() ? phoneError(addForm?.phone, true) ?? undefined : '10-digit mobile number'
+              }
               onChange={(e) => setAddForm((f) => (f ? { ...f, phone: e.target.value } : f))} />
           </Box>
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
@@ -782,28 +878,39 @@ export function VolunteerDirectory() {
             <TextField label="Occupation (optional)" value={addForm?.occupation ?? ''}
               onChange={(e) => setAddForm((f) => (f ? { ...f, occupation: e.target.value } : f))} />
           </Box>
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 2 }}>
+          {/* Organization is a CSR concern only: Individuals are not asked (Round 36). */}
+          <Box sx={{ display: 'grid', gridTemplateColumns: addForm?.category === 'CSR' ? '1fr 2fr' : '1fr', gap: 2 }}>
             <TextField select label="Category" value={addForm?.category ?? 'Individual'}
               onChange={(e) =>
-                setAddForm((f) => (f ? { ...f, category: e.target.value as 'Individual' | 'CSR' } : f))
+                setAddForm((f) =>
+                  f
+                    ? {
+                        ...f,
+                        category: e.target.value as 'Individual' | 'CSR',
+                        ...(e.target.value === 'Individual' ? { organization: '' } : {}),
+                      }
+                    : f,
+                )
               }>
               <MenuItem value="Individual">Individual</MenuItem>
               <MenuItem value="CSR">CSR</MenuItem>
             </TextField>
-            <Autocomplete
-              freeSolo
-              options={inviteOrgs.map((o) => o.name)}
-              inputValue={addForm?.organization ?? ''}
-              onInputChange={(_, v) => setAddForm((f) => (f ? { ...f, organization: v } : f))}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label={addForm?.category === 'CSR' ? 'Organization (required for CSR)' : 'Organization (optional affiliation)'}
-                  required={addForm?.category === 'CSR'}
-                  helperText="Pick an existing organization or type a new name — new ones are created automatically"
-                />
-              )}
-            />
+            {addForm?.category === 'CSR' && (
+              <Autocomplete
+                freeSolo
+                options={inviteOrgs.map((o) => o.name)}
+                inputValue={addForm?.organization ?? ''}
+                onInputChange={(_, v) => setAddForm((f) => (f ? { ...f, organization: v } : f))}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Organization (required for CSR)"
+                    required
+                    helperText="Pick an existing organization or type a new name — new ones are created automatically"
+                  />
+                )}
+              />
+            )}
           </Box>
           <TextField label="Initial password (optional)" value={addForm?.password ?? ''}
             helperText="Blank uses Parinaam@123 — ask them to change it after first login"
@@ -821,7 +928,7 @@ export function VolunteerDirectory() {
               addVolunteer.isPending ||
               !addForm?.email.trim() || !addForm?.firstName.trim() || !addForm?.lastName.trim() ||
               !addForm?.gender || !addForm?.ageGroup || !addForm?.city.trim() ||
-              !addForm?.state.trim() || !addForm?.phone.trim() ||
+              !addForm?.state.trim() || phoneError(addForm?.phone, true) !== null ||
               (addForm?.category === 'CSR' && !addForm?.organization.trim())
             }
             onClick={() => addForm && addVolunteer.mutate(addForm)}
@@ -882,6 +989,16 @@ export function VolunteerDirectory() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ConfirmDialog
+        open={deleting !== null}
+        title={`Delete ${deleting?.firstName ?? ''} ${deleting?.lastName ?? ''} (${deleting?.code ?? ''})?`}
+        message="This permanently removes who they are — name, email, phone, sign-in — and cannot be undone. Their contributed hours and attendance stay in the foundation's totals, but nothing will identify them again. If you only want to stop them signing in, use Inactivate instead."
+        confirmLabel="Delete permanently"
+        danger
+        onConfirm={() => deleting && deleteVolunteer.mutate(deleting.id)}
+        onCancel={() => setDeleting(null)}
+      />
 
       <ConfirmDialog
         open={deactivating !== null}
@@ -1021,6 +1138,7 @@ function VolunteerDetailDrawer({
       {v && (
         <Box>
           <Typography variant="overline" sx={{ color: tokens.accentStrong }}>
+            {v.code} ·{' '}
             {v.category === 'CSR'
               ? 'CSR volunteer'
               : v.subCategory === 'Student'
@@ -1030,7 +1148,7 @@ function VolunteerDetailDrawer({
           <Typography variant="h4" sx={{ mb: 0.5 }}>
             {v.firstName} {v.lastName}
           </Typography>
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 2 }}>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 2, flexWrap: 'wrap' }}>
             <StatusPill status={statusPill[v.registrationStatus]} />
             <Typography
               sx={{
@@ -1042,6 +1160,13 @@ function VolunteerDetailDrawer({
               {v.isActive ? '● Active' : '○ Inactive'}
             </Typography>
             <Typography sx={{ fontSize: '0.78rem', color: 'text.secondary' }}>{v.phase}</Typography>
+            {/* Staff can correct details at ANY lifecycle stage (Round 36) —
+                admins and field coordinators alike; the API audits each edit. */}
+            {!editing && (
+              <Button variant="pillOutlined" size="small" sx={{ px: 2, ml: 'auto' }} onClick={startEditing}>
+                ✎ Edit details
+              </Button>
+            )}
           </Box>
 
           {!readOnly && v.registrationStatus === 'pending' && (
@@ -1053,8 +1178,8 @@ function VolunteerDetailDrawer({
                 This registration is awaiting your review
               </Typography>
               <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary', mb: 1.5 }}>
-                Correct anything the volunteer mistyped before you decide — details become
-                read-only once the registration is approved or rejected.
+                Correct anything the volunteer mistyped before you decide — Edit details above
+                works at any stage.
               </Typography>
               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                 <Button
@@ -1075,11 +1200,6 @@ function VolunteerDetailDrawer({
                 >
                   ✕ Reject
                 </Button>
-                {!editing && (
-                  <Button variant="pillOutlined" size="small" sx={{ px: 2 }} onClick={startEditing}>
-                    ✎ Edit details
-                  </Button>
-                )}
               </Box>
             </Paper>
           )}

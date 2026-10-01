@@ -5,6 +5,7 @@ import {
   IsIn,
   IsInt,
   IsMilitaryTime,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
@@ -30,6 +31,14 @@ export class UpdateProgramDto {
 
 export class DiscontinueDto {
   @IsOptional() @IsString() @MaxLength(2000) reason?: string;
+}
+
+/** Terminal delete (Round 36): unlike discontinue, the reason is mandatory. */
+export class DeleteCatalogDto {
+  @IsString()
+  @IsNotEmpty({ message: 'A reason for the deletion is required' })
+  @MaxLength(2000)
+  reason!: string;
 }
 
 export class CreateActivityDto {

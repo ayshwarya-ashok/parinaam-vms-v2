@@ -408,6 +408,9 @@ export class VolunteersService {
     category?: string;
     city?: string;
     registrationStatus?: string;
+    isActive?: string;
+    registeredFrom?: string;
+    registeredTo?: string;
     limit?: number;
     offset?: number;
   }) {
@@ -451,11 +454,22 @@ export class VolunteersService {
     }
     if (query.category) qb.andWhere('v.category = :category', { category: query.category });
     if (query.city) qb.andWhere('v.city ILIKE :city', { city: query.city });
+    if (query.isActive === 'true' || query.isActive === 'false') {
+      qb.andWhere('u.is_active = :isActive', { isActive: query.isActive === 'true' });
+    }
+    // Registration-date range, inclusive, on the local calendar date.
+    if (query.registeredFrom && /^\d{4}-\d{2}-\d{2}$/.test(query.registeredFrom)) {
+      qb.andWhere('v.created_at::date >= :regFrom', { regFrom: query.registeredFrom });
+    }
+    if (query.registeredTo && /^\d{4}-\d{2}-\d{2}$/.test(query.registeredTo)) {
+      qb.andWhere('v.created_at::date <= :regTo', { regTo: query.registeredTo });
+    }
 
     const [rows, total] = await qb.getManyAndCount();
     return {
       data: rows.map((v) => ({
         id: v.id,
+        code: v.code,
         firstName: v.firstName,
         lastName: v.lastName,
         email: v.user?.email,
@@ -510,14 +524,13 @@ export class VolunteersService {
   }
 
   /**
-   * Correct what a volunteer entered, while their registration is still
-   * pending.
+   * Staff correction of a volunteer's details, at any lifecycle stage.
    *
-   * Bounded to the pending state on purpose: before a decision, an admin
-   * fixing a transposed phone number or a mis-picked category is completing
-   * the same registration. After approval the record has been acted on —
-   * hours, certificates and compliance hang off it — so edits there belong to
-   * the volunteer's own profile, not to a review screen.
+   * Originally bounded to pending registrations; the client asked for staff
+   * (admin and field coordinator) to be able to fix a transposed phone number
+   * or a mis-picked category whenever it is noticed — volunteers in the field
+   * rarely maintain their own profiles. The audit trail carries before/after
+   * for every edit.
    */
   async updateRegistration(
     principal: AuthPrincipal,
@@ -527,13 +540,9 @@ export class VolunteersService {
     const volunteer = await this.volunteers.findOne({ where: { id } });
     if (!volunteer) throw new NotFoundException('Volunteer not found');
 
-    if (volunteer.registrationStatus !== 'pending') {
-      throw new BusinessException(
-        'REGISTRATION_REVIEWED',
-        `This registration has already been ${volunteer.registrationStatus}. Reviewed registrations can no longer be edited here.`,
-        409,
-      );
-    }
+    // Round 36 dropped the pending-only gate: admins and field coordinators
+    // may correct a volunteer's details at any point in the lifecycle. Every
+    // edit is still audited with before/after.
 
     const category = dto.category ?? volunteer.category;
     const organizationId =

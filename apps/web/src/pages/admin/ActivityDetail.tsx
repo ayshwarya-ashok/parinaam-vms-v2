@@ -3,6 +3,10 @@ import {
   Box,
   Button,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Paper,
   Table,
   TableBody,
@@ -10,6 +14,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -64,6 +69,9 @@ export function ActivityDetail() {
 
   const [cancelTarget, setCancelTarget] = useState<{ id: string; label: string } | null>(null);
   const [discontinueOpen, setDiscontinueOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirmName, setDeleteConfirmName] = useState('');
+  const [deleteReason, setDeleteReason] = useState('');
 
   const refetch = () => {
     void queryClient.invalidateQueries({ queryKey: ['activity', id] });
@@ -101,6 +109,27 @@ export function ActivityDetail() {
     onError: (err) => enqueueSnackbar(asApiError(err)?.message ?? 'Cancel failed', { variant: 'error' }),
   });
 
+  // Terminal delete: status becomes "deleted" forever — no reactivate,
+  // every further mutation refuses; session history stays for reporting.
+  const deleteActivity = useMutation({
+    mutationFn: async () =>
+      (
+        await api.delete<{ deleted: true; upcomingEventsBlocked: number }>(`/activities/${id}`, {
+          data: { reason: deleteReason.trim() },
+        })
+      ).data,
+    onSuccess: (res) => {
+      setDeleteOpen(false);
+      refetch();
+      enqueueSnackbar(
+        `Activity deleted${res.upcomingEventsBlocked > 0 ? ` — ${res.upcomingEventsBlocked} upcoming session(s) no longer accept enrollment` : ''}`,
+        { variant: 'warning' },
+      );
+    },
+    onError: (err) =>
+      enqueueSnackbar(asApiError(err)?.message ?? 'Could not delete the activity', { variant: 'error' }),
+  });
+
   const toggleActivity = useMutation({
     mutationFn: async () =>
       (
@@ -134,7 +163,7 @@ export function ActivityDetail() {
       actions={
         <>
           <StatusPill status={activity.status} />
-          {!readOnly && (<>
+          {!readOnly && activity.status !== 'deleted' && (<>
           <Button component={RouterLink} to={`/admin/activities/${id}/edit`} variant="pillOutlined" size="small">
             ✎ Edit
           </Button>
@@ -151,6 +180,14 @@ export function ActivityDetail() {
           <Button component={RouterLink} to={`/admin/activities/${id}/events/new`} variant="pill" size="small">
             + Schedule Session
           </Button>
+          <Button
+            variant="pillOutlined"
+            size="small"
+            sx={{ color: '#8B1A1A', borderColor: 'rgba(139,26,26,0.4)' }}
+            onClick={() => { setDeleteConfirmName(''); setDeleteReason(''); setDeleteOpen(true); }}
+          >
+            🗑 Delete
+          </Button>
           </>)}
         </>
       }
@@ -159,6 +196,14 @@ export function ActivityDetail() {
         <Alert severity="warning" sx={{ mb: 2, borderRadius: 3 }}>
           Discontinued{activity.discontinue_reason ? ` — ${activity.discontinue_reason}` : ''}. Its
           sessions no longer accept enrollment; history is intact.
+        </Alert>
+      )}
+
+      {activity.status === 'deleted' && (
+        <Alert severity="error" sx={{ mb: 2, borderRadius: 3 }}>
+          Deleted{(activity as { deleteReason?: string | null }).deleteReason ? ` — ${(activity as { deleteReason?: string | null }).deleteReason}` : ''}.
+          This is permanent: the activity cannot be changed or reactivated, and its sessions no
+          longer accept enrollment. Recorded history stays in reports.
         </Alert>
       )}
 
@@ -324,6 +369,52 @@ export function ActivityDetail() {
         onConfirm={() => toggleActivity.mutate()}
         onCancel={() => setDiscontinueOpen(false)}
       />
+
+      {/* Delete modal — hard-delete contract: type the name, give a reason */}
+      <Dialog open={deleteOpen} onClose={() => setDeleteOpen(false)} PaperProps={{ sx: { borderRadius: 4, maxWidth: 500 } }}>
+        <DialogTitle sx={{ fontFamily: '"Source Serif 4", Georgia, serif' }}>
+          Delete this activity?
+        </DialogTitle>
+        <DialogContent sx={{ display: 'grid', gap: 2 }}>
+          <Alert severity="error" sx={{ borderRadius: 2 }}>
+            This is a <strong>hard delete and cannot be reversed</strong>. {activity.name} becomes
+            permanently <strong>Deleted</strong> — no edits, no reactivation, no new enrollment on
+            its sessions. Recorded history (sessions, hours, certificates) stays in reports.
+          </Alert>
+          <TextField
+            label={`Type "${activity.name}" to confirm`}
+            fullWidth
+            autoFocus
+            value={deleteConfirmName}
+            onChange={(e) => setDeleteConfirmName(e.target.value)}
+          />
+          <TextField
+            label="Reason for deletion (required)"
+            fullWidth
+            multiline
+            minRows={2}
+            value={deleteReason}
+            onChange={(e) => setDeleteReason(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button variant="pillOutlined" onClick={() => setDeleteOpen(false)}>
+            Keep activity
+          </Button>
+          <Button
+            variant="pill"
+            sx={{ background: 'linear-gradient(135deg,#9a2020,#7a1616)' }}
+            disabled={
+              deleteActivity.isPending ||
+              deleteConfirmName.trim() !== activity.name ||
+              deleteReason.trim().length === 0
+            }
+            onClick={() => deleteActivity.mutate()}
+          >
+            {deleteActivity.isPending ? 'Deleting…' : 'Delete permanently'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </PageShell>
   );
 }

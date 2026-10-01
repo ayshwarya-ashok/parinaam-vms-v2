@@ -13,6 +13,7 @@ import { AuditService } from '../audit/audit.service';
 import {
   CreateActivityDto,
   CreateProgramDto,
+  DeleteCatalogDto,
   DiscontinueDto,
   UpdateActivityDto,
   UpdateProgramDto,
@@ -90,7 +91,7 @@ export class ProgramsService {
     const activities = await this.dataSource.query(
       `SELECT a.id, a.code, a.name, a.description, a.type, a.skill_required,
               a.default_duration_hours, a.default_max_slots, a.default_location,
-              a.status, a.sort_order, a.discontinue_reason,
+              a.status, a.sort_order, a.discontinue_reason, a.delete_reason,
               COUNT(e.id) FILTER (WHERE e.status = 'upcoming')::int   AS upcoming_events,
               COUNT(e.id) FILTER (WHERE e.status = 'inprogress')::int AS inprogress_events,
               COUNT(e.id) FILTER (WHERE e.status = 'completed')::int  AS completed_events
@@ -130,9 +131,21 @@ export class ProgramsService {
     return this.detail(program.id);
   }
 
+  /** 'deleted' is terminal: nothing about a deleted record may change again. */
+  private assertNotDeleted(status: string, what: 'program' | 'activity') {
+    if (status === 'deleted') {
+      throw new BusinessException(
+        'CATALOG_DELETED',
+        `This ${what} has been deleted — deletion is permanent and it can no longer be changed.`,
+        409,
+      );
+    }
+  }
+
   async update(id: string, dto: UpdateProgramDto) {
     const program = await this.programs.findOneBy({ id });
     if (!program) throw new NotFoundException('Program not found');
+    this.assertNotDeleted(program.status, 'program');
     Object.assign(program, {
       ...(dto.name !== undefined && { name: dto.name }),
       ...(dto.description !== undefined && { description: dto.description }),
@@ -147,6 +160,7 @@ export class ProgramsService {
   async publish(id: string) {
     const program = await this.programs.findOneBy({ id });
     if (!program) throw new NotFoundException('Program not found');
+    this.assertNotDeleted(program.status, 'program');
     if (program.status === 'discontinued') {
       throw new BusinessException(
         'PROGRAM_DISCONTINUED',
@@ -167,6 +181,7 @@ export class ProgramsService {
   async discontinue(principal: AuthPrincipal, id: string, dto: DiscontinueDto) {
     const program = await this.programs.findOneBy({ id });
     if (!program) throw new NotFoundException('Program not found');
+    this.assertNotDeleted(program.status, 'program');
 
     program.status = 'discontinued';
     program.discontinuedAt = new Date();
@@ -193,9 +208,54 @@ export class ProgramsService {
     return { ...(await this.detail(id)), upcomingEventsBlocked: Number(count) };
   }
 
+  /**
+   * Terminal delete (Round 36). Deliberately a SOFT delete under a hard-delete
+   * contract: the row stays (a real row delete would cascade through events
+   * and corrupt every report and certificate beneath it), but the status is
+   * irreversible — no reactivation path exists, and every mutation refuses.
+   * Enrollment under it is blocked by BR-17 with no further change.
+   */
+  async deleteProgram(principal: AuthPrincipal, id: string, dto: DeleteCatalogDto) {
+    const program = await this.programs.findOneBy({ id });
+    if (!program) throw new NotFoundException('Program not found');
+    this.assertNotDeleted(program.status, 'program');
+
+    program.status = 'deleted';
+    program.deletedAt = new Date();
+    program.deletedBy = principal.sub;
+    program.deleteReason = dto.reason;
+    await this.programs.save(program);
+
+    // The activities beneath it share the fate: a deleted program's activities
+    // are each marked deleted too, carrying the same reason.
+    await this.dataSource.query(
+      `UPDATE activities
+       SET status = 'deleted', deleted_at = now(), deleted_by = $2,
+           delete_reason = COALESCE(delete_reason, $3)
+       WHERE program_id = $1 AND status <> 'deleted'`,
+      [id, principal.sub, `Program deleted: ${dto.reason}`],
+    );
+
+    await this.audit.record(principal, {
+      action: 'program.deleted',
+      entity: 'programs',
+      entityId: id,
+      after: { reason: dto.reason },
+    });
+
+    const [{ count }] = await this.dataSource.query(
+      `SELECT COUNT(*)::int AS count FROM events e
+       JOIN activities a ON a.id = e.activity_id
+       WHERE a.program_id = $1 AND e.status = 'upcoming' AND e.date >= CURRENT_DATE`,
+      [id],
+    );
+    return { deleted: true, upcomingEventsBlocked: Number(count) };
+  }
+
   async reactivate(principal: AuthPrincipal, id: string) {
     const program = await this.programs.findOneBy({ id });
     if (!program) throw new NotFoundException('Program not found');
+    this.assertNotDeleted(program.status, 'program');
     program.status = 'active';
     program.discontinuedAt = null;
     program.discontinuedBy = null;
@@ -307,6 +367,7 @@ export class ProgramsService {
   async updateActivity(id: string, dto: UpdateActivityDto) {
     const activity = await this.activities.findOneBy({ id });
     if (!activity) throw new NotFoundException('Activity not found');
+    this.assertNotDeleted(activity.status, 'activity');
     Object.assign(activity, {
       ...(dto.name !== undefined && { name: dto.name }),
       ...(dto.description !== undefined && { description: dto.description }),
@@ -328,6 +389,7 @@ export class ProgramsService {
   async discontinueActivity(principal: AuthPrincipal, id: string, dto: DiscontinueDto) {
     const activity = await this.activities.findOneBy({ id });
     if (!activity) throw new NotFoundException('Activity not found');
+    this.assertNotDeleted(activity.status, 'activity');
     activity.status = 'discontinued';
     activity.discontinuedAt = new Date();
     activity.discontinuedBy = principal.sub;
@@ -342,9 +404,37 @@ export class ProgramsService {
     return this.activityDetail(id);
   }
 
+  /** Same terminal delete as deleteProgram, scoped to one activity. */
+  async deleteActivity(principal: AuthPrincipal, id: string, dto: DeleteCatalogDto) {
+    const activity = await this.activities.findOneBy({ id });
+    if (!activity) throw new NotFoundException('Activity not found');
+    this.assertNotDeleted(activity.status, 'activity');
+
+    activity.status = 'deleted';
+    activity.deletedAt = new Date();
+    activity.deletedBy = principal.sub;
+    activity.deleteReason = dto.reason;
+    await this.activities.save(activity);
+
+    await this.audit.record(principal, {
+      action: 'activity.deleted',
+      entity: 'activities',
+      entityId: id,
+      after: { reason: dto.reason },
+    });
+
+    const [{ count }] = await this.dataSource.query(
+      `SELECT COUNT(*)::int AS count FROM events
+       WHERE activity_id = $1 AND status = 'upcoming' AND date >= CURRENT_DATE`,
+      [id],
+    );
+    return { deleted: true, upcomingEventsBlocked: Number(count) };
+  }
+
   async reactivateActivity(principal: AuthPrincipal, id: string) {
     const activity = await this.activities.findOneBy({ id });
     if (!activity) throw new NotFoundException('Activity not found');
+    this.assertNotDeleted(activity.status, 'activity');
     activity.status = 'active';
     activity.discontinuedAt = null;
     activity.discontinuedBy = null;

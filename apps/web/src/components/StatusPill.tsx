@@ -14,7 +14,8 @@ type Status =
   | 'pending'
   | 'inactive'
   | 'sent'
-  | 'failed';
+  | 'failed'
+  | 'deleted';
 
 const palette: Record<Status, { bg: string; fg: string }> = {
   upcoming: { bg: alpha(tokens.success, 0.1), fg: tokens.success },
@@ -29,6 +30,7 @@ const palette: Record<Status, { bg: string; fg: string }> = {
   cancelled: { bg: alpha(tokens.accentStrong, 0.1), fg: tokens.accentStrong },
   discontinued: { bg: alpha(tokens.accentStrong, 0.1), fg: tokens.accentStrong },
   failed: { bg: alpha(tokens.accentStrong, 0.1), fg: tokens.accentStrong },
+  deleted: { bg: alpha('#8B1A1A', 0.12), fg: '#8B1A1A' },
 };
 
 export function StatusPill({ status }: { status: Status }) {

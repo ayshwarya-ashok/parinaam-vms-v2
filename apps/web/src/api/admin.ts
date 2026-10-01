@@ -8,7 +8,7 @@ export interface ProgramRow {
   code: string;
   name: string;
   description: string | null;
-  status: 'draft' | 'active' | 'discontinued';
+  status: 'draft' | 'active' | 'discontinued' | 'deleted';
   defaultCoordinator: { id: string; name: string } | null;
   activeActivities: number;
   upcomingEvents: number;
@@ -27,8 +27,9 @@ export interface ActivityRow {
   default_duration_hours: string | null;
   default_max_slots: number | null;
   default_location: string | null;
-  status: 'active' | 'discontinued';
+  status: 'active' | 'discontinued' | 'deleted';
   discontinue_reason: string | null;
+  delete_reason?: string | null;
   upcoming_events: number;
   completed_events: number;
 }
@@ -36,6 +37,7 @@ export interface ActivityRow {
 export interface ProgramDetail
   extends Omit<ProgramRow, 'activeActivities' | 'upcomingEvents' | 'inprogressEvents' | 'completedEvents' | 'nextEventDate'> {
   discontinueReason: string | null;
+  deleteReason?: string | null;
   activities: ActivityRow[];
   trainings: TrainingRef[];
 }
@@ -128,7 +130,7 @@ export const useActivity = (id: string | undefined) =>
   useQuery({
     queryKey: ['activity', id],
     queryFn: async () =>
-      (await api.get<ActivityRow & { programId: string; programName: string; events: EventRow[]; trainings: TrainingRef[]; name: string; description: string | null; outcome: string | null; skillRequired: string | null; defaultDurationHours: string | null; defaultMaxSlots: number | null; defaultLocation: string | null; type: 'In person' | 'Online'; status: 'active' | 'discontinued' }>(`/activities/${id}`)).data,
+      (await api.get<ActivityRow & { programId: string; programName: string; events: EventRow[]; trainings: TrainingRef[]; name: string; description: string | null; outcome: string | null; skillRequired: string | null; defaultDurationHours: string | null; defaultMaxSlots: number | null; defaultLocation: string | null; type: 'In person' | 'Online'; status: 'active' | 'discontinued' | 'deleted' }>(`/activities/${id}`)).data,
     enabled: !!id,
   });
 

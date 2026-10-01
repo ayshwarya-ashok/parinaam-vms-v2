@@ -64,6 +64,14 @@ export class Volunteer {
   @JoinColumn({ name: 'user_id' })
   user!: User;
 
+  /**
+   * Human-readable identity (VOL-0001, …) for field use. Assigned by the DB
+   * (sequence-backed DEFAULT, V022) so every insert path gets one; the app
+   * never writes it — `insert/update: false` keeps TypeORM's hands off.
+   */
+  @Column({ type: 'varchar', length: 12, insert: false, update: false })
+  code!: string;
+
   @Column({ name: 'first_name', type: 'varchar', length: 100 })
   firstName!: string;
 

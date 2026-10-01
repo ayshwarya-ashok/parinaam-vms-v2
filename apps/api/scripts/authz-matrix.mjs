@@ -66,8 +66,12 @@ const MATRIX = [
   ['POST',   `/events/${UUID}/sponsor-pack`,            'D', 'D', 'A', 'A'],
   ['POST',   `/events/${UUID}/enrollments`,           'D', 'D', 'A', 'A'],
   ['DELETE', `/events/${UUID}/enrollments/${UUID}`,     'D', 'D', 'A', 'A'],
-  ['PATCH',  `/volunteers/${UUID}/registration`,        'D', 'D', 'D', 'A'],
+  // Round 36: staff (admin AND fc) can correct details at any lifecycle stage.
+  ['PATCH',  `/volunteers/${UUID}/registration`,        'D', 'D', 'A', 'A'],
   ['POST',   `/volunteers/${UUID}/approve`,             'D', 'D', 'D', 'A'],
+  // Round 36: terminal catalog deletes — admin only.
+  ['DELETE', `/programs/${UUID}`,                       'D', 'D', 'D', 'A'],
+  ['DELETE', `/activities/${UUID}`,                     'D', 'D', 'D', 'A'],
   ['POST',   `/volunteers/${UUID}/reject`,              'D', 'D', 'D', 'A'],
   ['GET',    `/events/${UUID}/session-record`,          'D', 'D', 'A', 'A'],
   ['POST',   `/events/${UUID}/complete`,                'D', 'D', 'A', 'A'],

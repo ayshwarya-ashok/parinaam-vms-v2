@@ -11,7 +11,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
@@ -32,8 +32,36 @@ export function ProgramDetail() {
 
   const [discontinueOpen, setDiscontinueOpen] = useState(false);
   const [reason, setReason] = useState('');
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirmName, setDeleteConfirmName] = useState('');
+  const [deleteReason, setDeleteReason] = useState('');
   const [announceOpen, setAnnounceOpen] = useState(false);
   const [preview, setPreview] = useState<{ subject: string; html: string; recipientCount: number } | null>(null);
+
+  const queryClient = useQueryClient();
+
+  // Terminal delete: status becomes "deleted" forever — no reactivate, every
+  // further mutation refuses. History beneath it (sessions, hours,
+  // certificates) is kept for reporting.
+  const deleteProgram = useMutation({
+    mutationFn: async () =>
+      (
+        await api.delete<{ deleted: true; upcomingEventsBlocked: number }>(`/programs/${id}`, {
+          data: { reason: deleteReason.trim() },
+        })
+      ).data,
+    onSuccess: (res) => {
+      setDeleteOpen(false);
+      void queryClient.invalidateQueries({ queryKey: ['program', id] });
+      void queryClient.invalidateQueries({ queryKey: ['programs'] });
+      enqueueSnackbar(
+        `Program deleted${res.upcomingEventsBlocked > 0 ? ` — ${res.upcomingEventsBlocked} upcoming session(s) no longer accept enrollment` : ''}`,
+        { variant: 'warning' },
+      );
+    },
+    onError: (err) =>
+      enqueueSnackbar(asApiError(err)?.message ?? 'Could not delete the program', { variant: 'error' }),
+  });
 
   const openAnnounce = useMutation({
     mutationFn: async () =>
@@ -74,6 +102,7 @@ export function ProgramDetail() {
   }
 
   const isDiscontinued = program.status === 'discontinued';
+  const isDeleted = program.status === 'deleted';
 
   return (
     <PageShell
@@ -82,7 +111,7 @@ export function ProgramDetail() {
       actions={
         <>
           <StatusPill status={program.status} />
-          {!readOnly && (<>
+          {!readOnly && !isDeleted && (<>
           <Button component={RouterLink} to={`/admin/programs/${id}/edit`} variant="pillOutlined" size="small">
             ✎ Edit
           </Button>
@@ -130,6 +159,14 @@ export function ProgramDetail() {
           <Button component={RouterLink} to={`/admin/programs/${id}/activities/new`} variant="pill" size="small">
             + Add Activity
           </Button>
+          <Button
+            variant="pillOutlined"
+            size="small"
+            sx={{ color: '#8B1A1A', borderColor: 'rgba(139,26,26,0.4)' }}
+            onClick={() => { setDeleteConfirmName(''); setDeleteReason(''); setDeleteOpen(true); }}
+          >
+            🗑 Delete
+          </Button>
           </>)}
         </>
       }
@@ -139,6 +176,14 @@ export function ProgramDetail() {
           Discontinued{program.discontinueReason ? ` — ${program.discontinueReason}` : ''}. New
           enrollment is blocked on every session beneath this program; scheduled sessions were not
           cancelled and no one was emailed.
+        </Alert>
+      )}
+
+      {isDeleted && (
+        <Alert severity="error" sx={{ mb: 2, borderRadius: 3 }}>
+          Deleted{program.deleteReason ? ` — ${program.deleteReason}` : ''}. This is permanent:
+          the program cannot be changed or reactivated, and enrollment is blocked on everything
+          beneath it. Its history (sessions, hours, certificates) is retained for reporting.
         </Alert>
       )}
 
@@ -271,6 +316,53 @@ export function ProgramDetail() {
             }
           >
             Discontinue
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete modal — hard-delete contract: type the name, give a reason */}
+      <Dialog open={deleteOpen} onClose={() => setDeleteOpen(false)} PaperProps={{ sx: { borderRadius: 4, maxWidth: 500 } }}>
+        <DialogTitle sx={{ fontFamily: '"Source Serif 4", Georgia, serif' }}>
+          Delete this program?
+        </DialogTitle>
+        <DialogContent sx={{ display: 'grid', gap: 2 }}>
+          <Alert severity="error" sx={{ borderRadius: 2 }}>
+            This is a <strong>hard delete and cannot be reversed</strong>. {program.name} and every
+            activity under it become permanently <strong>Deleted</strong> — no edits, no
+            reactivation, no new enrollment. Recorded history (sessions, hours, certificates)
+            stays in reports.
+          </Alert>
+          <TextField
+            label={`Type "${program.name}" to confirm`}
+            fullWidth
+            autoFocus
+            value={deleteConfirmName}
+            onChange={(e) => setDeleteConfirmName(e.target.value)}
+          />
+          <TextField
+            label="Reason for deletion (required)"
+            fullWidth
+            multiline
+            minRows={2}
+            value={deleteReason}
+            onChange={(e) => setDeleteReason(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button variant="pillOutlined" onClick={() => setDeleteOpen(false)}>
+            Keep program
+          </Button>
+          <Button
+            variant="pill"
+            sx={{ background: 'linear-gradient(135deg,#9a2020,#7a1616)' }}
+            disabled={
+              deleteProgram.isPending ||
+              deleteConfirmName.trim() !== program.name ||
+              deleteReason.trim().length === 0
+            }
+            onClick={() => deleteProgram.mutate()}
+          >
+            {deleteProgram.isPending ? 'Deleting…' : 'Delete permanently'}
           </Button>
         </DialogActions>
       </Dialog>

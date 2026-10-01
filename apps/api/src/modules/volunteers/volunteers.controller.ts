@@ -112,10 +112,16 @@ export class VolunteersController {
     @Query('category') category?: string,
     @Query('city') city?: string,
     @Query('registrationStatus') registrationStatus?: string,
+    @Query('isActive') isActive?: string,
+    @Query('registeredFrom') registeredFrom?: string,
+    @Query('registeredTo') registeredTo?: string,
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
   ) {
-    return this.service.directory({ q, phase, category, city, registrationStatus, limit, offset });
+    return this.service.directory({
+      q, phase, category, city, registrationStatus,
+      isActive, registeredFrom, registeredTo, limit, offset,
+    });
   }
 
   @Get('volunteers/import-template')
@@ -148,12 +154,12 @@ export class VolunteersController {
   }
 
   @Patch('volunteers/:id/registration')
-  @Roles('admin')
+  @Roles('admin', 'field_coordinator')
   @ApiOperation({
-    summary: 'Correct what the volunteer entered, while the registration is pending',
+    summary: "Staff correction of a volunteer's details, at any lifecycle stage",
     description:
-      'Available only before approve/reject — afterwards the record has been acted on and edits ' +
-      'belong to the volunteer profile instead.',
+      'Admins and field coordinators can fix mistyped details whenever noticed — pending, ' +
+      'approved or rejected alike. Every edit is audited with before/after.',
   })
   updateRegistration(
     @CurrentUser() user: AuthPrincipal,
