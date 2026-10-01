@@ -166,14 +166,24 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           '& .MuiTableCell-head': {
-            fontSize: '0.75rem',
-            letterSpacing: '0.07em',
+            fontSize: '0.72rem',
+            letterSpacing: '0.05em',
             textTransform: 'uppercase',
             color: tokens.textMuted,
             fontWeight: 700,
             background: 'rgba(255,255,255,0.6)',
           },
         },
+      },
+    },
+
+    // Tables fit the screen, not the other way round (Round 40): tighter cell
+    // padding than MUI's default 16px gutters, so even the nine-column tables
+    // read without a horizontal scrollbar on a laptop width.
+    MuiTableCell: {
+      styleOverrides: {
+        root: { padding: '6px 8px' },
+        sizeSmall: { padding: '5px 8px' },
       },
     },
   },

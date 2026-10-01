@@ -599,7 +599,7 @@ export function VolunteerDirectory() {
                     {v.phase}
                   </Typography>
                 </TableCell>
-                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
+                <TableCell align="right" onClick={(e) => e.stopPropagation()} sx={{ minWidth: 150 }}>
                   {readOnly ? null : v.registrationStatus === 'pending' ? (
                     <>
                       <Button

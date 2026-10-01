@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-10-01 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across thirty-nine review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across forty review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -993,6 +993,20 @@ buckets and view modes, not value lists.
 Verified in the browser: Field Execution's Program funnel lists all nine programs from
 data, two ticks narrow 49 rows to 8 across exactly those programs, Clear restores all;
 the directory's Registration funnel multi-selects pending+rejected server-side (3 rows).
+
+---
+
+## Round 40 — Tables fit the screen  (2026-10-01)
+
+The nine-column tables (directory, field execution) needed a horizontal scroll on a
+laptop. Fixed globally rather than per page: the theme's `MuiTableCell` override tightens
+cell padding (MUI's default 16px gutters → 8px) and the heavyweight action cells
+(directory's Approve/Reject/Welcome-back/Inactivate/Delete, field execution's
+Record/Send) wrap within their cell instead of forcing width ("✉ Send emails" shortened
+to "✉ Send"). Verified by measurement, not eyeballing: a headless sweep at 1366×768
+across every table-bearing page — directory, field execution, reports (both tables),
+scheduled reports, certificates, assessments, activity sessions, session-record roster —
+reports `scrollWidth === clientWidth` (zero overflow) on all of them.
 
 ---
 

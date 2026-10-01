@@ -207,24 +207,26 @@ export function FieldExecution() {
                     <Typography sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>—</Typography>
                   )}
                 </TableCell>
-                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                  <Button
-                    size="small"
-                    variant="pillOutlined"
-                    sx={{ px: 1.5, py: 0.4, mr: 0.5 }}
-                    component={RouterLink}
-                    to={`/admin/sessions/${row.id}`}
-                  >
-                    Record ↗
-                  </Button>
-                  <Button
-                    size="small"
-                    variant={row.volunteerEmail.sent && row.coordinatorEmail.sent ? 'pillOutlined' : 'pill'}
-                    sx={{ px: 1.5, py: 0.4 }}
-                    onClick={() => openModal.mutate(row)}
-                  >
-                    {row.volunteerEmail.sent && row.coordinatorEmail.sent ? '↻ Resend' : '✉ Send emails'}
-                  </Button>
+                <TableCell align="right" sx={{ minWidth: 120 }}>
+                  <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                    <Button
+                      size="small"
+                      variant="pillOutlined"
+                      sx={{ px: 1.25, py: 0.3 }}
+                      component={RouterLink}
+                      to={`/admin/sessions/${row.id}`}
+                    >
+                      Record ↗
+                    </Button>
+                    <Button
+                      size="small"
+                      variant={row.volunteerEmail.sent && row.coordinatorEmail.sent ? 'pillOutlined' : 'pill'}
+                      sx={{ px: 1.25, py: 0.3 }}
+                      onClick={() => openModal.mutate(row)}
+                    >
+                      {row.volunteerEmail.sent && row.coordinatorEmail.sent ? '↻ Resend' : '✉ Send'}
+                    </Button>
+                  </Box>
                 </TableCell>
               </TableRow>
             ))}
