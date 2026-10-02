@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-10-02 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across forty-one review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across forty-two review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -1030,6 +1030,42 @@ queries keeps the previous rows on screen while the next result loads. Measured,
 assumed: typing "kavya" at human speed fires exactly ONE /volunteers request for five
 keystrokes, and a 60 ms row-count sampler never once saw an empty table — 25 rows step
 directly to the single match.
+
+---
+
+## Round 42 — Deletion reaches the volunteers  (2026-10-02)
+
+Rounds 36–37 made catalog deletes terminal for staff; this round carries the consequence
+through to everyone else:
+
+- **No dead scheduling buttons.** The program page's per-activity "+ Schedule" disappears
+  when that activity (or the program) is deleted — the 409 behind it stops being
+  reachable from the UI at all.
+- **Phases die with their session.** Every phase mutation — edit, remove, start, both
+  completion marks, and even the override that legitimately reopens ordinary
+  cancellations — now refuses with `CATALOG_DELETED` when the owning session was
+  cancelled by a catalog delete. (Ordinary cancellations keep their reopen path.)
+- **Enrolled volunteers see it.** `/enrollments/me` carries `event_deleted`; the
+  dashboard gains a "No longer happening" section listing deleted/cancelled enrollments
+  struck through with a red chip, counted in neither "upcoming sessions" nor "hours
+  committed" — the calendar was already free of cancelled sessions, so their schedule is
+  genuinely released. Phase partner-leads keep seeing their phase on the dashboard,
+  struck through as **deleted** with "nothing more is needed from you".
+- **Unenrolled volunteers see it too.** The volunteer session detail used to 404 for any
+  cancelled session (its lookup went through a scope that excluded them); a new
+  detail-only scope finds them, the page shows a plain banner — "This session was deleted
+  by Parinaam…" (or the cancellation reason) — with a deleted status pill, and the browse
+  payload now carries `cancelReason`/`isDeleted` for any view that needs the distinction.
+- **Found along the way:** the PRG/ACT/EVT code generators used row COUNTs, which collide
+  with surviving codes the moment any row is deleted — new program creation was actually
+  broken on the local stack. All three now take MAX(existing numeric suffix) + 1.
+
+Verified on a scratch program end to end: activity delete cascaded (1 session cancelled
+with the reason on record), admin phase-start and the partner-lead's own completion both
+answered CATALOG_DELETED, Kavya's session detail returned 200/cancelled/isDeleted instead
+of 404, her `/enrollments/me` and `/phases/mine` both carried the deleted flag, December's
+calendar had no trace of it, and the dashboard screenshot shows the struck-through phase
+and the "No longer happening" card. Scratch data removed after.
 
 ---
 

@@ -13,7 +13,8 @@ export interface BrowseQuery {
   to?: string;
   enrollState?: 'all' | 'open' | 'waitlist' | 'enrolled';
   sort?: 'date' | 'time' | 'venue' | 'slots';
-  scope?: 'open' | 'all' | 'completed';
+  /** 'any' includes cancelled — the detail view's scope, never a list's. */
+  scope?: 'open' | 'all' | 'completed' | 'any';
 }
 
 /**
@@ -39,7 +40,7 @@ export class EventsBrowseService {
 
     const rows = await this.dataSource.query(
       `SELECT e.id, e.code, COALESCE(e.name, a.name) AS name, e.date, e.start_time,
-              e.duration_hours, e.location, e.city, e.max_slots, e.status,
+              e.duration_hours, e.location, e.city, e.max_slots, e.status, e.cancel_reason,
               a.id AS activity_id, a.name AS activity_name, a.type, a.skill_required,
               a.status AS activity_status,
               p.id AS program_id, p.name AS program_name, p.status AS program_status,
@@ -81,6 +82,9 @@ export class EventsBrowseService {
          AND ($7::date IS NULL OR e.date <= $7)
          AND (CASE WHEN $8 = 'open' THEN e.status = 'upcoming' AND e.date >= CURRENT_DATE
                    WHEN $8 = 'completed' THEN e.status = 'completed'
+                   -- 'any' exists for the detail view: a volunteer following a
+                   -- link to a deleted/cancelled session sees its state, not 404.
+                   WHEN $8 = 'any' THEN TRUE
                    ELSE e.status <> 'cancelled' END)
        ORDER BY CASE WHEN $8 = 'completed' THEN e.date END DESC,
                 e.date, e.start_time
@@ -109,6 +113,11 @@ export class EventsBrowseService {
       type: r.type,
       skillRequired: r.skill_required,
       status: r.status,
+      cancelReason: r.cancel_reason ?? null,
+      // Deleted catalog entries cancel their sessions with a marked reason —
+      // the volunteer-facing views say "deleted", not just "cancelled".
+      isDeleted:
+        r.status === 'cancelled' && /^(activity|program) deleted/i.test(String(r.cancel_reason ?? '')),
       program: { id: r.program_id, name: r.program_name },
       activity: { id: r.activity_id, name: r.activity_name },
       coordinatorName: r.coordinator_name,
@@ -161,7 +170,7 @@ export class EventsBrowseService {
   }
 
   async detail(principal: AuthPrincipal, eventId: string) {
-    const { data } = await this.browse(principal, { scope: 'all' });
+    const { data } = await this.browse(principal, { scope: 'any' });
     const event = data.find((e: { id: string }) => e.id === eventId);
     if (!event) throw new NotFoundException('Session not found');
 

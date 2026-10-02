@@ -15,6 +15,9 @@ export interface SessionRow {
   type: 'In person' | 'Online';
   skillRequired: string | null;
   status: 'draft' | 'upcoming' | 'inprogress' | 'completed' | 'cancelled';
+  cancelReason: string | null;
+  /** Cancelled because its activity/program was deleted — shown as "deleted". */
+  isDeleted: boolean;
   program: { id: string; name: string };
   activity: { id: string; name: string };
   coordinatorName: string;
@@ -55,6 +58,8 @@ export interface MyPhaseRow {
   event_id: string;
   event_name: string;
   event_status: string;
+  /** The session was removed by a catalog delete — the phase is dead with it. */
+  event_deleted: boolean;
   program_name: string;
 }
 
@@ -85,6 +90,8 @@ export interface MyEnrollments {
     duration_hours: string;
     location: string | null;
     event_status: string;
+    cancel_reason: string | null;
+    event_deleted: boolean;
     program_name: string;
     promoted_from_waitlist: boolean;
   }>;

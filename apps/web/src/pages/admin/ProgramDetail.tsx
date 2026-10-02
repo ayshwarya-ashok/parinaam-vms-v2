@@ -220,7 +220,7 @@ export function ProgramDetail() {
               p: 2,
               borderRadius: 3,
               bgcolor: 'rgba(255,255,255,0.8)',
-              opacity: a.status === 'discontinued' ? 0.6 : 1,
+              opacity: a.status === 'discontinued' || a.status === 'deleted' ? 0.6 : 1,
             }}
           >
             <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
@@ -250,7 +250,9 @@ export function ProgramDetail() {
                 <Button component={RouterLink} to={`/admin/activities/${a.id}`} variant="pillOutlined" size="small" sx={{ px: 2, py: 0.5 }}>
                   Sessions
                 </Button>
-                {!readOnly && (
+                {/* Nothing new is scheduled under a deleted activity or
+                    program — the button goes, not just the endpoint (6b). */}
+                {!readOnly && a.status !== 'deleted' && !isDeleted && (
                   <Button
                     component={RouterLink}
                     to={`/admin/activities/${a.id}/events/new`}

@@ -507,7 +507,9 @@ export class EnrollmentsService {
     const enrollments = await this.dataSource.query(
       `SELECT en.id, en.event_id, en.status, en.enrolled_at, en.promoted_from_waitlist,
               COALESCE(e.name, a.name) AS event_name, e.code, e.date, e.start_time,
-              e.duration_hours, e.location, e.status AS event_status,
+              e.duration_hours, e.location, e.status AS event_status, e.cancel_reason,
+              (e.status = 'cancelled' AND e.cancel_reason ~* '^(activity|program) deleted')
+                AS event_deleted,
               p.name AS program_name
        FROM event_enrollments en
        JOIN events e ON e.id = en.event_id

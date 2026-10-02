@@ -1,4 +1,5 @@
 import {
+  Alert,
   Box,
   Button,
   Chip,
@@ -54,7 +55,18 @@ export function SessionDetailPage() {
   return (
     <PageShell
       title={session.name}
+      actions={<StatusPill status={session.isDeleted ? 'deleted' : session.status} />}
     >
+      {/* A deleted/cancelled session says so plainly — enrolled or not, a
+          volunteer landing here sees what happened instead of a dead page. */}
+      {session.status === 'cancelled' && (
+        <Alert severity={session.isDeleted ? 'error' : 'warning'} sx={{ mb: 2, borderRadius: 3 }}>
+          {session.isDeleted
+            ? 'This session was deleted by Parinaam. It has been removed from your calendar — no action is needed from you.'
+            : `This session was cancelled${session.cancelReason ? `: ${session.cancelReason}` : '.'}`}
+        </Alert>
+      )}
+
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid size={{ xs: 6, md: 2 }}>
           <StatTile label="Date" value={fmtDate(session.date)} />

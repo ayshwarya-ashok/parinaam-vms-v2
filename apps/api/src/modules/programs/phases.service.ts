@@ -133,8 +133,29 @@ export class PhasesService {
     return row;
   }
 
+  /**
+   * A session cancelled by a catalog delete (Round 42) is terminal for its
+   * phases too: no edits, no starts, no completion marks, no overrides.
+   * Ordinary cancellations keep their existing semantics (a phase override is
+   * the documented way to reopen one).
+   */
+  private async assertSessionNotDeleted(eventId: string) {
+    const [e] = await this.dataSource.query(
+      'SELECT status, cancel_reason FROM events WHERE id = $1',
+      [eventId],
+    );
+    if (e?.status === 'cancelled' && /^(activity|program) deleted/i.test(e.cancel_reason ?? '')) {
+      throw new BusinessException(
+        'CATALOG_DELETED',
+        'This session was deleted with its activity — its phases can no longer change.',
+        409,
+      );
+    }
+  }
+
   async update(id: string, dto: UpdatePhaseDto) {
     const phase = await this.phaseOf(id);
+    await this.assertSessionNotDeleted(phase.eventId);
     if (phase.status === 'completed') {
       throw new BusinessException(
         'PHASE_LOCKED',
@@ -170,6 +191,7 @@ export class PhasesService {
 
   async remove(principal: AuthPrincipal, id: string) {
     const phase = await this.phaseOf(id);
+    await this.assertSessionNotDeleted(phase.eventId);
     if (phase.status !== 'upcoming' || phase.parinaamMarkedAt || phase.partnerMarkedAt) {
       throw new BusinessException(
         'PHASE_LOCKED',
@@ -185,6 +207,7 @@ export class PhasesService {
   /** Explicit "work has started" — mirrors the deliberate session lifecycle. */
   async start(principal: AuthPrincipal, id: string) {
     const phase = await this.phaseOf(id);
+    await this.assertSessionNotDeleted(phase.eventId);
     if (phase.status !== 'upcoming') {
       throw new BusinessException('PHASE_ALREADY_MARKED', `This phase is already ${phase.status}.`);
     }
@@ -206,6 +229,7 @@ export class PhasesService {
    */
   async completeParinaamSide(principal: AuthPrincipal, id: string) {
     const phase = await this.phaseOf(id);
+    await this.assertSessionNotDeleted(phase.eventId);
     if (phase.responsibility === 'partner') {
       throw new BusinessException(
         'PHASE_NOT_YOURS',
@@ -243,6 +267,7 @@ export class PhasesService {
     if (!me) throw new NotFoundException('Volunteer profile not found');
 
     const phase = await this.phaseOf(id);
+    await this.assertSessionNotDeleted(phase.eventId);
     if (phase.responsibility === 'parinaam') {
       throw new BusinessException(
         'PHASE_NOT_YOURS',
@@ -281,6 +306,8 @@ export class PhasesService {
       `SELECT ph.id, ph.name, ph.responsibility, ph.status, ph.start_date, ph.end_date,
               ph.parinaam_marked_at, ph.partner_marked_at,
               e.id AS event_id, COALESCE(e.name, a.name) AS event_name, e.status AS event_status,
+              (e.status = 'cancelled' AND e.cancel_reason ~* '^(activity|program) deleted')
+                AS event_deleted,
               p.name AS program_name
        FROM event_phases ph
        JOIN volunteers v ON v.id = ph.partner_lead_volunteer_id
@@ -289,7 +316,11 @@ export class PhasesService {
        JOIN programs p ON p.id = a.program_id
        WHERE v.user_id = $1
          AND ph.status <> 'completed'
-         AND e.status NOT IN ('draft', 'cancelled')
+         AND (e.status NOT IN ('draft', 'cancelled')
+              -- A phase whose session was DELETED stays visible to its partner
+              -- lead so they can see what happened to it (Round 42).
+              OR (e.status = 'cancelled'
+                  AND e.cancel_reason ~* '^(activity|program) deleted'))
        ORDER BY ph.start_date`,
       [principal.sub],
     );
@@ -302,6 +333,9 @@ export class PhasesService {
    */
   async override(principal: AuthPrincipal, id: string, dto: OverridePhaseDto) {
     const phase = await this.phaseOf(id);
+    // The override is the documented reopen tool for ordinary cancellations,
+    // but a catalog delete is terminal — nothing under it reopens.
+    await this.assertSessionNotDeleted(phase.eventId);
     const beforeData = {
       status: phase.status,
       parinaamMarkedAt: phase.parinaamMarkedAt,

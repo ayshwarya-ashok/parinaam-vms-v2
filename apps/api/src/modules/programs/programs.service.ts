@@ -310,8 +310,10 @@ export class ProgramsService {
     const program = await this.programs.findOneBy({ id: programId });
     if (!program) throw new NotFoundException('Program not found');
 
+    // Max existing suffix + 1 (a row count collides after any deletion).
     const [{ n }] = await this.dataSource.query(
-      'SELECT COUNT(*)::int AS n FROM activities',
+      `SELECT COALESCE(MAX((regexp_match(code, '(\\d+)$'))[1]::int), 0) AS n
+       FROM activities WHERE code ~ '\\d+$'`,
     );
     const activity = await this.activities.save(
       this.activities.create({
@@ -478,10 +480,15 @@ export class ProgramsService {
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
+  /**
+   * Next code = highest existing numeric suffix + 1 — NOT a row count. A count
+   * collides with a surviving code the moment any row is ever deleted.
+   */
   private async nextCode(): Promise<string> {
     const year = new Date().getFullYear();
     const [{ n }] = await this.dataSource.query(
-      'SELECT COUNT(*)::int AS n FROM programs',
+      `SELECT COALESCE(MAX((regexp_match(code, '(\\d+)$'))[1]::int), 0) AS n
+       FROM programs WHERE code ~ '\\d+$'`,
     );
     return `PRG-${year}-${String(Number(n) + 1).padStart(3, '0')}`;
   }

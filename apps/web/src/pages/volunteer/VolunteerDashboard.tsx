@@ -22,6 +22,10 @@ export function VolunteerDashboard() {
   const { onEnroll, onWithdraw, onLeaveWaitlist, dialogs } = useEnrollFlow();
 
   const upcoming = (mine?.enrollments ?? []).filter((e) => e.event_status === 'upcoming');
+  // Sessions that will not happen (deleted with their activity, or cancelled):
+  // shown so the volunteer learns their calendar was freed, never counted as
+  // commitments or hours.
+  const removed = (mine?.enrollments ?? []).filter((e) => e.event_status === 'cancelled');
   const totalHours = upcoming.reduce((sum, e) => sum + Number(e.duration_hours), 0);
   const suggestions = open.filter((s) => s.myState === 'none').slice(0, 6);
 
@@ -92,22 +96,40 @@ export function VolunteerDashboard() {
                 }}
               >
                 <Box>
-                  <Typography sx={{ fontWeight: 700, fontSize: '0.95rem' }}>
+                  <Typography
+                    sx={{
+                      fontWeight: 700,
+                      fontSize: '0.95rem',
+                      textDecoration: p.event_deleted ? 'line-through' : 'none',
+                    }}
+                  >
                     {p.name} — {p.event_name}
                   </Typography>
                   <Typography sx={{ fontSize: '0.82rem', color: 'text.secondary' }}>
-                    {p.program_name} · {fmtDate(p.start_date)}
-                    {String(p.end_date).slice(0, 10) !== String(p.start_date).slice(0, 10)
-                      ? ` – ${fmtDate(p.end_date)}`
-                      : ''}{' '}
-                    · you are the partner lead
-                    {p.partner_marked_at ? ' · your side is done' : ' · your mark is pending'}
+                    {p.event_deleted ? (
+                      <>
+                        {p.program_name} · this session was deleted by Parinaam — nothing more is
+                        needed from you
+                      </>
+                    ) : (
+                      <>
+                        {p.program_name} · {fmtDate(p.start_date)}
+                        {String(p.end_date).slice(0, 10) !== String(p.start_date).slice(0, 10)
+                          ? ` – ${fmtDate(p.end_date)}`
+                          : ''}{' '}
+                        · you are the partner lead
+                        {p.partner_marked_at ? ' · your side is done' : ' · your mark is pending'}
+                      </>
+                    )}
                   </Typography>
                 </Box>
                 <Chip
-                  label={p.status === 'inprogress' ? 'in progress' : p.status}
+                  label={p.event_deleted ? 'deleted' : p.status === 'inprogress' ? 'in progress' : p.status}
                   size="small"
-                  sx={{ fontSize: '0.7rem' }}
+                  sx={{
+                    fontSize: '0.7rem',
+                    ...(p.event_deleted && { bgcolor: 'rgba(139,26,26,0.12)', color: '#8B1A1A', fontWeight: 700 }),
+                  }}
                 />
               </Paper>
             ))}
@@ -155,6 +177,55 @@ export function VolunteerDashboard() {
                 <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: 'secondary.dark' }}>
                   {e.duration_hours}h
                 </Typography>
+              </Paper>
+            ))}
+          </Box>
+        </Box>
+      )}
+
+      {removed.length > 0 && (
+        <Box sx={{ mb: 4 }}>
+          <Typography sx={{ fontWeight: 700, fontSize: '1.1rem', mb: 0.5 }}>
+            No longer happening
+          </Typography>
+          <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary', mb: 1.5 }}>
+            Sessions you were enrolled in that were deleted or cancelled — your calendar is
+            freed; nothing is needed from you.
+          </Typography>
+          <Box sx={{ display: 'grid', gap: 1 }}>
+            {removed.map((e) => (
+              <Paper
+                key={e.id}
+                variant="outlined"
+                component={RouterLink}
+                to={`/app/events/${e.event_id}`}
+                sx={{
+                  p: 1.75,
+                  borderRadius: 3,
+                  bgcolor: 'rgba(255,255,255,0.6)',
+                  opacity: 0.85,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: 2,
+                  flexWrap: 'wrap',
+                  textDecoration: 'none',
+                  color: 'inherit',
+                }}
+              >
+                <Box>
+                  <Typography sx={{ fontWeight: 700, fontSize: '0.95rem', textDecoration: 'line-through' }}>
+                    {e.event_name}
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.82rem', color: 'text.secondary' }}>
+                    {e.program_name} · was {fmtDate(e.date)} at {String(e.start_time).slice(0, 5)}
+                  </Typography>
+                </Box>
+                <Chip
+                  label={e.event_deleted ? 'deleted' : 'cancelled'}
+                  size="small"
+                  sx={{ fontSize: '0.7rem', bgcolor: 'rgba(139,26,26,0.12)', color: '#8B1A1A', fontWeight: 700 }}
+                />
               </Paper>
             ))}
           </Box>

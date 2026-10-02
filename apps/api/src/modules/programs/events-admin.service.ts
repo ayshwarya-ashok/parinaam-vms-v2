@@ -529,9 +529,13 @@ export class EventsAdminService {
     return { subject: rendered.subject, html: rendered.html, context };
   }
 
+  /** Max existing suffix + 1 (a row count collides after any deletion). */
   private async nextCode(): Promise<string> {
     const year = new Date().getFullYear();
-    const [{ n }] = await this.dataSource.query('SELECT COUNT(*)::int AS n FROM events');
+    const [{ n }] = await this.dataSource.query(
+      `SELECT COALESCE(MAX((regexp_match(code, '(\\d+)$'))[1]::int), 0) AS n
+       FROM events WHERE code ~ '\\d+$'`,
+    );
     return `EVT-${year}-${String(Number(n) + 1).padStart(4, '0')}`;
   }
 }
