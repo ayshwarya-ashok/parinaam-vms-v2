@@ -1,4 +1,5 @@
 import { Box, Typography } from '@mui/material';
+import { useDebouncedValue } from '@/app/use-debounced';
 import { useState } from 'react';
 import { useSessions } from '@/api/volunteer';
 import { EmptyState, FilterBar, PageShell } from '@/components';
@@ -15,8 +16,10 @@ export function BrowseSessions() {
 
   const showingCompleted = view === 'completed';
 
+  // Live search: debounced query + previous rows kept while loading.
+  const dq = useDebouncedValue(q);
   const { data: sessions = [], isLoading } = useSessions({
-    q: q || undefined,
+    q: dq || undefined,
     type: type === 'all' ? undefined : type,
     enrollState: showingCompleted || enrollState === 'all' ? undefined : enrollState,
     sort,

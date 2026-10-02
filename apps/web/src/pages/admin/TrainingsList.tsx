@@ -2,6 +2,7 @@ import { Box, Button, Chip, Paper, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useMutation } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
+import { useDebouncedValue } from '@/app/use-debounced';
 import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { api } from '@/api/client';
@@ -18,7 +19,9 @@ export function TrainingsList() {
 
   // Load everything; the filter chips below are built from the DATA's own
   // distinct categories/statuses (Round 39), never a hardcoded list.
-  const { data: allTrainings = [], isLoading } = useTrainingsList({ q: q || undefined });
+  // Live search: debounced query + previous rows kept while loading.
+  const dq = useDebouncedValue(q);
+  const { data: allTrainings = [], isLoading } = useTrainingsList({ q: dq || undefined });
   const categories = [...new Set(allTrainings.map((t) => t.category))].sort();
   const statuses = [...new Set(allTrainings.map((t) => t.status))].sort();
   const trainings = allTrainings.filter(

@@ -108,6 +108,8 @@ export const useTrainingsList = (filters: Record<string, string | undefined>) =>
     queryKey: ['trainings', 'list', filters],
     queryFn: async () =>
       (await api.get<TrainingSummary[]>('/trainings', { params: filters })).data,
+    // Live search: keep the previous rows on screen while the next load runs.
+    placeholderData: (prev) => prev,
   });
 
 export const useTraining = (id: string | undefined) =>

@@ -11,6 +11,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
+import { useDebouncedValue } from '@/app/use-debounced';
 import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import {
@@ -37,7 +38,9 @@ export function ReportsPage() {
   const [exporting, setExporting] = useState<string | null>(null);
   const { enqueueSnackbar } = useSnackbar();
 
-  const { data: rows } = useVolunteerReport({ q, category: 'all', phase: 'all' });
+  // Live search: debounced query + previous rows kept while loading.
+  const dq = useDebouncedValue(q);
+  const { data: rows } = useVolunteerReport({ q: dq, category: 'all', phase: 'all' });
   const { data: runs, refetch: refetchRuns } = useReportRuns();
 
   // Column funnels (Round 39): distinct values straight from the rows.

@@ -44,6 +44,8 @@ export const useCertificateCandidates = (filters: {
           },
         })
       ).data.data,
+    // Live search: keep the previous rows on screen while the next load runs.
+    placeholderData: (prev) => prev,
   });
 
 export interface MyCertificate {

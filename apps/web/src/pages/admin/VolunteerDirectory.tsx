@@ -52,6 +52,7 @@ import {
 } from '@/app/validation';
 import { tokens } from '@/theme';
 import { useAuth } from '@/app/auth';
+import { useDebouncedValue } from '@/app/use-debounced';
 
 type RegistrationStatus = 'pending' | 'approved' | 'rejected';
 
@@ -327,13 +328,16 @@ export function VolunteerDirectory() {
   }
 
   const joined = (key: string) => (colSel[key]?.length ? colSel[key].join(',') : undefined);
+  // Live search: the query sees the debounced text, and previous rows stay on
+  // screen while the next page loads — no blank-table flicker per keystroke.
+  const dq = useDebouncedValue(q);
   const { data } = useQuery({
-    queryKey: ['directory', q, colSel, registeredFrom, registeredTo, page],
+    queryKey: ['directory', dq, colSel, registeredFrom, registeredTo, page],
     queryFn: async () =>
       (
         await api.get<{ data: DirectoryRow[]; meta: DirectoryMeta }>('/volunteers', {
           params: {
-            q: q || undefined,
+            q: dq || undefined,
             registrationStatus: joined('registration'),
             category: joined('category'),
             isActive: colSel.account?.length
@@ -346,6 +350,7 @@ export function VolunteerDirectory() {
           },
         })
       ).data,
+    placeholderData: (prev) => prev,
   });
 
   // The funnels' option lists come from server facets — the distinct values

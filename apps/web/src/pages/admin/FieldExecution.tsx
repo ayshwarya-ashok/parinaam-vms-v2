@@ -20,6 +20,7 @@ import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { api, asApiError } from '@/api/client';
 import { FilterBar, PageShell, SortableCell, StatusPill, useColumnFilters, useTableSort } from '@/components';
+import { useDebouncedValue } from '@/app/use-debounced';
 import { tokens } from '@/theme';
 
 interface DispatchRow {
@@ -74,18 +75,21 @@ function SentBadge({ state }: { state: { sent: boolean; sentAt: string | null; c
 
 export function FieldExecution() {
   const [q, setQ] = useState('');
+  // Live search: debounced query + previous rows kept while loading.
+  const dq = useDebouncedValue(q);
   const [modal, setModal] = useState<{ row: DispatchRow; volunteer: Preview; coordinator: Preview } | null>(null);
   const queryClient = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
 
   const { data } = useQuery({
-    queryKey: ['dispatches', q],
+    queryKey: ['dispatches', dq],
     queryFn: async () =>
       (
         await api.get<{ data: DispatchRow[] }>('/attendance/dispatches', {
-          params: { q: q || undefined },
+          params: { q: dq || undefined },
         })
       ).data.data,
+    placeholderData: (prev) => prev,
   });
 
   const openModal = useMutation({

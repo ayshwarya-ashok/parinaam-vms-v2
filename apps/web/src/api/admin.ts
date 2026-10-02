@@ -117,6 +117,8 @@ export const usePrograms = (q: string, status: string) =>
           params: { q: q || undefined, status: status === 'all' ? undefined : status },
         })
       ).data.data,
+    // Live search: keep the previous rows on screen while the next load runs.
+    placeholderData: (prev) => prev,
   });
 
 export const useProgram = (id: string | undefined) =>

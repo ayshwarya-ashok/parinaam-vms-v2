@@ -105,6 +105,8 @@ export const useSessions = (params: Record<string, string | undefined>) =>
     queryKey: ['sessions', params],
     queryFn: async () =>
       (await api.get<{ data: SessionRow[] }>('/events', { params })).data.data,
+    // Live search: keep the previous rows on screen while the next load runs.
+    placeholderData: (prev) => prev,
   });
 
 export const useSession = (id: string | undefined) =>

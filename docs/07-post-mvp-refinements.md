@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
-| **Period** | 2026-08-20 → 2026-10-01 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across forty review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Period** | 2026-08-20 → 2026-10-02 (ongoing) |
+| **Driver** | Hands-on testing by the product owner across forty-one review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -1015,6 +1015,21 @@ Addendum, same day: the directory's Sub-category column was removed to buy the A
 column more room — a student volunteer now shows "Student" as the Category chip's label
 (Student is Individual plus a sub-category, so one chip carries both), and the detail
 drawer keeps the full breakdown.
+
+---
+
+## Round 41 — Live search without the flicker  (2026-10-02)
+
+Typing in any table's search box used to re-run the query per keystroke, and React Query
+drops to "no data" while a new key loads — so the table blanked and re-rendered with
+every letter. Two-part fix, applied to every searchable list for both roles (directory,
+field execution, certificates, reports, trainings, programs, and the volunteer's Browse
+sessions): a shared `useDebouncedValue` hook lets the input stay instant while the query
+only fires once typing pauses (300 ms), and `placeholderData: (prev) => prev` on the list
+queries keeps the previous rows on screen while the next result loads. Measured, not
+assumed: typing "kavya" at human speed fires exactly ONE /volunteers request for five
+keystrokes, and a 60 ms row-count sampler never once saw an empty table — 25 rows step
+directly to the single match.
 
 ---
 

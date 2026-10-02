@@ -1,4 +1,5 @@
 import { Box, Button, Paper, Typography } from '@mui/material';
+import { useDebouncedValue } from '@/app/use-debounced';
 import { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { usePrograms } from '@/api/admin';
@@ -21,8 +22,10 @@ export function ProgramsList() {
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('all');
   const navigate = useNavigate();
-  // Load all; the status options are the data's own distinct statuses (Round 39).
-  const { data: allPrograms = [], isLoading } = usePrograms(q, 'all');
+  // Live search (debounced; previous rows kept while loading) over all rows;
+  // the status options are the data's own distinct statuses (Round 39).
+  const dq = useDebouncedValue(q);
+  const { data: allPrograms = [], isLoading } = usePrograms(dq, 'all');
   const statuses = [...new Set(allPrograms.map((p) => p.status))].sort();
   const programs = allPrograms.filter((p) => status === 'all' || p.status === status);
 

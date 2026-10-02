@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
+import { useDebouncedValue } from '@/app/use-debounced';
 import { useState } from 'react';
 import { api, asApiError } from '@/api/client';
 import { usePrograms } from '@/api/admin';
@@ -46,7 +47,9 @@ export function CertificatesAdmin() {
   const queryClient = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
 
-  const { data } = useCertificateCandidates({ q, programId: '', status: 'all' });
+  // Live search: debounced query + previous rows kept while loading.
+  const dq = useDebouncedValue(q);
+  const { data } = useCertificateCandidates({ q: dq, programId: '', status: 'all' });
   const { data: programs } = usePrograms('', 'all');
 
   // Column funnels (Round 39): program and issue-state filter client-side
