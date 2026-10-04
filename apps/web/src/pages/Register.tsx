@@ -33,11 +33,6 @@ import { tokens } from '@/theme';
 import { PasswordField } from '@/components/PasswordField';
 import { StateCityFields } from '@/components/StateCityFields';
 
-interface OrganizationOption {
-  id: string;
-  name: string;
-}
-
 type ReferenceOptions = Record<string, Array<{ code: string; label: string }>>;
 
 /** Credentials handed over by the landing page's sign-up tab, in memory only. */
@@ -78,8 +73,13 @@ export function Register() {
     category: 'Individual' as 'Individual' | 'CSR',
     subCategory: '' as '' | 'Student',
     institution: '',
-    organizationId: '',
-    occupation: '',
+    // CSR organization: a fixed partner list plus Other → free text (Round 44).
+    organizationChoice: '',
+    organizationOther: '',
+    // Occupation: dropdown plus Other → free text; optional.
+    occupationChoice: '',
+    occupationOther: '',
+    referralSource: '',
     skills: '',
     languages: [] as string[],
     areasOfInterest: [] as string[],
@@ -96,24 +96,56 @@ export function Register() {
   const [error, setError] = useState<string | null>(null);
   const [problems, setProblems] = useState<ProfileErrors>({});
   const [busy, setBusy] = useState(false);
-
-  // Both lists are public: the form must render before an account exists, so
-  // these use a bare client with no auth interceptor attached.
-  const { data: organizations = [] } = useQuery({
-    queryKey: ['public-organizations'],
-    queryFn: async () =>
-      (await axios.get<OrganizationOption[]>(`${API_BASE_URL}/organizations`)).data,
-  });
+  // Submission succeeded: show the thank-you screen instead of the form.
+  const [registered, setRegistered] = useState(false);
   const { data: options = {} } = useQuery({
     queryKey: ['reference-values'],
     queryFn: async () => (await axios.get<ReferenceOptions>(`${API_BASE_URL}/reference-values`)).data,
     staleTime: 10 * 60_000,
   });
 
-  // Already signed in with a profile? This page is finished with you.
-  if (status === 'authenticated' && user?.profileComplete) {
+  // Already signed in with a profile? This page is finished with you — unless
+  // the profile was completed HERE just now, in which case the thank-you
+  // screen below owns the moment.
+  if (!registered && status === 'authenticated' && user?.profileComplete) {
     return <Navigate to="/app/dashboard" replace />;
   }
+  // The post-submission thank-you (Round 44). "Register someone else" signs
+  // this fresh session out and reloads a clean form — the common case is one
+  // household registering several people from the same device.
+  if (registered) {
+    return (
+      <Container maxWidth="sm" sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center' }}>
+        <Paper variant="outlined" sx={{ p: { xs: 3, md: 5 }, borderRadius: 4, width: '100%', textAlign: 'left' }}>
+          <Box component="img" src="/parinaam-logo.svg" alt="Parinaam" sx={{ height: 48, display: 'block', mb: 2 }} />
+          <Typography variant="h3" sx={{ mb: 2 }}>
+            Thank you! 💙
+          </Typography>
+          <Typography sx={{ fontSize: '1.05rem', lineHeight: 1.7, color: 'text.secondary', mb: 3 }}>
+            Thank you for registering. Our team will review your details and get in touch with
+            you. We thank you for being a Goodheart.
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+            <Button variant="pill" onClick={() => navigate('/app/dashboard', { replace: true })}>
+              Go to my dashboard
+            </Button>
+            <Button
+              variant="pillOutlined"
+              onClick={() => {
+                void (async () => {
+                  await logout();
+                  window.location.assign('/register');
+                })();
+              }}
+            >
+              Register someone else
+            </Button>
+          </Box>
+        </Paper>
+      </Container>
+    );
+  }
+
   // Arriving without credentials and without a session is the SHARED LINK:
   // the Parinaam team hands /register to volunteers directly, so the page is
   // self-contained — it asks for email + password itself and registers in one
@@ -158,8 +190,12 @@ export function Register() {
       setError('Please confirm you have read the compliance report.');
       return;
     }
-    if (form.category === 'CSR' && !form.organizationId) {
+    if (form.category === 'CSR' && !form.organizationChoice) {
       setError('Please select the organization sponsoring your volunteering.');
+      return;
+    }
+    if (form.category === 'CSR' && form.organizationChoice === 'Other' && !form.organizationOther.trim()) {
+      setError('Please type the name of your organization.');
       return;
     }
     if (form.subCategory === 'Student' && !form.institution) {
@@ -186,8 +222,18 @@ export function Register() {
     category: form.category,
     subCategory: form.subCategory || undefined,
     institution: form.subCategory === 'Student' ? form.institution : undefined,
-    organizationId: form.organizationId || undefined,
-    occupation: form.occupation || undefined,
+    organizationName:
+      form.category === 'CSR'
+        ? form.organizationChoice === 'Other'
+          ? form.organizationOther.trim()
+          : form.organizationChoice
+        : undefined,
+    occupation: form.occupationChoice
+      ? form.occupationChoice === 'Other'
+        ? form.occupationOther.trim() || undefined
+        : form.occupationChoice
+      : undefined,
+    referralSource: form.referralSource || undefined,
     skills: form.skills || undefined,
     languages: form.languages.length ? form.languages : undefined,
     areasOfInterest: form.areasOfInterest.length ? form.areasOfInterest : undefined,
@@ -215,7 +261,7 @@ export function Register() {
           password: account.password,
         });
       }
-      navigate('/app/dashboard', { replace: true });
+      setRegistered(true);
     } catch (err) {
       const apiError = asApiError(err);
       setError(
@@ -326,6 +372,84 @@ export function Register() {
                   </Grid>
                 </>
               )}
+
+              {/* ── Volunteering as — the 2nd question, right after the account
+                     (Round 44): the answer shapes what the rest of the form asks. ── */}
+              <SectionTitle>Volunteering as</SectionTitle>
+
+              <Box>
+                {/* Student is Individual + a tracked sub-category, so the radio
+                    speaks in three options while the API still sees two
+                    categories. */}
+                <RadioGroup
+                  row
+                  value={form.subCategory === 'Student' ? 'Student' : form.category}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setForm((f) => ({
+                      ...f,
+                      category: v === 'CSR' ? 'CSR' : 'Individual',
+                      subCategory: v === 'Student' ? 'Student' : '',
+                      // Only CSR names an organization; a student names an
+                      // institution instead, and Individuals are not asked.
+                      organizationChoice: v === 'CSR' ? f.organizationChoice : '',
+                      organizationOther: v === 'CSR' ? f.organizationOther : '',
+                      institution: v === 'Student' ? f.institution : '',
+                    }));
+                  }}
+                >
+                  <FormControlLabel value="Individual" control={<Radio />} label="As an individual" />
+                  <FormControlLabel
+                    value="CSR"
+                    control={<Radio />}
+                    label="Through my organization (CSR)"
+                  />
+                  <FormControlLabel value="Student" control={<Radio />} label="As a student" />
+                </RadioGroup>
+              </Box>
+
+              {form.subCategory === 'Student' ? (
+                <TextField
+                  select
+                  required
+                  label="Institution"
+                  value={form.institution}
+                  onChange={(e) => set('institution', e.target.value)}
+                  helperText="Pick the institution you study at"
+                >
+                  {(options.INSTITUTION ?? []).map((inst) => (
+                    <MenuItem key={inst.code} value={inst.label}>
+                      {inst.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              ) : form.category === 'CSR' ? (
+                <>
+                  {/* The client's CSR partner list; "Other" captures any name. */}
+                  <TextField
+                    select
+                    required
+                    label="Sponsoring organization"
+                    value={form.organizationChoice}
+                    onChange={(e) => set('organizationChoice', e.target.value)}
+                    helperText="CSR volunteers must name their organization"
+                  >
+                    {['Odessa', 'PwC', 'Deutsche Bank', 'IG Group', 'Finastra', 'Other'].map((name) => (
+                      <MenuItem key={name} value={name}>
+                        {name}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                  {form.organizationChoice === 'Other' && (
+                    <TextField
+                      required
+                      label="Name of your organization"
+                      value={form.organizationOther}
+                      onChange={(e) => set('organizationOther', e.target.value)}
+                    />
+                  )}
+                </>
+              ) : null}
 
               <SectionTitle>About you</SectionTitle>
 
@@ -489,80 +613,45 @@ export function Register() {
                 onChange={(e) => set('skills', e.target.value)}
               />
 
-              <TextField
-                label="Occupation"
-                autoComplete="organization-title"
-                value={form.occupation}
-                onChange={(e) => set('occupation', e.target.value)}
-              />
-
-              {/* ── Volunteering as ───────────────────────────────────────── */}
-              <SectionTitle>Volunteering as</SectionTitle>
-
-              <Box>
-                {/* Student is Individual + a tracked sub-category, so the radio
-                    speaks in three options while the API still sees two
-                    categories. */}
-                <RadioGroup
-                  row
-                  value={form.subCategory === 'Student' ? 'Student' : form.category}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setForm((f) => ({
-                      ...f,
-                      category: v === 'CSR' ? 'CSR' : 'Individual',
-                      subCategory: v === 'Student' ? 'Student' : '',
-                      // Only CSR names an organization; a student names an
-                      // institution instead, and Individuals are not asked.
-                      organizationId: v === 'CSR' ? f.organizationId : '',
-                      institution: v === 'Student' ? f.institution : '',
-                    }));
-                  }}
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                <TextField
+                  select
+                  label="Occupation (optional)"
+                  value={form.occupationChoice}
+                  onChange={(e) => set('occupationChoice', e.target.value)}
                 >
-                  <FormControlLabel value="Individual" control={<Radio />} label="As an individual" />
-                  <FormControlLabel
-                    value="CSR"
-                    control={<Radio />}
-                    label="Through my employer (CSR)"
-                  />
-                  <FormControlLabel value="Student" control={<Radio />} label="As a student" />
-                </RadioGroup>
+                  <MenuItem value="">
+                    <em>Prefer not to say</em>
+                  </MenuItem>
+                  {(options.OCCUPATION ?? []).map((o) => (
+                    <MenuItem key={o.code} value={o.label}>
+                      {o.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField
+                  select
+                  label="How did you hear about Parinaam? (optional)"
+                  value={form.referralSource}
+                  onChange={(e) => set('referralSource', e.target.value)}
+                >
+                  <MenuItem value="">
+                    <em>Prefer not to say</em>
+                  </MenuItem>
+                  {(options.REFERRAL_SOURCE ?? []).map((o) => (
+                    <MenuItem key={o.code} value={o.label}>
+                      {o.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
               </Box>
-
-              {form.subCategory === 'Student' ? (
+              {form.occupationChoice === 'Other' && (
                 <TextField
-                  select
-                  required
-                  label="Institution"
-                  value={form.institution}
-                  onChange={(e) => set('institution', e.target.value)}
-                  helperText="Pick the institution you study at"
-                >
-                  {(options.INSTITUTION ?? []).map((inst) => (
-                    <MenuItem key={inst.code} value={inst.label}>
-                      {inst.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              ) : form.category === 'CSR' ? (
-                /* Organization is a CSR concern only — Individuals are not
-                   asked (Round 38; staff can still record an affiliation from
-                   the admin side if one applies). */
-                <TextField
-                  select
-                  required
-                  label="Sponsoring organization"
-                  value={form.organizationId}
-                  onChange={(e) => set('organizationId', e.target.value)}
-                  helperText="CSR volunteers must name their organization"
-                >
-                  {organizations.map((org) => (
-                    <MenuItem key={org.id} value={org.id}>
-                      {org.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              ) : null}
+                  label="Please specify your occupation"
+                  value={form.occupationOther}
+                  onChange={(e) => set('occupationOther', e.target.value)}
+                />
+              )}
 
               <Paper
                 variant="outlined"

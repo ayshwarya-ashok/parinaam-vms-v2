@@ -77,6 +77,12 @@ export class VolunteersService {
       );
     }
 
+    // The public form sends the organization by NAME (fixed CSR list, or the
+    // free text under "Other") — resolve it to an id before the rules run.
+    if (!dto.organizationId && dto.organizationName?.trim()) {
+      dto.organizationId = await this.resolveOrganizationPublic(dto.organizationName);
+    }
+
     this.assertCategoryRules(dto);
     await this.assertStudentRules(dto);
 
@@ -151,6 +157,9 @@ export class VolunteersService {
         'Your volunteer profile already exists.',
         409,
       );
+    }
+    if (!dto.organizationId && dto.organizationName?.trim()) {
+      dto.organizationId = await this.resolveOrganizationPublic(dto.organizationName);
     }
     this.assertCategoryRules(dto);
     await this.assertStudentRules(dto);
@@ -264,6 +273,7 @@ export class VolunteersService {
       phone: dto.phone ?? null,
       skills: dto.skills ?? null,
       occupation: dto.occupation ?? null,
+      referralSource: dto.referralSource?.trim() || null,
       languages: joinCodes(dto.languages),
       areasOfInterest: joinCodes(dto.areasOfInterest),
       availability: joinCodes(dto.availability),
@@ -748,6 +758,25 @@ export class VolunteersService {
       await this.users.update({ id: volunteer.userId }, { isActive: dto.isActive });
     }
 
+    // Activation overrides the registration verdict (Round 44): an admin who
+    // reactivates a rejected (or still-pending) account is approving the
+    // person — the record must not stay "rejected" while they sign in.
+    if (dto.isActive === true && volunteer.registrationStatus !== 'approved') {
+      const wasStatus = volunteer.registrationStatus;
+      volunteer.registrationStatus = 'approved';
+      volunteer.reviewedBy = principal.sub;
+      volunteer.reviewedAt = new Date();
+      volunteer.rejectionReason = null;
+      await this.volunteers.save(volunteer);
+      await this.audit.record(principal, {
+        action: 'volunteer.registration_overridden',
+        entity: 'volunteers',
+        entityId: id,
+        before: { registrationStatus: wasStatus },
+        after: { registrationStatus: 'approved', via: 'activate' },
+      });
+    }
+
     await this.audit.record(principal, {
       action: 'volunteer.admin_updated',
       entity: 'volunteers',
@@ -781,6 +810,33 @@ export class VolunteersService {
    * no other creation path, so admin-driven imports/adds are where the org
    * catalog grows. Creation is audited.
    */
+  /**
+   * Name → id for the PUBLIC registration path, where no principal exists yet.
+   * The client's CSR list is pre-seeded (V024), so named options always
+   * resolve; a typed "Other" organization is created, audited as system.
+   */
+  private async resolveOrganizationPublic(name: string): Promise<string> {
+    const trimmed = name.trim();
+    const existing = await this.organizations
+      .createQueryBuilder('o')
+      .where('LOWER(o.name) = LOWER(:name)', { name: trimmed })
+      .getOne();
+    if (existing) return existing.id;
+    const created = await this.organizations.save(
+      this.organizations.create({ name: trimmed, isActive: true }),
+    );
+    await this.audit.record(
+      { sub: created.id, email: 'public-registration', role: 'volunteer' },
+      {
+        action: 'organization.created',
+        entity: 'organizations',
+        entityId: created.id,
+        after: { name: trimmed, via: 'public registration (Other)' },
+      },
+    );
+    return created.id;
+  }
+
   private async resolveOrganization(principal: AuthPrincipal, name: string): Promise<string> {
     const trimmed = name.trim();
     const existing = await this.organizations
@@ -851,6 +907,7 @@ export class VolunteersService {
       email: string; firstName: string; lastName: string; gender: string;
       ageGroup: string; city: string; state: string; phone: string;
       skills?: string | null; occupation?: string | null; password?: string | null;
+      referralSource?: string | null;
       category?: 'Individual' | 'CSR'; organizationId?: string | null;
       areasOfInterest?: string[]; availability?: string | null;
       availabilityNotes?: string | null;
@@ -875,6 +932,7 @@ export class VolunteersService {
           phone: data.phone,
           skills: data.skills?.trim() || null,
           occupation: data.occupation?.trim() || null,
+          referralSource: data.referralSource?.trim() || null,
           areasOfInterest: data.areasOfInterest?.length ? data.areasOfInterest.join(',') : null,
           availability: data.availability?.trim() || null,
           availabilityNotes: data.availabilityNotes?.trim() || null,

@@ -121,6 +121,10 @@ export class Volunteer {
   @Column({ type: 'varchar', length: 150, nullable: true })
   occupation!: string | null;
 
+  /** "How did you hear about Parinaam?" — the chosen label, optional (V024). */
+  @Column({ name: 'referral_source', type: 'varchar', length: 80, nullable: true })
+  referralSource!: string | null;
+
   /** Comma-joined reference_values codes — see V011. */
   @Column({ type: 'text', nullable: true })
   languages!: string | null;

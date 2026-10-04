@@ -77,7 +77,7 @@ export function StateCityFields({
         renderInput={(params) => (
           <TextField
             {...params}
-            label="City"
+            label="Current city"
             required
             error={Boolean(cityError) && !othersMode}
             helperText={

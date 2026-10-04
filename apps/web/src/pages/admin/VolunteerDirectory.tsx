@@ -82,6 +82,7 @@ interface VolunteerDetail extends Omit<DirectoryRow, 'organization'> {
   ageGroup: string | null;
   state: string | null;
   occupation: string | null;
+  referralSource: string | null;
   skills: string | null;
   languages: string | null;
   areasOfInterest: string | null;
@@ -153,7 +154,9 @@ export function VolunteerDirectory() {
   } | null>(null);
   const emptyAdd = {
     email: '', firstName: '', lastName: '', gender: '', ageGroup: '',
-    city: '', state: '', phone: '', skills: '', occupation: '', password: '',
+    city: '', state: '', phone: '', skills: '', password: '',
+    // Occupation and referral are dropdowns (Round 44); Other → free text.
+    occupationChoice: '', occupationOther: '', referralSource: '',
     category: 'Individual' as 'Individual' | 'CSR', organization: '',
     // "How would they like to help?" — same catalogs as /register (Round 37).
     areasOfInterest: [] as string[], availability: '', availabilityOther: '',
@@ -252,7 +255,12 @@ export function VolunteerDirectory() {
           state: f.state.trim(),
           phone: phoneForApi(f.phone),
           skills: f.skills.trim() || undefined,
-          occupation: f.occupation.trim() || undefined,
+          occupation: f.occupationChoice
+            ? f.occupationChoice === 'Other'
+              ? f.occupationOther.trim() || undefined
+              : f.occupationChoice
+            : undefined,
+          referralSource: f.referralSource || undefined,
           areasOfInterest: f.areasOfInterest.length ? f.areasOfInterest : undefined,
           availability: f.availability
             ? f.availability === 'other' && f.availabilityOther.trim()
@@ -915,9 +923,26 @@ export function VolunteerDirectory() {
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
             <TextField label="Skills (optional)" value={addForm?.skills ?? ''}
               onChange={(e) => setAddForm((f) => (f ? { ...f, skills: e.target.value } : f))} />
-            <TextField label="Occupation (optional)" value={addForm?.occupation ?? ''}
-              onChange={(e) => setAddForm((f) => (f ? { ...f, occupation: e.target.value } : f))} />
+            <TextField select label="Occupation (optional)" value={addForm?.occupationChoice ?? ''}
+              onChange={(e) => setAddForm((f) => (f ? { ...f, occupationChoice: e.target.value } : f))}>
+              <MenuItem value=""><em>Not stated</em></MenuItem>
+              {(options.OCCUPATION ?? []).map((o) => (
+                <MenuItem key={o.code} value={o.label}>{o.label}</MenuItem>
+              ))}
+            </TextField>
           </Box>
+          {addForm?.occupationChoice === 'Other' && (
+            <TextField label="Please specify the occupation" value={addForm?.occupationOther ?? ''}
+              onChange={(e) => setAddForm((f) => (f ? { ...f, occupationOther: e.target.value } : f))} />
+          )}
+          <TextField select label="How did they hear about Parinaam? (optional)"
+            value={addForm?.referralSource ?? ''}
+            onChange={(e) => setAddForm((f) => (f ? { ...f, referralSource: e.target.value } : f))}>
+            <MenuItem value=""><em>Not stated</em></MenuItem>
+            {(options.REFERRAL_SOURCE ?? []).map((o) => (
+              <MenuItem key={o.code} value={o.label}>{o.label}</MenuItem>
+            ))}
+          </TextField>
 
           {/* ── How would they like to help? — mirrors /register (Round 37) ── */}
           <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: tokens.accentStrong, mt: 0.5 }}>
@@ -1010,7 +1035,9 @@ export function VolunteerDirectory() {
             {addForm?.category === 'CSR' && (
               <Autocomplete
                 freeSolo
-                options={inviteOrgs.map((o) => o.name)}
+                // The client's CSR partner list leads; typing anything else is
+                // the "Other" path (new names are created on save).
+                options={[...new Set(['Odessa', 'PwC', 'Deutsche Bank', 'IG Group', 'Finastra', ...inviteOrgs.map((o) => o.name)])]}
                 inputValue={addForm?.organization ?? ''}
                 onInputChange={(_, v) => setAddForm((f) => (f ? { ...f, organization: v } : f))}
                 renderInput={(params) => (
@@ -1390,6 +1417,7 @@ function VolunteerDetailDrawer({
               <Field label="Age group" value={v.ageGroup} />
               <Field label="Gender" value={v.gender} />
               <Field label="Occupation" value={v.occupation} />
+              <Field label="Heard about us via" value={v.referralSource} />
               {v.organization && <Field label="Organization" value={v.organization.name} />}
               {v.institution && <Field label="Institution" value={v.institution} />}
             </Section>

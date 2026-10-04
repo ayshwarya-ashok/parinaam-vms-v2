@@ -84,6 +84,16 @@ export class RegisterVolunteerDto {
   @Matches(UUID_PATTERN, { message: 'must be a UUID' })
   organizationId?: string;
 
+  /**
+   * Alternative to organizationId (Round 44): the organization's NAME — the
+   * form's fixed CSR list, or whatever was typed under "Other". Resolved
+   * case-insensitively; unknown names are created.
+   */
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  organizationName?: string;
+
   @IsOptional()
   @IsString()
   @MaxLength(255)
@@ -93,6 +103,12 @@ export class RegisterVolunteerDto {
   @IsString()
   @MaxLength(150)
   occupation?: string;
+
+  /** "How did you hear about Parinaam?" — optional, the chosen label. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  referralSource?: string;
 
   /** Reference-value CODES, not labels — see V011. */
   @IsOptional() @IsArray() @ArrayMaxSize(30) @IsString({ each: true })
@@ -204,6 +220,8 @@ export class AdminCreateVolunteerDto {
   @Matches(PHONE_PATTERN, { message: 'Enter a 10-digit mobile number' }) phone!: string;
   @IsOptional() @IsString() @MaxLength(255) skills?: string;
   @IsOptional() @IsString() @MaxLength(150) occupation?: string;
+  /** "How did you hear about Parinaam?" — optional, the chosen label. */
+  @IsOptional() @IsString() @MaxLength(80) referralSource?: string;
   /** "How would they like to help?" (Round 37): same catalogs the public form uses. */
   @IsOptional() @IsArray() @ArrayMaxSize(30) @IsString({ each: true }) areasOfInterest?: string[];
   /** Frequency — a single code, or the free text typed under "Other". */

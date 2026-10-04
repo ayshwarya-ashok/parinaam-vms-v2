@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-10-04 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across forty-three review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across forty-four review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -1098,6 +1098,51 @@ in the feedback dropdown narrows five cards to that program's one.
 Addendum (3d): every table cell app-wide is now LEFT-aligned — all 44 right/center
 alignment props across the eight table pages removed (numeric columns, action columns and
 the empty-state rows included), so the eye tracks one consistent edge down every column.
+
+---
+
+## Round 44 — The registration form, round two  (2026-10-04)
+
+Migration `V024`; the public form and Add Volunteer move in lockstep.
+
+- **A real thank-you.** Submitting /register now lands on a dedicated screen with the
+  client's exact message — "Thank you for registering. Our team will review your details
+  and get in touch with you. We thank you for being a Goodheart." — plus two actions:
+  "Go to my dashboard" (the account is signed in and pending review) and **"Register
+  someone else"**, which signs the fresh session out and reloads a clean /register — the
+  household-sharing-one-device case.
+- **"Volunteering as" moved up** to be the second question, right after Your account —
+  the answer shapes what the rest of the form asks.
+- **"Through my employer (CSR)" → "Through my organization (CSR)"**, and the organization
+  select became the client's partner list — Odessa, PwC, Deutsche Bank, IG Group,
+  Finastra (pre-seeded by V024) — plus **Other**, which opens a free-text field. The form
+  now sends the organization by NAME; the API resolves it case-insensitively and creates
+  unknown names (audited), on both the register and legacy profile-completion paths. Add
+  Volunteer's autocomplete leads with the same five.
+- **"City" reads "Current city"** in both flows (one label change in the shared
+  `StateCityFields`).
+- **Occupation became a dropdown** (optional): Salaried / Working Professional, Retired,
+  Homemaker, Business Owner / Entrepreneur, Freelancer / Consultant, Other — "Other"
+  reveals "Please specify your occupation", and whatever is typed is stored verbatim in
+  the existing column, so historical free-text occupations stay valid. Options live in
+  the reference catalog (OCCUPATION).
+- **"How did you hear about Parinaam?"** (optional) — Website, Social Media, Friends &
+  Family, Corporate, Existing Volunteer, School or College, Others — new
+  `volunteers.referral_source`, catalog-driven (REFERRAL_SOURCE), asked in both flows and
+  shown in the admin drawer as "Heard about us via".
+- **Activate now overrides the registration verdict.** Reactivating a rejected (or
+  pending) account sets its registration to approved, records the admin as reviewer,
+  clears the rejection reason, and writes a `volunteer.registration_overridden` audit
+  entry — an account that can sign in is an account the foundation has accepted. (No
+  approval email is sent on this path; the explicit Approve button remains the flow that
+  notifies.)
+
+Verified end to end: an API registration stored referral/occupation/PwC link; a FULL
+browser registration (CSR → Deutsche Bank, occupation Other → "Beekeeper", referral
+Friends & Family, Karnataka → Bengaluru) landed on the thank-you screen with the exact
+message, "Register someone else" produced a clean signed-out form, and the row carried
+every answer; reject-then-Activate flipped a volunteer to approved with the reason
+cleared. Test registrants removed after.
 
 ---
 
