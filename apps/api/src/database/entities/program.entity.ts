@@ -39,6 +39,13 @@ export class Program {
   @Column({ type: 'enum', enumName: 'program_status', enum: ['draft', 'active', 'discontinued', 'deleted'], default: 'draft' })
   status!: ProgramStatus;
 
+  /** Optional planned window (V025) — informational, never gates enrollment. */
+  @Column({ name: 'start_date', type: 'date', nullable: true })
+  startDate!: string | null;
+
+  @Column({ name: 'end_date', type: 'date', nullable: true })
+  endDate!: string | null;
+
   @Column({ name: 'default_coordinator_id', type: 'uuid', nullable: true })
   defaultCoordinatorId!: string | null;
 
@@ -125,6 +132,13 @@ export class Activity {
 
   @Column({ type: 'enum', enumName: 'activity_status', enum: ['active', 'discontinued', 'deleted'], default: 'active' })
   status!: ActivityStatus;
+
+  /** Optional planned window (V025) — informational, never gates enrollment. */
+  @Column({ name: 'start_date', type: 'date', nullable: true })
+  startDate!: string | null;
+
+  @Column({ name: 'end_date', type: 'date', nullable: true })
+  endDate!: string | null;
 
   @Column({ name: 'sort_order', type: 'int', default: 0 })
   sortOrder!: number;

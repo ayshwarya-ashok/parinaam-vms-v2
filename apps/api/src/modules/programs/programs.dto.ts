@@ -18,14 +18,20 @@ import { UUID_PATTERN } from '../../common/pipes/uuid.pipe';
 
 export class CreateProgramDto {
   @IsString() @MaxLength(255) name!: string;
-  @IsOptional() @IsString() description?: string;
+  /** Mandatory (Round 45): a program without a description cannot be reviewed. */
+  @IsString() @IsNotEmpty({ message: 'Description is required' }) @MaxLength(4000) description!: string;
+  /** Optional planned window — informational, never gates enrollment. */
+  @IsOptional() @IsDateString() startDate?: string;
+  @IsOptional() @IsDateString() endDate?: string;
   @IsOptional() @Matches(UUID_PATTERN, { message: 'must be a UUID' }) defaultCoordinatorId?: string;
   @IsOptional() @IsArray() @ArrayUnique() @Matches(UUID_PATTERN, { each: true, message: 'each id must be a UUID' }) trainingIds?: string[];
 }
 
 export class UpdateProgramDto {
   @IsOptional() @IsString() @MaxLength(255) name?: string;
-  @IsOptional() @IsString() description?: string;
+  @IsOptional() @IsString() @IsNotEmpty({ message: 'Description cannot be emptied' }) @MaxLength(4000) description?: string;
+  @IsOptional() @IsDateString() startDate?: string;
+  @IsOptional() @IsDateString() endDate?: string;
   @IsOptional() @Matches(UUID_PATTERN, { message: 'must be a UUID' }) defaultCoordinatorId?: string;
 }
 
@@ -43,18 +49,25 @@ export class DeleteCatalogDto {
 
 export class CreateActivityDto {
   @IsString() @MaxLength(255) name!: string;
-  @IsOptional() @IsString() description?: string;
+  /** Mandatory (Round 45): volunteers read this before enrolling. */
+  @IsString() @IsNotEmpty({ message: 'Description is required' }) @MaxLength(4000) description!: string;
   @IsOptional() @IsIn(['In person', 'Online']) type?: 'In person' | 'Online';
   @IsOptional() @IsString() outcome?: string;
   @IsOptional() @IsString() @MaxLength(255) skillRequired?: string;
   @IsOptional() @IsNumber() @Min(0.5) @Max(24) defaultDurationHours?: number;
   @IsOptional() @IsInt() @Min(1) defaultMaxSlots?: number;
-  @IsOptional() @IsString() @MaxLength(255) defaultLocation?: string;
+  /** Mandatory (Round 45): every session needs somewhere to happen by default. */
+  @IsString() @IsNotEmpty({ message: 'Location is required' }) @MaxLength(255) defaultLocation!: string;
+  /** Optional planned window — informational, never gates enrollment. */
+  @IsOptional() @IsDateString() startDate?: string;
+  @IsOptional() @IsDateString() endDate?: string;
   @IsOptional() @IsArray() @ArrayUnique() @Matches(UUID_PATTERN, { each: true, message: 'each id must be a UUID' }) trainingIds?: string[];
 }
 
 export class UpdateActivityDto extends CreateActivityDto {
   @IsOptional() @IsString() @MaxLength(255) declare name: string;
+  @IsOptional() @IsString() @IsNotEmpty({ message: 'Description cannot be emptied' }) @MaxLength(4000) declare description: string;
+  @IsOptional() @IsString() @IsNotEmpty({ message: 'Location cannot be emptied' }) @MaxLength(255) declare defaultLocation: string;
 }
 
 export class CreateEventDto {

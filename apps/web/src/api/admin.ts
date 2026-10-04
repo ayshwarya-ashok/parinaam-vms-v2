@@ -38,6 +38,9 @@ export interface ProgramDetail
   extends Omit<ProgramRow, 'activeActivities' | 'upcomingEvents' | 'inprogressEvents' | 'completedEvents' | 'nextEventDate'> {
   discontinueReason: string | null;
   deleteReason?: string | null;
+  /** Optional planned window (V025) — informational. */
+  startDate?: string | null;
+  endDate?: string | null;
   activities: ActivityRow[];
   trainings: TrainingRef[];
 }
@@ -132,7 +135,7 @@ export const useActivity = (id: string | undefined) =>
   useQuery({
     queryKey: ['activity', id],
     queryFn: async () =>
-      (await api.get<ActivityRow & { programId: string; programName: string; events: EventRow[]; trainings: TrainingRef[]; name: string; description: string | null; outcome: string | null; skillRequired: string | null; defaultDurationHours: string | null; defaultMaxSlots: number | null; defaultLocation: string | null; type: 'In person' | 'Online'; status: 'active' | 'discontinued' | 'deleted' }>(`/activities/${id}`)).data,
+      (await api.get<ActivityRow & { programId: string; programName: string; events: EventRow[]; trainings: TrainingRef[]; name: string; description: string | null; outcome: string | null; skillRequired: string | null; defaultDurationHours: string | null; defaultMaxSlots: number | null; defaultLocation: string | null; type: 'In person' | 'Online'; status: 'active' | 'discontinued' | 'deleted'; startDate?: string | null; endDate?: string | null }>(`/activities/${id}`)).data,
     enabled: !!id,
   });
 

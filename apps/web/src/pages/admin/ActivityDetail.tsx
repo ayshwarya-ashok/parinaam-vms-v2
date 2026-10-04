@@ -227,6 +227,13 @@ export function ActivityDetail() {
 
       <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mb: 3 }}>
         <Chip label={activity.type} size="small" variant="outlined" />
+        {(activity.startDate || activity.endDate) && (
+          <Chip
+            size="small"
+            variant="outlined"
+            label={`🗓 ${activity.startDate ? fmtDate(String(activity.startDate)) : '…'} – ${activity.endDate ? fmtDate(String(activity.endDate)) : 'open-ended'}`}
+          />
+        )}
         {activity.skillRequired && <Chip label={`Skill: ${activity.skillRequired}`} size="small" variant="outlined" />}
         {activity.trainings.map((t) => (
           <Chip

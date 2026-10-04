@@ -40,6 +40,9 @@ export function ActivityForm() {
     defaultDurationHours: '2',
     defaultMaxSlots: '10',
     defaultLocation: '',
+    // Optional planned window (Round 45) — informational.
+    startDate: '',
+    endDate: '',
   });
   const [trainingIds, setTrainingIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +52,7 @@ export function ActivityForm() {
 
   useEffect(() => {
     if (existing && isEdit) {
-      setForm({
+      const loaded = {
         name: existing.name,
         description: existing.description ?? '',
         type: existing.type,
@@ -58,18 +61,12 @@ export function ActivityForm() {
         defaultDurationHours: existing.defaultDurationHours ?? '2',
         defaultMaxSlots: String(existing.defaultMaxSlots ?? 10),
         defaultLocation: existing.defaultLocation ?? '',
-      });
+        startDate: existing.startDate ? String(existing.startDate).slice(0, 10) : '',
+        endDate: existing.endDate ? String(existing.endDate).slice(0, 10) : '',
+      };
+      setForm(loaded);
       setTrainingIds(existing.trainings.map((t) => t.id));
-      setOriginal({
-        name: existing.name,
-        description: existing.description ?? '',
-        type: existing.type,
-        outcome: existing.outcome ?? '',
-        skillRequired: existing.skillRequired ?? '',
-        defaultDurationHours: existing.defaultDurationHours ?? '2',
-        defaultMaxSlots: String(existing.defaultMaxSlots ?? 10),
-        defaultLocation: existing.defaultLocation ?? '',
-      });
+      setOriginal(loaded);
     }
   }, [existing, isEdit]);
 
@@ -91,6 +88,21 @@ export function ActivityForm() {
       return;
     }
     setNameError(null);
+    if (form.description.trim() === '') {
+      setError('A description is required — volunteers read it before enrolling.');
+      toast.failure('A description is required.');
+      return;
+    }
+    if (form.defaultLocation.trim() === '') {
+      setError('A location is required — every session needs somewhere to happen by default.');
+      toast.failure('A location is required.');
+      return;
+    }
+    if (form.startDate && form.endDate && form.endDate < form.startDate) {
+      setError('The end date is before the start date.');
+      toast.failure('The end date is before the start date.');
+      return;
+    }
 
     if (isEdit && original && isUnchanged(form, original)) {
       toast.noChanges();
@@ -99,13 +111,15 @@ export function ActivityForm() {
     setBusy(true);
     const payload = {
       name: form.name,
-      description: form.description || undefined,
+      description: form.description.trim(),
       type: form.type,
       outcome: form.outcome || undefined,
       skillRequired: form.skillRequired || undefined,
       defaultDurationHours: Number(form.defaultDurationHours) || undefined,
       defaultMaxSlots: Number(form.defaultMaxSlots) || undefined,
-      defaultLocation: form.defaultLocation || undefined,
+      defaultLocation: form.defaultLocation.trim(),
+      startDate: form.startDate || undefined,
+      endDate: form.endDate || undefined,
       trainingIds,
     };
     try {
@@ -160,11 +174,29 @@ export function ActivityForm() {
         />
         <TextField
           label="Description"
+          required
           multiline
           minRows={2}
           value={form.description}
           onChange={(e) => set('description', e.target.value)}
         />
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+          <TextField
+            label="Start date (optional)"
+            type="date"
+            InputLabelProps={{ shrink: true }}
+            value={form.startDate}
+            onChange={(e) => set('startDate', e.target.value)}
+            helperText="The planned window — informational; sessions carry the real dates"
+          />
+          <TextField
+            label="End date (optional)"
+            type="date"
+            InputLabelProps={{ shrink: true }}
+            value={form.endDate}
+            onChange={(e) => set('endDate', e.target.value)}
+          />
+        </Box>
         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
           <TextField select label="Type" value={form.type} onChange={(e) => set('type', e.target.value as 'In person' | 'Online')}>
             <MenuItem value="In person">In person</MenuItem>
@@ -206,6 +238,7 @@ export function ActivityForm() {
           />
           <TextField
             label="Location"
+            required
             value={form.defaultLocation}
             onChange={(e) => set('defaultLocation', e.target.value)}
             placeholder="Block, room or online link"

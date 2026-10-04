@@ -202,6 +202,15 @@ export function ProgramDetail() {
         </Alert>
       )}
 
+      {(program.startDate || program.endDate) && (
+        <Typography sx={{ mb: 2, fontSize: '0.9rem', color: 'text.secondary' }}>
+          🗓 Planned window:{' '}
+          {program.startDate ? new Date(`${String(program.startDate).slice(0, 10)}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '…'}
+          {' – '}
+          {program.endDate ? new Date(`${String(program.endDate).slice(0, 10)}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'open-ended'}
+        </Typography>
+      )}
+
       {/* Program-level trainings */}
       <Box sx={{ mb: 3 }}>
         <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'text.secondary', mb: 1 }}>

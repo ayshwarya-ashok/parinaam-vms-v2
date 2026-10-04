@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-10-04 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across forty-four review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across forty-five review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -1143,6 +1143,33 @@ Friends & Family, Karnataka → Bengaluru) landed on the thank-you screen with t
 message, "Register someone else" produced a clean signed-out form, and the row carried
 every answer; reject-then-Activate flipped a volunteer to approved with the reason
 cleared. Test registrants removed after.
+
+---
+
+## Round 45 — Catalog form hardening, planned windows, mobile audit  (2026-10-04)
+
+- **Programs and activities gained an optional planned window** (`V025`:
+  `start_date`/`end_date` on both, DB CHECK end ≥ start). The "is it needed?" question
+  was answered deliberately: sessions stay the source of truth for when work happens,
+  but programs/activities are often seasonal (a winter drive, a collection window), so
+  the dates exist as OPTIONAL, purely informational fields — they never gate enrollment.
+  Shown as "🗓 Planned window" on the program page and a date chip on the activity page.
+- **Description became mandatory** on both Add Program and Add Activity (create requires
+  it; an edit cannot empty it; existing null descriptions remain untouched), and
+  **location became mandatory on Add Activity** — every session needs somewhere to happen
+  by default. Enforced in the forms and again in the API DTOs.
+- **Mobile responsiveness audited, not assumed:** a headless sweep at 390×844 across
+  fourteen pages — /register, the impact page, six volunteer pages (dashboard, browse,
+  calendar, trainings, certificates, profile) and six admin pages (dashboard, directory,
+  field execution, programs, metrics, session record) — measured ZERO body-level
+  horizontal overflow on every one. The hamburger drawer nav is present throughout,
+  header actions wrap into pill rows, and wide tables scroll within their own container
+  (the accepted mobile pattern). No fixes were needed — the Round 40 compaction and the
+  app's grid layouts already hold at phone width.
+
+Verified via API too: program create without a description → 400, end-before-start →
+"The end date is before the start date.", a valid window round-trips, and activity
+create without a location → "Location is required".
 
 ---
 

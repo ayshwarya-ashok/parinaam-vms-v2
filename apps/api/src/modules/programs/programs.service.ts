@@ -113,13 +113,23 @@ export class ProgramsService {
     return { ...program, activities, trainings };
   }
 
+  /** Friendly cross-field check — the DB CHECK is the backstop. */
+  private assertWindow(startDate?: string | null, endDate?: string | null) {
+    if (startDate && endDate && endDate < startDate) {
+      throw new BusinessException('TIMES_REQUIRED', 'The end date is before the start date.', 400);
+    }
+  }
+
   async create(principal: AuthPrincipal, dto: CreateProgramDto) {
+    this.assertWindow(dto.startDate, dto.endDate);
     const code = await this.nextCode();
     const program = await this.programs.save(
       this.programs.create({
         code,
         name: dto.name,
-        description: dto.description ?? null,
+        description: dto.description,
+        startDate: dto.startDate ?? null,
+        endDate: dto.endDate ?? null,
         defaultCoordinatorId: dto.defaultCoordinatorId ?? null,
         status: 'draft',
         createdBy: principal.sub,
@@ -146,9 +156,12 @@ export class ProgramsService {
     const program = await this.programs.findOneBy({ id });
     if (!program) throw new NotFoundException('Program not found');
     this.assertNotDeleted(program.status, 'program');
+    this.assertWindow(dto.startDate ?? program.startDate, dto.endDate ?? program.endDate);
     Object.assign(program, {
       ...(dto.name !== undefined && { name: dto.name }),
       ...(dto.description !== undefined && { description: dto.description }),
+      ...(dto.startDate !== undefined && { startDate: dto.startDate || null }),
+      ...(dto.endDate !== undefined && { endDate: dto.endDate || null }),
       ...(dto.defaultCoordinatorId !== undefined && {
         defaultCoordinatorId: dto.defaultCoordinatorId,
       }),
@@ -309,6 +322,7 @@ export class ProgramsService {
   async createActivity(principal: AuthPrincipal, programId: string, dto: CreateActivityDto) {
     const program = await this.programs.findOneBy({ id: programId });
     if (!program) throw new NotFoundException('Program not found');
+    this.assertWindow(dto.startDate, dto.endDate);
 
     // Max existing suffix + 1 (a row count collides after any deletion).
     const [{ n }] = await this.dataSource.query(
@@ -327,7 +341,9 @@ export class ProgramsService {
         defaultDurationHours:
           dto.defaultDurationHours !== undefined ? String(dto.defaultDurationHours) : null,
         defaultMaxSlots: dto.defaultMaxSlots ?? null,
-        defaultLocation: dto.defaultLocation ?? null,
+        defaultLocation: dto.defaultLocation,
+        startDate: dto.startDate ?? null,
+        endDate: dto.endDate ?? null,
         createdBy: principal.sub,
       }),
     );
@@ -379,9 +395,12 @@ export class ProgramsService {
     const activity = await this.activities.findOneBy({ id });
     if (!activity) throw new NotFoundException('Activity not found');
     this.assertNotDeleted(activity.status, 'activity');
+    this.assertWindow(dto.startDate ?? activity.startDate, dto.endDate ?? activity.endDate);
     Object.assign(activity, {
       ...(dto.name !== undefined && { name: dto.name }),
       ...(dto.description !== undefined && { description: dto.description }),
+      ...(dto.startDate !== undefined && { startDate: dto.startDate || null }),
+      ...(dto.endDate !== undefined && { endDate: dto.endDate || null }),
       ...(dto.type !== undefined && { type: dto.type }),
       ...(dto.outcome !== undefined && { outcome: dto.outcome }),
       ...(dto.skillRequired !== undefined && { skillRequired: dto.skillRequired }),

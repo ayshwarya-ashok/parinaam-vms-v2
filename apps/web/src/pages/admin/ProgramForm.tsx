@@ -35,6 +35,9 @@ export function ProgramForm() {
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  // Optional planned window (Round 45) — informational, never gates enrollment.
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [coordinatorId, setCoordinatorId] = useState('');
   const [trainingIds, setTrainingIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -46,11 +49,15 @@ export function ProgramForm() {
     if (existing && isEdit) {
       setName(existing.name);
       setDescription(existing.description ?? '');
+      setStartDate(existing.startDate ? String(existing.startDate).slice(0, 10) : '');
+      setEndDate(existing.endDate ? String(existing.endDate).slice(0, 10) : '');
       setCoordinatorId(existing.defaultCoordinator?.id ?? '');
       setTrainingIds(existing.trainings.map((t) => t.id));
       setOriginal({
         name: existing.name,
         description: existing.description ?? '',
+        startDate: existing.startDate ? String(existing.startDate).slice(0, 10) : '',
+        endDate: existing.endDate ? String(existing.endDate).slice(0, 10) : '',
         coordinatorId: existing.defaultCoordinator?.id ?? '',
         trainingIds: existing.trainings.map((t) => t.id),
       });
@@ -70,8 +77,18 @@ export function ProgramForm() {
       return;
     }
     setNameError(null);
+    if (description.trim() === '') {
+      setError('A description is required — it is what reviewers and volunteers read.');
+      toast.failure('A description is required.');
+      return;
+    }
+    if (startDate && endDate && endDate < startDate) {
+      setError('The end date is before the start date.');
+      toast.failure('The end date is before the start date.');
+      return;
+    }
 
-    if (isEdit && original && isUnchanged({ name, description, coordinatorId, trainingIds }, original)) {
+    if (isEdit && original && isUnchanged({ name, description, startDate, endDate, coordinatorId, trainingIds }, original)) {
       toast.noChanges();
       return;
     }
@@ -81,7 +98,9 @@ export function ProgramForm() {
       if (isEdit) {
         await api.patch(`/programs/${id}`, {
           name,
-          description: description || undefined,
+          description: description.trim(),
+          startDate: startDate || undefined,
+          endDate: endDate || undefined,
           defaultCoordinatorId: coordinatorId || undefined,
         });
         await api.put(`/programs/${id}/trainings`, { trainingIds });
@@ -91,7 +110,9 @@ export function ProgramForm() {
       } else {
         const { data } = await api.post<{ id: string }>('/programs', {
           name,
-          description: description || undefined,
+          description: description.trim(),
+          startDate: startDate || undefined,
+          endDate: endDate || undefined,
           defaultCoordinatorId: coordinatorId || undefined,
           trainingIds,
         });
@@ -135,12 +156,30 @@ export function ProgramForm() {
         />
         <TextField
           label="Description"
+          required
           multiline
           minRows={2}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="What is this initiative about?"
         />
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+          <TextField
+            label="Start date (optional)"
+            type="date"
+            InputLabelProps={{ shrink: true }}
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            helperText="The planned window — informational; sessions carry the real dates"
+          />
+          <TextField
+            label="End date (optional)"
+            type="date"
+            InputLabelProps={{ shrink: true }}
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+          />
+        </Box>
         <TextField
           select
           label="Default coordinator (proposed when scheduling sessions)"
