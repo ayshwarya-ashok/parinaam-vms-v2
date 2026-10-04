@@ -545,7 +545,7 @@ export function VolunteerDirectory() {
               <SortableCell sortKey="registered" sort={sort} onSort={toggle}>Registered</SortableCell>
               <SortableCell sortKey="registration" sort={sort} onSort={toggle} filter={filterFor('registration', facets?.registrationStatuses)}>Registration</SortableCell>
               <SortableCell sortKey="account" sort={sort} onSort={toggle} filter={filterFor('account', facets?.accounts)}>Account</SortableCell>
-              <TableCell align="right">Actions</TableCell>
+              <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -612,7 +612,7 @@ export function VolunteerDirectory() {
                     {v.phase}
                   </Typography>
                 </TableCell>
-                <TableCell align="right" onClick={(e) => e.stopPropagation()} sx={{ whiteSpace: 'nowrap' }}>
+                <TableCell onClick={(e) => e.stopPropagation()} sx={{ whiteSpace: 'nowrap' }}>
                   {readOnly ? null : v.registrationStatus === 'pending' ? (
                     <>
                       <Tooltip title="Approve this registration — the volunteer is emailed and can start enrolling">
@@ -694,7 +694,7 @@ export function VolunteerDirectory() {
             ))}
             {data && data.data.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                <TableCell colSpan={8} sx={{ textAlign: 'left', py: 4, color: 'text.secondary' }}>
                   No volunteers match your filters.
                 </TableCell>
               </TableRow>

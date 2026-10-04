@@ -212,11 +212,11 @@ export function ReportsPage() {
               <SortableCell sortKey="volunteer" sort={volunteers.sort} onSort={volunteers.toggle}>Volunteer</SortableCell>
               <SortableCell sortKey="category" sort={volunteers.sort} onSort={volunteers.toggle} filter={cf.filterFor('category')}>Category</SortableCell>
               <SortableCell sortKey="phase" sort={volunteers.sort} onSort={volunteers.toggle} filter={cf.filterFor('phase')}>Phase</SortableCell>
-              <SortableCell sortKey="programs" sort={volunteers.sort} onSort={volunteers.toggle} align="right">Programs</SortableCell>
-              <SortableCell sortKey="hours" sort={volunteers.sort} onSort={volunteers.toggle} align="right">Hours</SortableCell>
+              <SortableCell sortKey="programs" sort={volunteers.sort} onSort={volunteers.toggle}>Programs</SortableCell>
+              <SortableCell sortKey="hours" sort={volunteers.sort} onSort={volunteers.toggle}>Hours</SortableCell>
               <SortableCell sortKey="attendance" sort={volunteers.sort} onSort={volunteers.toggle} sx={{ minWidth: 140 }}>Attendance</SortableCell>
-              <SortableCell sortKey="trainings" sort={volunteers.sort} onSort={volunteers.toggle} align="right">Trainings</SortableCell>
-              <SortableCell sortKey="certificates" sort={volunteers.sort} onSort={volunteers.toggle} align="right">Certificates</SortableCell>
+              <SortableCell sortKey="trainings" sort={volunteers.sort} onSort={volunteers.toggle}>Trainings</SortableCell>
+              <SortableCell sortKey="certificates" sort={volunteers.sort} onSort={volunteers.toggle}>Certificates</SortableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -230,8 +230,8 @@ export function ReportsPage() {
                 </TableCell>
                 <TableCell sx={{ fontSize: '0.85rem' }}>{row.category}</TableCell>
                 <TableCell sx={{ fontSize: '0.85rem' }}>{row.phase}</TableCell>
-                <TableCell align="right">{row.programs_joined}</TableCell>
-                <TableCell align="right"><strong>{Number(row.total_hours)}</strong></TableCell>
+                <TableCell>{row.programs_joined}</TableCell>
+                <TableCell><strong>{Number(row.total_hours)}</strong></TableCell>
                 <TableCell>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Box sx={{ flex: 1, height: 7, borderRadius: 999, bgcolor: 'rgba(31,43,54,0.08)' }}>
@@ -249,13 +249,13 @@ export function ReportsPage() {
                     </Typography>
                   </Box>
                 </TableCell>
-                <TableCell align="right">{row.trainings_passed}</TableCell>
-                <TableCell align="right">{row.certificates_issued}</TableCell>
+                <TableCell>{row.trainings_passed}</TableCell>
+                <TableCell>{row.certificates_issued}</TableCell>
               </TableRow>
             ))}
             {cf.filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                <TableCell colSpan={8} sx={{ textAlign: 'left', py: 4, color: 'text.secondary' }}>
                   No volunteers match your filters.
                 </TableCell>
               </TableRow>
@@ -272,7 +272,7 @@ export function ReportsPage() {
               <SortableCell sortKey="when" sort={runsSort.sort} onSort={runsSort.toggle}>When</SortableCell>
               <SortableCell sortKey="report" sort={runsSort.sort} onSort={runsSort.toggle} filter={runsCf.filterFor('report')}>Report</SortableCell>
               <SortableCell sortKey="format" sort={runsSort.sort} onSort={runsSort.toggle} filter={runsCf.filterFor('format')}>Format</SortableCell>
-              <SortableCell sortKey="rowCount" sort={runsSort.sort} onSort={runsSort.toggle} align="right">Rows</SortableCell>
+              <SortableCell sortKey="rowCount" sort={runsSort.sort} onSort={runsSort.toggle}>Rows</SortableCell>
               <SortableCell sortKey="status" sort={runsSort.sort} onSort={runsSort.toggle} filter={runsCf.filterFor('status')}>Status</SortableCell>
               <SortableCell sortKey="source" sort={runsSort.sort} onSort={runsSort.toggle} filter={runsCf.filterFor('source')}>Source</SortableCell>
             </TableRow>
@@ -283,7 +283,7 @@ export function ReportsPage() {
                 <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.82rem' }}>{fmtDateTime(run.createdAt)}</TableCell>
                 <TableCell sx={{ fontSize: '0.85rem' }}>{run.reportType}</TableCell>
                 <TableCell sx={{ fontSize: '0.85rem' }}>{run.format}</TableCell>
-                <TableCell align="right">{run.rowCount ?? '—'}</TableCell>
+                <TableCell>{run.rowCount ?? '—'}</TableCell>
                 <TableCell>
                   <Typography
                     component="span"
@@ -303,7 +303,7 @@ export function ReportsPage() {
             ))}
             {runsCf.filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} sx={{ textAlign: 'center', py: 3, color: 'text.secondary' }}>
+                <TableCell colSpan={6} sx={{ textAlign: 'left', py: 3, color: 'text.secondary' }}>
                   No exports yet.
                 </TableCell>
               </TableRow>

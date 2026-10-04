@@ -1095,6 +1095,10 @@ Browser-verified: Field Execution pages 49 rows as 1–25 / 26–49, certificate
 pagination, hovering "✉ Send emails" renders its exact tooltip, and ticking one program
 in the feedback dropdown narrows five cards to that program's one.
 
+Addendum (3d): every table cell app-wide is now LEFT-aligned — all 44 right/center
+alignment props across the eight table pages removed (numeric columns, action columns and
+the empty-state rows included), so the eye tracks one consistent edge down every column.
+
 ---
 
 ## Conventions the refinements established

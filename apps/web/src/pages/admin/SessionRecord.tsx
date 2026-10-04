@@ -653,17 +653,17 @@ export function SessionRecord() {
                 <>
                   <SortableCell sortKey="enrolledAt" sort={roster.sort} onSort={roster.toggle}>Enrolled on</SortableCell>
                   <SortableCell sortKey="skills" sort={roster.sort} onSort={roster.toggle}>Skills offered</SortableCell>
-                  <TableCell align="center">Route</TableCell>
-                  <TableCell align="right">Action</TableCell>
+                  <TableCell>Route</TableCell>
+                  <TableCell>Action</TableCell>
                 </>
               ) : (
                 <>
-                  <SortableCell sortKey="attended" sort={roster.sort} onSort={roster.toggle} align="center" filter={rosterCf.filterFor('attended')}>Attended</SortableCell>
-                  <TableCell align="center">Times</TableCell>
-                  <SortableCell sortKey="hours" sort={roster.sort} onSort={roster.toggle} align="right">Hours</SortableCell>
+                  <SortableCell sortKey="attended" sort={roster.sort} onSort={roster.toggle} filter={rosterCf.filterFor('attended')}>Attended</SortableCell>
+                  <TableCell>Times</TableCell>
+                  <SortableCell sortKey="hours" sort={roster.sort} onSort={roster.toggle}>Hours</SortableCell>
                   <SortableCell sortKey="source" sort={roster.sort} onSort={roster.toggle} filter={rosterCf.filterFor('source')}>Logged by</SortableCell>
                   <TableCell>Notes</TableCell>
-                  <TableCell align="right">Action</TableCell>
+                  <TableCell>Action</TableCell>
                 </>
               )}
             </TableRow>
@@ -688,14 +688,14 @@ export function SessionRecord() {
                     <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary', maxWidth: 240 }}>
                       {r.enrollment_skills ?? '—'}
                     </TableCell>
-                    <TableCell align="center">
+                    <TableCell>
                       {r.promoted_from_waitlist ? (
                         <Chip size="small" label="from waitlist" sx={{ height: 20, fontSize: '0.7rem' }} />
                       ) : (
                         <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>direct</Typography>
                       )}
                     </TableCell>
-                    <TableCell align="right">
+                    <TableCell>
                       <Tooltip title="Remove them from this session — they are emailed, and the waitlist head takes the seat">
                         <Button size="small" variant="pillOutlined" sx={{ px: 1.5, py: 0.25, color: tokens.accentStrong }}
                           onClick={() => setRemoveTarget({ id: r.volunteer_id, name: `${r.first_name} ${r.last_name}` })}>
@@ -706,7 +706,7 @@ export function SessionRecord() {
                   </>
                 ) : (
                   <>
-                <TableCell align="center">
+                <TableCell>
                   {r.record_id === null ? (
                     <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>
                       no response
@@ -724,12 +724,12 @@ export function SessionRecord() {
                     </Box>
                   )}
                 </TableCell>
-                <TableCell align="center" sx={{ fontSize: '0.82rem', whiteSpace: 'nowrap' }}>
+                <TableCell sx={{ fontSize: '0.82rem', whiteSpace: 'nowrap' }}>
                   {r.arrival_time
                     ? `${r.arrival_time.slice(0, 5)} – ${r.departure_time?.slice(0, 5) ?? '?'}`
                     : '—'}
                 </TableCell>
-                <TableCell align="right">
+                <TableCell>
                   {r.hours_contributed ? <strong>{Number(r.hours_contributed)}</strong> : '—'}
                 </TableCell>
                 <TableCell>
@@ -755,7 +755,7 @@ export function SessionRecord() {
                 <TableCell sx={{ fontSize: '0.78rem', color: 'text.secondary', maxWidth: 200 }}>
                   {r.notes ?? r.absence_detail ?? '—'}
                 </TableCell>
-                <TableCell align="right">
+                <TableCell>
                   <Tooltip
                     title={
                       r.record_id
@@ -790,7 +790,7 @@ export function SessionRecord() {
             ))}
             {data.roster.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                <TableCell colSpan={7} sx={{ textAlign: 'left', py: 4, color: 'text.secondary' }}>
                   Nobody is enrolled in this session yet.
                 </TableCell>
               </TableRow>
@@ -812,7 +812,7 @@ export function SessionRecord() {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell align="center">#</TableCell>
+                  <TableCell>#</TableCell>
                   <TableCell>Volunteer</TableCell>
                   <TableCell>Email</TableCell>
                 </TableRow>
@@ -820,7 +820,7 @@ export function SessionRecord() {
               <TableBody>
                 {waitlist.map((w) => (
                   <TableRow key={w.volunteer_id}>
-                    <TableCell align="center" sx={{ fontWeight: 700 }}>{w.position}</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>{w.position}</TableCell>
                     <TableCell sx={{ fontWeight: 600, fontSize: '0.88rem' }}>
                       {w.first_name} {w.last_name}
                     </TableCell>

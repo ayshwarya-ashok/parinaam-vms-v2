@@ -250,9 +250,9 @@ export function ActivityDetail() {
               <SortableCell sortKey="date" sort={sort} onSort={toggle}>Date & time</SortableCell>
               <SortableCell sortKey="location" sort={sort} onSort={toggle}>Location</SortableCell>
               <SortableCell sortKey="coordinator" sort={sort} onSort={toggle} filter={cf.filterFor('coordinator')}>Coordinator</SortableCell>
-              <SortableCell sortKey="seats" sort={sort} onSort={toggle} align="center">Seats</SortableCell>
+              <SortableCell sortKey="seats" sort={sort} onSort={toggle}>Seats</SortableCell>
               <SortableCell sortKey="status" sort={sort} onSort={toggle} filter={cf.filterFor('status')}>Status</SortableCell>
-              <TableCell align="right">Actions</TableCell>
+              <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -278,7 +278,7 @@ export function ActivityDetail() {
                 </TableCell>
                 <TableCell>{e.location ?? '—'}</TableCell>
                 <TableCell>{e.coordinator_name}</TableCell>
-                <TableCell align="center">
+                <TableCell>
                   {e.enrolled_count}/{e.max_slots}
                   {e.waitlist_count > 0 ? ` (+${e.waitlist_count} waiting)` : ''}
                 </TableCell>
@@ -296,7 +296,7 @@ export function ActivityDetail() {
                             : ''}
                   </Typography>
                 </TableCell>
-                <TableCell align="right">
+                <TableCell>
                   <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
                     <Button
                       size="small"
@@ -357,7 +357,7 @@ export function ActivityDetail() {
             ))}
             {activity.events.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} sx={{ color: 'text.secondary', py: 3, textAlign: 'center' }}>
+                <TableCell colSpan={7} sx={{ color: 'text.secondary', py: 3, textAlign: 'left' }}>
                   No sessions scheduled yet.
                 </TableCell>
               </TableRow>

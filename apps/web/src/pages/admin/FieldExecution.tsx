@@ -183,9 +183,9 @@ export function FieldExecution() {
               <SortableCell sortKey="date" sort={sort} onSort={toggle}>Date & time</SortableCell>
               <SortableCell sortKey="volunteerEmail" sort={sort} onSort={toggle} filter={cf.filterFor('volunteerEmail')}>Volunteer email</SortableCell>
               <SortableCell sortKey="coordinatorEmail" sort={sort} onSort={toggle} filter={cf.filterFor('coordinatorEmail')}>Coordinator email</SortableCell>
-              <SortableCell sortKey="attendance" sort={sort} onSort={toggle} align="center">Attendance</SortableCell>
-              <SortableCell sortKey="report" sort={sort} onSort={toggle} align="center" filter={cf.filterFor('report')}>Report</SortableCell>
-              <TableCell align="right">Actions</TableCell>
+              <SortableCell sortKey="attendance" sort={sort} onSort={toggle}>Attendance</SortableCell>
+              <SortableCell sortKey="report" sort={sort} onSort={toggle} filter={cf.filterFor('report')}>Report</SortableCell>
+              <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -223,18 +223,18 @@ export function FieldExecution() {
                 <TableCell>
                   <SentBadge state={row.coordinatorEmail} />
                 </TableCell>
-                <TableCell align="center">
+                <TableCell>
                   {row.attended}/{row.enrolled}
                   {row.submitted > row.attended ? ` (${row.submitted} responded)` : ''}
                 </TableCell>
-                <TableCell align="center">
+                <TableCell>
                   {row.reportSubmitted ? (
                     <Typography sx={{ color: tokens.success, fontWeight: 700, fontSize: '0.85rem' }}>✓</Typography>
                   ) : (
                     <Typography sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>—</Typography>
                   )}
                 </TableCell>
-                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                <TableCell sx={{ whiteSpace: 'nowrap' }}>
                   <Tooltip title="Open this session's record — roster, attendance, phases, corrections">
                     <Button
                       size="small"
@@ -267,7 +267,7 @@ export function FieldExecution() {
             ))}
             {cf.filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={9} sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                <TableCell colSpan={9} sx={{ textAlign: 'left', py: 4, color: 'text.secondary' }}>
                   No sessions match your filters.
                 </TableCell>
               </TableRow>

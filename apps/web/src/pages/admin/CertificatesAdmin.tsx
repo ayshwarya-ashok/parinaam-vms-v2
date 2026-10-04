@@ -178,9 +178,9 @@ export function CertificatesAdmin() {
             <TableRow>
               <SortableCell sortKey="volunteer" sort={sort} onSort={toggle}>Volunteer</SortableCell>
               <SortableCell sortKey="program" sort={sort} onSort={toggle} filter={cf.filterFor('program')}>Program</SortableCell>
-              <SortableCell sortKey="hours" sort={sort} onSort={toggle} align="center">Participation</SortableCell>
+              <SortableCell sortKey="hours" sort={sort} onSort={toggle}>Participation</SortableCell>
               <SortableCell sortKey="certificate" sort={sort} onSort={toggle} filter={cf.filterFor('certificate')}>Certificate</SortableCell>
-              <TableCell align="right">Actions</TableCell>
+              <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -198,7 +198,7 @@ export function CertificatesAdmin() {
                   </Typography>
                 </TableCell>
                 <TableCell sx={{ fontSize: '0.88rem' }}>{c.programName}</TableCell>
-                <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>
+                <TableCell sx={{ whiteSpace: 'nowrap' }}>
                   <strong>{Number(c.hours)}h</strong> · {c.eventsAttended} session(s)
                   <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
                     {fmtDate(c.periodStart)}
@@ -225,7 +225,7 @@ export function CertificatesAdmin() {
                     <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>Not issued</Typography>
                   )}
                 </TableCell>
-                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                <TableCell sx={{ whiteSpace: 'nowrap' }}>
                   {c.certificate?.issued ? (
                     <>
                       <Tooltip title="Download the certificate PDF">
@@ -271,7 +271,7 @@ export function CertificatesAdmin() {
             ))}
             {data?.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                <TableCell colSpan={5} sx={{ textAlign: 'left', py: 4, color: 'text.secondary' }}>
                   No candidates match your filters.
                 </TableCell>
               </TableRow>

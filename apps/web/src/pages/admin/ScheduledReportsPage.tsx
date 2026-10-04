@@ -159,7 +159,7 @@ export function ScheduledReportsPage() {
                 <SortableCell sortKey="recipients" sort={sort} onSort={sortBy}>Recipients</SortableCell>
                 <SortableCell sortKey="nextRun" sort={sort} onSort={sortBy}>Next run</SortableCell>
                 <SortableCell sortKey="status" sort={sort} onSort={sortBy} filter={cf.filterFor('status')}>Status</SortableCell>
-                <TableCell align="right">Actions</TableCell>
+                <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -201,7 +201,7 @@ export function ScheduledReportsPage() {
                       {row.isActive ? '● Active' : '⏸ Paused'}
                     </Typography>
                   </TableCell>
-                  <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                  <TableCell sx={{ whiteSpace: 'nowrap' }}>
                     <Button size="small" variant="pillOutlined" sx={{ px: 1.25, py: 0.3, mr: 0.5 }}
                       disabled={runNow.isPending}
                       onClick={() => runNow.mutate(row.id)}>

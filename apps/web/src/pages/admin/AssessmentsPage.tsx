@@ -104,7 +104,7 @@ export function AssessmentsPage() {
               <SortableCell sortKey="best" sort={sort} onSort={toggle}>Scores</SortableCell>
               <SortableCell sortKey="status" sort={sort} onSort={toggle} filter={cf.filterFor('status')}>Status</SortableCell>
               <SortableCell sortKey="validUntil" sort={sort} onSort={toggle}>Valid until</SortableCell>
-              <TableCell align="right">Admin actions</TableCell>
+              <TableCell>Admin actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -132,7 +132,7 @@ export function AssessmentsPage() {
                   )}
                 </TableCell>
                 <TableCell>{r.expiryDate ? String(r.expiryDate).slice(0, 10) : '—'}</TableCell>
-                <TableCell align="right">
+                <TableCell>
                   <Button
                     size="small"
                     variant="pillOutlined"
@@ -146,7 +146,7 @@ export function AssessmentsPage() {
             ))}
             {rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                <TableCell colSpan={6} sx={{ textAlign: 'left', py: 4, color: 'text.secondary' }}>
                   No records match the selected filter.
                 </TableCell>
               </TableRow>
