@@ -184,7 +184,22 @@ export function SessionRecord() {
   const [enrollOpen, setEnrollOpen] = useState(false);
   const [enrollVolunteer, setEnrollVolunteer] = useState<PickerVolunteer | null>(null);
   const [walkInVolunteer, setWalkInVolunteer] = useState<PickerVolunteer | null>(null);
-  const [walkInHours, setWalkInHours] = useState('');
+  // Same details as the emailed form (Round 46): arrival/departure, hours derived.
+  const [walkInArrival, setWalkInArrival] = useState('');
+  const [walkInDeparture, setWalkInDeparture] = useState('');
+  // Staff submission/override of the Field Coordinator Report (Round 46).
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportForm, setReportForm] = useState({
+    status: 'completed',
+    actualStartTime: '',
+    actualEndTime: '',
+    volunteersPresent: '',
+    beneficiariesReached: '',
+    highlights: '',
+    challenges: '',
+    notes: '',
+  });
+  const [reportImages, setReportImages] = useState<File[]>([]);
   const queryClient = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
 
@@ -229,7 +244,8 @@ export function SessionRecord() {
         await api.post(`/events/${id}/attendance`, {
           volunteerId: walkInVolunteer?.id,
           attended: true,
-          hoursContributed: Number(walkInHours),
+          arrivalTime: walkInArrival,
+          departureTime: walkInDeparture,
           notes: 'Walk-in recorded by admin.',
           walkIn: true,
         })
@@ -238,7 +254,8 @@ export function SessionRecord() {
       void queryClient.invalidateQueries({ queryKey: ['session-record', id] });
       setWalkInOpen(false);
       setWalkInVolunteer(null);
-      setWalkInHours('');
+      setWalkInArrival('');
+      setWalkInDeparture('');
       enqueueSnackbar('Walk-in recorded', { variant: 'success' });
     },
     onError: (err) => enqueueSnackbar(asApiError(err)?.message ?? 'Could not record the walk-in', { variant: 'error' }),
@@ -323,6 +340,53 @@ export function SessionRecord() {
       );
     },
     onError: (err) => enqueueSnackbar(asApiError(err)?.message ?? 'Could not queue the email', { variant: 'error' }),
+  });
+
+  const openReport = () => {
+    const r = data?.report;
+    setReportForm({
+      status: r?.status ?? 'completed',
+      actualStartTime: r?.actualStartTime ? String(r.actualStartTime).slice(0, 5) : '',
+      actualEndTime: r?.actualEndTime ? String(r.actualEndTime).slice(0, 5) : '',
+      volunteersPresent: r?.volunteersPresent != null ? String(r.volunteersPresent) : '',
+      beneficiariesReached: r?.beneficiariesReached != null ? String(r.beneficiariesReached) : '',
+      highlights: r?.highlights ?? '',
+      challenges: r?.challenges ?? '',
+      notes: r?.notes ?? '',
+    });
+    setReportImages([]);
+    setReportOpen(true);
+  };
+
+  const submitReport = useMutation({
+    mutationFn: async () => {
+      const fd = new FormData();
+      fd.append('status', reportForm.status);
+      if (reportForm.actualStartTime) fd.append('actualStartTime', reportForm.actualStartTime);
+      if (reportForm.actualEndTime) fd.append('actualEndTime', reportForm.actualEndTime);
+      fd.append('volunteersPresent', reportForm.volunteersPresent);
+      fd.append('beneficiariesReached', reportForm.beneficiariesReached);
+      if (reportForm.highlights.trim()) fd.append('highlights', reportForm.highlights.trim());
+      if (reportForm.challenges.trim()) fd.append('challenges', reportForm.challenges.trim());
+      if (reportForm.notes.trim()) fd.append('notes', reportForm.notes.trim());
+      for (const img of reportImages.slice(0, 2)) fd.append('images', img);
+      return (
+        await api.post<{ submitted: true; replaced: boolean }>(`/events/${id}/report`, fd, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+      ).data;
+    },
+    onSuccess: (res) => {
+      void queryClient.invalidateQueries({ queryKey: ['session-record', id] });
+      void queryClient.invalidateQueries({ queryKey: ['dispatches'] });
+      setReportOpen(false);
+      enqueueSnackbar(
+        res.replaced ? 'Coordinator report overridden' : 'Coordinator report submitted',
+        { variant: 'success' },
+      );
+    },
+    onError: (err) =>
+      enqueueSnackbar(asApiError(err)?.message ?? 'Could not save the report', { variant: 'error' }),
   });
 
   const markCompleted = useMutation({
@@ -411,6 +475,19 @@ export function SessionRecord() {
             <Tooltip title="Email a sponsor the session's outcomes with links to its photos">
               <Button variant="pillOutlined" onClick={() => setSponsorOpen(true)}>
                 ✉ Send sponsor pack
+              </Button>
+            </Tooltip>
+          )}
+          {(event.status === 'upcoming' || event.status === 'inprogress' || event.status === 'completed') && (
+            <Tooltip
+              title={
+                report
+                  ? "Replace the coordinator's report with your own — the override is audited"
+                  : 'File the Field Coordinator Report yourself — the same fields as the emailed link'
+              }
+            >
+              <Button variant="pillOutlined" onClick={openReport}>
+                {report ? '✏️ Override report' : '📋 Submit report'}
               </Button>
             </Tooltip>
           )}
@@ -895,14 +972,33 @@ export function SessionRecord() {
             excludeIds={rosterIds}
             autoFocus
           />
-          <TextField
-            label="Hours contributed"
-            type="number"
-            required
-            inputProps={{ min: 0.25, step: 0.25 }}
-            value={walkInHours}
-            onChange={(e) => setWalkInHours(e.target.value)}
-          />
+          {/* Same details as the emailed attendance form: arrival and
+              departure times, with the hours derived from them. */}
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+            <TextField
+              label="Arrival time"
+              type="time"
+              required
+              InputLabelProps={{ shrink: true }}
+              value={walkInArrival}
+              onChange={(e) => setWalkInArrival(e.target.value)}
+            />
+            <TextField
+              label="Departure time"
+              type="time"
+              required
+              InputLabelProps={{ shrink: true }}
+              value={walkInDeparture}
+              onChange={(e) => setWalkInDeparture(e.target.value)}
+            />
+          </Box>
+          <Typography sx={{ fontSize: '0.82rem', color: 'text.secondary' }}>
+            {walkInArrival && walkInDeparture
+              ? hoursBetween(walkInArrival, walkInDeparture) === null
+                ? 'Departure must be after arrival.'
+                : `Hours contributed: ${hoursBetween(walkInArrival, walkInDeparture)}h`
+              : 'The hours are derived from the two times, like the emailed form.'}
+          </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button variant="pillOutlined" onClick={() => setWalkInOpen(false)}>
@@ -910,10 +1006,135 @@ export function SessionRecord() {
           </Button>
           <Button
             variant="pill"
-            disabled={!walkInVolunteer || walkInHours === '' || recordWalkIn.isPending}
+            disabled={
+              !walkInVolunteer ||
+              hoursBetween(walkInArrival, walkInDeparture) === null ||
+              recordWalkIn.isPending
+            }
             onClick={() => recordWalkIn.mutate()}
           >
             {recordWalkIn.isPending ? 'Recording…' : 'Record attendance'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Staff coordinator-report dialog (Round 46): the same fields as the
+             emailed link, submit or override from here. ───────────────────── */}
+      <Dialog
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        PaperProps={{ sx: { borderRadius: 4, width: 520, maxWidth: '100%' } }}
+      >
+        <DialogTitle sx={{ fontFamily: '"Source Serif 4", Georgia, serif' }}>
+          Field Coordinator Report — {event.name}
+        </DialogTitle>
+        <DialogContent sx={{ display: 'grid', gap: 2, pt: '8px !important' }}>
+          {report && (
+            <Alert severity="info" sx={{ borderRadius: 2 }}>
+              A report already exists for this session — submitting again replaces it. The
+              override is recorded in the audit trail.
+            </Alert>
+          )}
+          <TextField
+            select
+            label="Session status"
+            value={reportForm.status}
+            onChange={(e) => setReportForm((f) => ({ ...f, status: e.target.value }))}
+          >
+            <MenuItem value="completed">✓ Completed</MenuItem>
+            <MenuItem value="partial">◫ Partially completed</MenuItem>
+            <MenuItem value="postponed">🕐 Postponed</MenuItem>
+            <MenuItem value="cancelled">✕ Cancelled</MenuItem>
+          </TextField>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+            <TextField
+              label="Actual start"
+              type="time"
+              InputLabelProps={{ shrink: true }}
+              value={reportForm.actualStartTime}
+              onChange={(e) => setReportForm((f) => ({ ...f, actualStartTime: e.target.value }))}
+            />
+            <TextField
+              label="Actual end"
+              type="time"
+              InputLabelProps={{ shrink: true }}
+              value={reportForm.actualEndTime}
+              onChange={(e) => setReportForm((f) => ({ ...f, actualEndTime: e.target.value }))}
+            />
+          </Box>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+            <TextField
+              label="Volunteers present"
+              type="number"
+              required
+              inputProps={{ min: 0 }}
+              value={reportForm.volunteersPresent}
+              onChange={(e) => setReportForm((f) => ({ ...f, volunteersPresent: e.target.value }))}
+              helperText={`${summary.enrolled} were enrolled`}
+            />
+            <TextField
+              label="Beneficiaries reached"
+              type="number"
+              required
+              inputProps={{ min: 0 }}
+              value={reportForm.beneficiariesReached}
+              onChange={(e) => setReportForm((f) => ({ ...f, beneficiariesReached: e.target.value }))}
+            />
+          </Box>
+          <TextField
+            label="Highlights / what went well"
+            multiline
+            minRows={2}
+            value={reportForm.highlights}
+            onChange={(e) => setReportForm((f) => ({ ...f, highlights: e.target.value }))}
+          />
+          <TextField
+            label="Challenges faced (optional)"
+            multiline
+            minRows={2}
+            value={reportForm.challenges}
+            onChange={(e) => setReportForm((f) => ({ ...f, challenges: e.target.value }))}
+          />
+          <TextField
+            label="Additional notes (optional)"
+            multiline
+            minRows={2}
+            value={reportForm.notes}
+            onChange={(e) => setReportForm((f) => ({ ...f, notes: e.target.value }))}
+          />
+          <Box>
+            <Typography sx={{ fontSize: '0.85rem', fontWeight: 600 }}>Evidence photos</Typography>
+            <Typography sx={{ fontSize: '0.78rem', color: 'text.secondary', mb: 0.75 }}>
+              Optional — up to 2 images. Location data is stripped automatically.
+            </Typography>
+            <Button variant="pillOutlined" size="small" component="label">
+              {reportImages.length
+                ? reportImages.map((f) => f.name).join(', ')
+                : '📷 Choose images'}
+              <input
+                type="file"
+                hidden
+                multiple
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(e) => setReportImages([...(e.target.files ?? [])].slice(0, 2))}
+              />
+            </Button>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button variant="pillOutlined" onClick={() => setReportOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="pill"
+            disabled={
+              submitReport.isPending ||
+              reportForm.volunteersPresent === '' ||
+              reportForm.beneficiariesReached === ''
+            }
+            onClick={() => submitReport.mutate()}
+          >
+            {submitReport.isPending ? 'Submitting…' : report ? 'Override report' : 'Submit report'}
           </Button>
         </DialogActions>
       </Dialog>

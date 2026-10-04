@@ -379,7 +379,7 @@ export class AttendanceService {
       );
     });
 
-    await this.storeEvidence(images, token, { attendanceRecordId: record.id, source: 'volunteer_attendance' });
+    await this.storeEvidence(images, token.eventId!, { attendanceRecordId: record.id, source: 'volunteer_attendance' });
 
     return { submitted: true, hoursContributed: record.hoursContributed };
   }
@@ -408,14 +408,72 @@ export class AttendanceService {
       return mgr.save(mgr.create(EventReport, { eventId: token.eventId!, ...values }));
     });
 
-    await this.storeEvidence(images, token, { eventReportId: report.id, source: 'coordinator_report' });
+    await this.storeEvidence(images, token.eventId!, { eventReportId: report.id, source: 'coordinator_report' });
 
     return { submitted: true };
   }
 
+  /**
+   * Staff submission of the Field Coordinator Report (Round 46): the same
+   * fields — and the same replace-on-resubmit semantics — as the emailed
+   * link, available to admins and field coordinators from the session record.
+   * The report stays attributed to the session's coordinator; who actually
+   * filed or overrode it is in the audit trail.
+   */
+  async staffSubmitReport(
+    principal: AuthPrincipal,
+    eventId: string,
+    dto: CoordinatorSubmission,
+    images: UploadedImage[],
+  ) {
+    const [event] = await this.dataSource.query(
+      `SELECT id, coordinator_id, status FROM events WHERE id = $1`,
+      [eventId],
+    );
+    if (!event) throw new NotFoundException('Session not found');
+
+    let replaced = false;
+    const report = await this.dataSource.transaction(async (mgr) => {
+      const existing = await mgr.findOne(EventReport, { where: { eventId } });
+      const values = {
+        coordinatorId: event.coordinator_id,
+        status: dto.status,
+        actualStartTime: dto.actualStartTime ?? null,
+        actualEndTime: dto.actualEndTime ?? null,
+        volunteersPresent: dto.volunteersPresent,
+        beneficiariesReached: dto.beneficiariesReached,
+        highlights: dto.highlights ?? null,
+        challenges: dto.challenges ?? null,
+        notes: dto.notes ?? null,
+        submittedViaToken: null,
+      };
+      if (existing) {
+        replaced = true;
+        Object.assign(existing, values);
+        return mgr.save(existing);
+      }
+      return mgr.save(mgr.create(EventReport, { eventId, ...values }));
+    });
+
+    await this.storeEvidence(images, eventId, { eventReportId: report.id, source: 'coordinator_report' });
+
+    await this.audit.record(principal, {
+      action: replaced ? 'report.staff_overridden' : 'report.staff_submitted',
+      entity: 'event_reports',
+      entityId: report.id,
+      after: {
+        status: dto.status,
+        volunteersPresent: dto.volunteersPresent,
+        beneficiariesReached: dto.beneficiariesReached,
+      },
+    });
+
+    return { submitted: true, replaced };
+  }
+
   private async storeEvidence(
     images: UploadedImage[],
-    token: AccessToken,
+    eventId: string,
     link: { attendanceRecordId?: string; eventReportId?: string; source: EventPhoto['source'] },
   ): Promise<void> {
     for (const image of images.slice(0, MAX_EVIDENCE_IMAGES)) {
@@ -428,13 +486,13 @@ export class AttendanceService {
         const cleaned = await sharp(image.buffer).rotate().jpeg({ quality: 85 }).toBuffer();
         const thumb = await sharp(cleaned).resize({ width: 320 }).jpeg({ quality: 70 }).toBuffer();
 
-        const path = this.storage.buildPath(`evidence/${token.eventId}`, 'jpg');
+        const path = this.storage.buildPath(`evidence/${eventId}`, 'jpg');
         const stored = await this.storage.put(path, cleaned);
         const thumbStored = await this.storage.put(path.replace('.jpg', '.thumb.jpg'), thumb);
 
         await this.photos.save(
           this.photos.create({
-            eventId: token.eventId!,
+            eventId,
             attendanceRecordId: link.attendanceRecordId ?? null,
             eventReportId: link.eventReportId ?? null,
             filePath: stored.path,

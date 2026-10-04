@@ -64,6 +64,8 @@ const MATRIX = [
   ['POST',   '/volunteers/admin-create',                 'D', 'D', 'D', 'A'],
   ['POST',   `/volunteers/${UUID}/welcome-back`,        'D', 'D', 'D', 'A'],
   ['POST',   `/events/${UUID}/sponsor-pack`,            'D', 'D', 'A', 'A'],
+  // Round 46: staff submission/override of the coordinator report.
+  ['POST',   `/events/${UUID}/report`,                  'D', 'D', 'A', 'A'],
   ['POST',   `/events/${UUID}/enrollments`,           'D', 'D', 'A', 'A'],
   ['DELETE', `/events/${UUID}/enrollments/${UUID}`,     'D', 'D', 'A', 'A'],
   // Round 36: staff (admin AND fc) can correct details at any lifecycle stage.

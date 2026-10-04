@@ -264,4 +264,23 @@ export class AttendanceController {
   ) {
     return this.service.submitCoordinator(token, dto, images);
   }
+
+  @Roles('admin', 'field_coordinator')
+  @Post('events/:id/report')
+  @UseInterceptors(FilesInterceptor('images', IMAGE_LIMITS.files, { limits: IMAGE_LIMITS }))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: 'Staff submission/override of the Field Coordinator Report (Round 46)',
+    description:
+      'Same fields and replace-on-resubmit semantics as the emailed link; who filed or ' +
+      'overrode it is recorded in the audit trail.',
+  })
+  staffSubmitReport(
+    @CurrentUser() user: AuthPrincipal,
+    @Param('id', UuidPipe) id: string,
+    @Body() dto: CoordinatorSubmissionDto,
+    @UploadedFiles() images: UploadedImage[] = [],
+  ) {
+    return this.service.staffSubmitReport(user, id, dto, images);
+  }
 }

@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-10-04 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across forty-five review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across forty-six review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -1170,6 +1170,32 @@ cleared. Test registrants removed after.
 Verified via API too: program create without a description → 400, end-before-start →
 "The end date is before the start date.", a valid window round-trips, and activity
 create without a location → "Location is required".
+
+---
+
+## Round 46 — Walk-in times, and the coordinator report from the admin side  (2026-10-04)
+
+Completing 8c — manual capture now matches the emailed forms on every path:
+
+- **Walk-ins record arrival and departure times** (the hours are derived with the same
+  math as the volunteer's emailed form and shown live in the dialog), replacing the bare
+  hours number. The backend had accepted times since Round 37; the dialog caught up.
+- **Staff can file — and override — the Field Coordinator Report.** A new
+  `POST /events/:id/report` (admin + field coordinator; authz matrix now 84 endpoints /
+  336 checks) carries the exact field set of the emailed link: session status
+  (Completed / Partially completed / Postponed / Cancelled), actual start/end, volunteers
+  present and beneficiaries reached (both required), highlights / challenges / notes, and
+  up to two evidence photos (EXIF/GPS stripped by the same pipeline — `storeEvidence` was
+  refactored to take an eventId so both the token path and the staff path share it). The
+  session record gains a "📋 Submit report" button that becomes "✏️ Override report" when
+  one exists, opening prefilled with the current report and a plain "submitting again
+  replaces it" warning. The report stays attributed to the session's coordinator; who
+  filed or overrode it is in the audit trail (`report.staff_submitted` /
+  `report.staff_overridden`).
+
+Verified: staff submit + override round-tripped on July Drive via API (the seeded report
+was restored afterwards), the authz matrix passes with the new row, and the browser shows
+the walk-in time fields with the derived-hours note and the prefilled override dialog.
 
 ---
 
