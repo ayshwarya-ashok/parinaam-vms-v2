@@ -49,8 +49,6 @@ const MATRIX = [
   ['POST',   '/feedback',                               'D', 'A', 'D', 'D'],
   ['POST',   `/feedback/${UUID}/photos`,                'D', 'A', 'D', 'D'],
   ['GET',    '/feedback/options',                       'D', 'A', 'A', 'A'],
-  ['GET',    '/phases/mine',                            'D', 'A', 'D', 'D'],
-  ['POST',   `/phases/${UUID}/partner-complete`,        'D', 'A', 'D', 'D'],
   // ── admin only ──────────────────────────────────────────────────────
   ['GET',    '/analytics/dashboard',                    'D', 'D', 'A', 'A'],
   ['GET',    '/analytics/summary',                      'D', 'D', 'A', 'A'],
@@ -104,15 +102,6 @@ const MATRIX = [
   ['GET',    `/communities/${UUID}`,                    'D', 'D', 'A', 'A'],
   ['PATCH',  `/communities/${UUID}`,                    'D', 'D', 'D', 'A'],
   ['GET',    `/communities/${UUID}/sessions`,           'D', 'D', 'A', 'A'],
-  ['GET',    `/events/${UUID}/phases`,                  'D', 'D', 'A', 'A'],
-  ['POST',   `/events/${UUID}/phases`,                  'D', 'D', 'D', 'A'],
-  ['PATCH',  `/phases/${UUID}`,                         'D', 'D', 'D', 'A'],
-  ['DELETE', `/phases/${UUID}`,                         'D', 'D', 'D', 'A'],
-  ['POST',   `/phases/${UUID}/start`,                   'D', 'D', 'A', 'A'],
-  ['POST',   `/phases/${UUID}/complete`,                'D', 'D', 'A', 'A'],
-  ['POST',   `/phases/${UUID}/override`,                'D', 'D', 'A', 'A'],
-  ['POST',   `/phases/${UUID}/visits`,                  'D', 'D', 'A', 'A'],
-  ['DELETE', `/attendance/visits/${UUID}`,              'D', 'D', 'A', 'A'],
   // shared-but-authorized-inside (guard admits both roles; ownership decides)
   ['GET',    `/certificates/${UUID}/download`,          'D', 'A', 'A', 'A'],
 ];

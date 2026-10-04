@@ -1,6 +1,6 @@
 import { Box, Button, Chip, Grid2 as Grid, Paper, Typography } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
-import { useMyEnrollments, useMyPhases, useSessions } from '@/api/volunteer';
+import { useMyEnrollments, useSessions } from '@/api/volunteer';
 import { useAuth } from '@/app/auth';
 import { PageShell, StatTile } from '@/components';
 import { useEnrollFlow } from '@/components/EnrollFlow';
@@ -18,7 +18,6 @@ export function VolunteerDashboard() {
   const { user } = useAuth();
   const { data: mine } = useMyEnrollments();
   const { data: open = [] } = useSessions({ scope: 'open', sort: 'date' });
-  const { data: myPhases = [] } = useMyPhases();
   const { onEnroll, onWithdraw, onLeaveWaitlist, dialogs } = useEnrollFlow();
 
   const upcoming = (mine?.enrollments ?? []).filter((e) => e.event_status === 'upcoming');
@@ -69,73 +68,6 @@ export function VolunteerDashboard() {
           </Paper>
         </Grid>
       </Grid>
-
-      {myPhases.length > 0 && (
-        <Box sx={{ mb: 4 }}>
-          <Typography sx={{ fontWeight: 700, fontSize: '1.1rem', mb: 1.5 }}>
-            My phase responsibilities
-          </Typography>
-          <Box sx={{ display: 'grid', gap: 1 }}>
-            {myPhases.map((p) => (
-              <Paper
-                key={p.id}
-                variant="outlined"
-                component={RouterLink}
-                to={`/app/events/${p.event_id}`}
-                sx={{
-                  p: 1.75,
-                  borderRadius: 3,
-                  bgcolor: 'rgba(255,255,255,0.8)',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  gap: 2,
-                  flexWrap: 'wrap',
-                  textDecoration: 'none',
-                  color: 'inherit',
-                }}
-              >
-                <Box>
-                  <Typography
-                    sx={{
-                      fontWeight: 700,
-                      fontSize: '0.95rem',
-                      textDecoration: p.event_deleted ? 'line-through' : 'none',
-                    }}
-                  >
-                    {p.name} — {p.event_name}
-                  </Typography>
-                  <Typography sx={{ fontSize: '0.82rem', color: 'text.secondary' }}>
-                    {p.event_deleted ? (
-                      <>
-                        {p.program_name} · this session was deleted by Parinaam — nothing more is
-                        needed from you
-                      </>
-                    ) : (
-                      <>
-                        {p.program_name} · {fmtDate(p.start_date)}
-                        {String(p.end_date).slice(0, 10) !== String(p.start_date).slice(0, 10)
-                          ? ` – ${fmtDate(p.end_date)}`
-                          : ''}{' '}
-                        · you are the partner lead
-                        {p.partner_marked_at ? ' · your side is done' : ' · your mark is pending'}
-                      </>
-                    )}
-                  </Typography>
-                </Box>
-                <Chip
-                  label={p.event_deleted ? 'deleted' : p.status === 'inprogress' ? 'in progress' : p.status}
-                  size="small"
-                  sx={{
-                    fontSize: '0.7rem',
-                    ...(p.event_deleted && { bgcolor: 'rgba(139,26,26,0.12)', color: '#8B1A1A', fontWeight: 700 }),
-                  }}
-                />
-              </Paper>
-            ))}
-          </Box>
-        </Box>
-      )}
 
       {upcoming.length > 0 && (
         <Box sx={{ mb: 4 }}>

@@ -1,5 +1,16 @@
 # Phased Sessions & Beneficiary Communities
 
+> **⚠️ SUPERSEDED (Round 47, 2026-10-04).** The session-phases concept described
+> here was **removed in its entirety** by client decision: there are no phases,
+> no phase responsibility, and no partner leads — volunteers enroll directly in
+> a session and attendance is one record per volunteer per session. Migration
+> **V026** dropped `event_phases`, `fn_recompute_event_phase_status`, the
+> phase/visit columns on `attendance_records` (folding visit hours into the
+> per-session record), and the phase enums. The **beneficiary communities**
+> part of this document (V013) remains in force. The volunteer-lifecycle phase
+> (Onboarding / In Training / Active / Inactive) is a different concept and is
+> unaffected. This document is kept for history only.
+
 | | |
 |---|---|
 | **Scope** | The client refinement of 2026-08-24: multi-phase sessions, phase ownership and completion, beneficiary communities |

@@ -1,7 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import sharp from 'sharp';
-import { DataSource, IsNull, Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { BusinessException } from '../../common';
 import type { AuthPrincipal } from '../../common/decorators/auth.decorators';
 import {
@@ -587,7 +587,7 @@ export class AttendanceService {
        JOIN volunteers v ON v.id = en.volunteer_id
        JOIN users u ON u.id = v.user_id
        LEFT JOIN attendance_records ar
-         ON ar.event_id = en.event_id AND ar.volunteer_id = v.id AND ar.phase_id IS NULL
+         ON ar.event_id = en.event_id AND ar.volunteer_id = v.id
        WHERE en.event_id = $1 AND en.status = 'enrolled'
        UNION
        -- Anyone with a record but no live enrolment (withdrew after attending;
@@ -602,7 +602,7 @@ export class AttendanceService {
        FROM attendance_records ar
        JOIN volunteers v ON v.id = ar.volunteer_id
        JOIN users u ON u.id = v.user_id
-       WHERE ar.event_id = $1 AND ar.phase_id IS NULL
+       WHERE ar.event_id = $1
          AND NOT EXISTS (
            SELECT 1 FROM event_enrollments en2
            WHERE en2.event_id = $1 AND en2.volunteer_id = v.id
@@ -623,15 +623,6 @@ export class AttendanceService {
 
     const { report, photos } = await this.reportOf(eventId);
 
-    const phases = await this.dataSource.query(
-      `SELECT ph.*, v.first_name AS lead_first_name, v.last_name AS lead_last_name
-       FROM event_phases ph
-       LEFT JOIN volunteers v ON v.id = ph.partner_lead_volunteer_id
-       WHERE ph.event_id = $1
-       ORDER BY ph.sort_order, ph.start_date, ph.created_at`,
-      [eventId],
-    );
-
     // Pre-session email history — powers the admin's send/re-send buttons.
     const [preSession] = await this.dataSource.query(
       `SELECT COUNT(*) FILTER (WHERE template_key = 'session_details')::int  AS details_sent,
@@ -642,47 +633,22 @@ export class AttendanceService {
       [eventId],
     );
 
-    // Visit-level rows (phased sessions): one per volunteer per phase per day.
-    const visits = await this.dataSource.query(
-      `SELECT ar.id, ar.phase_id, ar.visit_date, ar.hours_contributed, ar.notes,
-              ar.volunteer_id, v.first_name, v.last_name
-       FROM attendance_records ar
-       JOIN volunteers v ON v.id = ar.volunteer_id
-       WHERE ar.event_id = $1 AND ar.phase_id IS NOT NULL
-       ORDER BY ar.visit_date, v.first_name`,
-      [eventId],
-    );
-
     return {
       event,
       roster,
       waitlist,
       report,
       photos,
-      phases,
-      visits,
       preSession,
       summary: {
         enrolled: roster.filter((r: { enrollment_status: string | null }) => r.enrollment_status !== null).length,
         submitted: roster.filter((r: { record_id: string | null }) => r.record_id !== null).length,
-        // A volunteer counts as attended with a present session record OR any visit.
-        attended: new Set([
-          ...roster
-            .filter((r: { attended: boolean | null }) => r.attended === true)
-            .map((r: { volunteer_id: string }) => r.volunteer_id),
-          ...visits.map((v: { volunteer_id: string }) => v.volunteer_id),
-        ]).size,
-        totalHours:
-          roster.reduce(
-            (sum: number, r: { attended: boolean | null; hours_contributed: string | null }) =>
-              sum + (r.attended ? Number(r.hours_contributed ?? 0) : 0),
-            0,
-          ) +
-          visits.reduce(
-            (sum: number, v: { hours_contributed: string | null }) =>
-              sum + Number(v.hours_contributed ?? 0),
-            0,
-          ),
+        attended: roster.filter((r: { attended: boolean | null }) => r.attended === true).length,
+        totalHours: roster.reduce(
+          (sum: number, r: { attended: boolean | null; hours_contributed: string | null }) =>
+            sum + (r.attended ? Number(r.hours_contributed ?? 0) : 0),
+          0,
+        ),
       },
     };
   }
@@ -711,7 +677,7 @@ export class AttendanceService {
     },
   ) {
     const existing = await this.records.findOne({
-      where: { eventId, volunteerId: dto.volunteerId, phaseId: IsNull() },
+      where: { eventId, volunteerId: dto.volunteerId },
     });
     if (existing) {
       return this.adminOverride(principal, existing.id, dto as never);
@@ -858,146 +824,6 @@ export class AttendanceService {
       after: { attended: saved.attended, hours: saved.hoursContributed },
     });
     return saved;
-  }
-
-  // ── Visit-level attendance (phased sessions, client decision Q2) ───────────
-
-  /**
-   * One visit = one attendance record: (volunteer, phase, day), always
-   * present, hours required. A volunteer's session total is the sum of every
-   * visit across every phase — which is exactly what certificates read.
-   * Logging a visit on a phase nobody started implies work began, so an
-   * upcoming phase flips to inprogress (and the session follows).
-   */
-  async recordVisit(
-    principal: AuthPrincipal,
-    phaseId: string,
-    dto: {
-      volunteerId: string;
-      visitDate: string;
-      hoursContributed: number;
-      notes?: string;
-      walkIn?: boolean;
-    },
-  ) {
-    const [phase] = await this.dataSource.query(
-      `SELECT ph.id, ph.event_id, ph.name, ph.status, ph.start_date, ph.end_date
-       FROM event_phases ph WHERE ph.id = $1`,
-      [phaseId],
-    );
-    if (!phase) throw new NotFoundException('Phase not found');
-
-    if (dto.visitDate < String(phase.start_date) || dto.visitDate > String(phase.end_date)) {
-      throw new BusinessException(
-        'VISIT_INVALID',
-        `The visit date must fall inside the phase window (${phase.start_date} – ${phase.end_date}).`,
-        400,
-      );
-    }
-    if (!(dto.hoursContributed > 0)) {
-      throw new BusinessException('HOURS_REQUIRED', 'A visit needs the hours contributed.', 400);
-    }
-
-    // Same door policy as walk-ins on classic sessions: enrolled, or an
-    // explicitly flagged active approved volunteer (client decision Q3 —
-    // the admin may add any active volunteer to a phase mid-session).
-    const [enrollment] = await this.dataSource.query(
-      `SELECT 1 FROM event_enrollments WHERE event_id = $1 AND volunteer_id = $2 AND status = 'enrolled'`,
-      [phase.event_id, dto.volunteerId],
-    );
-    if (!enrollment) {
-      if (!dto.walkIn) {
-        throw new BusinessException(
-          'NOT_ENROLLED',
-          'This volunteer is not enrolled in the session. Flag them as an added volunteer to log the visit anyway.',
-          400,
-        );
-      }
-      const [eligible] = await this.dataSource.query(
-        `SELECT 1 FROM volunteers v JOIN users u ON u.id = v.user_id
-         WHERE v.id = $1 AND u.is_active AND v.registration_status = 'approved'`,
-        [dto.volunteerId],
-      );
-      if (!eligible) {
-        throw new BusinessException(
-          'WALKIN_NOT_ELIGIBLE',
-          'Added volunteers must be active, approved volunteers.',
-          400,
-        );
-      }
-    }
-
-    const [dup] = await this.dataSource.query(
-      `SELECT 1 FROM attendance_records WHERE volunteer_id = $1 AND phase_id = $2 AND visit_date = $3`,
-      [dto.volunteerId, phaseId, dto.visitDate],
-    );
-    if (dup) {
-      throw new BusinessException(
-        'VISIT_INVALID',
-        'A visit for this volunteer on this day is already logged — edit or remove it instead.',
-        409,
-      );
-    }
-
-    const saved = await this.records.save(
-      this.records.create({
-        eventId: phase.event_id,
-        volunteerId: dto.volunteerId,
-        phaseId,
-        visitDate: dto.visitDate,
-        attended: true,
-        hoursContributed: String(dto.hoursContributed),
-        notes: dto.notes ?? null,
-        source: 'admin',
-        recordedBy: principal.sub,
-      }),
-    );
-
-    if (phase.status === 'upcoming') {
-      await this.dataSource.query(
-        `UPDATE event_phases SET status = 'inprogress', updated_at = now() WHERE id = $1`,
-        [phaseId],
-      );
-      await this.dataSource.query('SELECT fn_recompute_event_phase_status($1)', [phase.event_id]);
-    }
-
-    await this.audit.record(principal, {
-      action: 'attendance.visit_recorded',
-      entity: 'attendance_records',
-      entityId: saved.id,
-      after: {
-        volunteerId: dto.volunteerId,
-        phase: phase.name,
-        visitDate: dto.visitDate,
-        hours: saved.hoursContributed,
-      },
-    });
-    return saved;
-  }
-
-  async deleteVisit(principal: AuthPrincipal, recordId: string) {
-    const record = await this.records.findOneBy({ id: recordId });
-    if (!record) throw new NotFoundException('Attendance record not found');
-    if (!record.phaseId) {
-      throw new BusinessException(
-        'VISIT_INVALID',
-        'This is a session-level attendance record, not a visit — correct it from the roster instead.',
-        400,
-      );
-    }
-    await this.records.delete(recordId);
-    await this.audit.record(principal, {
-      action: 'attendance.visit_deleted',
-      entity: 'attendance_records',
-      entityId: recordId,
-      before: {
-        volunteerId: record.volunteerId,
-        phaseId: record.phaseId,
-        visitDate: record.visitDate,
-        hours: record.hoursContributed,
-      },
-    });
-    return { ok: true };
   }
 
   /**

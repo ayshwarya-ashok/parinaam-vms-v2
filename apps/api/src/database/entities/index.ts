@@ -49,7 +49,6 @@ import {
 } from './ops.entity';
 import { ReferenceValue } from './reference.entity';
 import { BeneficiaryCommunity, EventCommunity } from './community.entity';
-import { EventPhase } from './phase.entity';
 
 export * from './identity.entity';
 export * from './people.entity';
@@ -61,7 +60,6 @@ export * from './recognition.entity';
 export * from './ops.entity';
 export * from './reference.entity';
 export * from './community.entity';
-export * from './phase.entity';
 
 /**
  * Every entity, in one array. Registered on the TypeORM data source and
@@ -88,7 +86,6 @@ export const ALL_ENTITIES = [
   Announcement,
   BeneficiaryCommunity,
   EventCommunity,
-  EventPhase,
   // training
   Training,
   TrainingMaterial,

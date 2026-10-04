@@ -71,8 +71,6 @@ export interface EventRow {
   waitlist_count: number;
   spots_left: number;
   is_enrollable: boolean;
-  phase_total: number;
-  phases_completed: number;
 }
 
 export interface Coordinator {

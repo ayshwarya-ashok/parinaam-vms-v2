@@ -1,5 +1,12 @@
 # Client-Document Impact Analysis
 
+> **⚠️ PARTLY SUPERSEDED (Round 47, 2026-10-04).** Everything below that
+> relies on session phases (V014/V015: `event_phases`, phase ownership,
+> partner leads, visit-level attendance) was removed by client decision in
+> migration **V026** — volunteers now enroll directly in sessions, with one
+> attendance record each. Beneficiary communities (V013) and all
+> non-phase dispositions remain accurate.
+
 | | |
 |---|---|
 | **Subject** | *Parinaam_Volunteering_Activity_Attributes.docx* (JPMC requirements reference: Exposure Visits, Read to Rise, Chote Kadam, Activity-Based Outings) checked against the VMS implementation |

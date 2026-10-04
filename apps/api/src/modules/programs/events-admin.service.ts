@@ -203,14 +203,6 @@ export class EventsAdminService {
        WHERE ec.event_id = $1 ORDER BY bc.name`,
       [id],
     );
-    row.phases = await this.dataSource.query(
-      `SELECT ph.*, v.first_name AS lead_first_name, v.last_name AS lead_last_name
-       FROM event_phases ph
-       LEFT JOIN volunteers v ON v.id = ph.partner_lead_volunteer_id
-       WHERE ph.event_id = $1
-       ORDER BY ph.sort_order, ph.start_date, ph.created_at`,
-      [id],
-    );
     return row;
   }
 
@@ -319,17 +311,9 @@ export class EventsAdminService {
   async complete(id: string) {
     const event = await this.events.findOneBy({ id });
     if (!event) throw new NotFoundException('Event not found');
-    const [{ count: phaseCount }] = await this.dataSource.query(
-      'SELECT COUNT(*)::int AS count FROM event_phases WHERE event_id = $1',
-      [id],
-    );
-    if (Number(phaseCount) > 0) {
-      throw new BusinessException(
-        'PHASED_SESSION',
-        'This session has phases — it completes automatically when every phase is complete.',
-      );
-    }
-    if (event.status !== 'upcoming') {
+    // 'inprogress' is a legacy value from the retired phases model (V026) —
+    // sessions still holding it close the same way.
+    if (event.status !== 'upcoming' && event.status !== 'inprogress') {
       throw new BusinessException(
         'NOT_UPCOMING',
         `Only an upcoming session can be marked completed — this one is ${event.status}.`,

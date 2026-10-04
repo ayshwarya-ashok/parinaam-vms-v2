@@ -403,9 +403,7 @@ FROM (VALUES
 JOIN events e     ON e.code = m.ecode
 JOIN users u      ON u.email = m.email
 JOIN volunteers v ON v.user_id = u.id
--- V015 split the old UNIQUE into partial indexes; these are unphased rows,
--- so the conflict target must name the partial index predicate.
-ON CONFLICT (event_id, volunteer_id) WHERE phase_id IS NULL DO NOTHING;
+ON CONFLICT (event_id, volunteer_id) DO NOTHING;
 
 -- -----------------------------------------------------------------------------
 -- Coordinator occurrence reports (source of the beneficiary KPI)

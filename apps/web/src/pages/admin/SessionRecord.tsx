@@ -38,7 +38,6 @@ import {
 } from '@/components';
 import type { PickerVolunteer } from '@/components';
 import { tokens } from '@/theme';
-import { PhasesPanel, type PhaseRow, type VisitRow } from './PhasesPanel';
 
 const ABSENCE_REASONS = [
   'Personal emergency',
@@ -115,8 +114,6 @@ interface SessionRecordPayload {
     submittedAt: string;
   } | null;
   photos: Array<{ id: string; caption: string | null }>;
-  phases: PhaseRow[];
-  visits: VisitRow[];
   preSession: {
     details_sent: number;
     details_last_at: string | null;
@@ -455,7 +452,7 @@ export function SessionRecord() {
       description={`${event.code} · ${event.activity_name}`}
       actions={
         <>
-          {event.status === 'upcoming' && (data?.phases?.length ?? 0) === 0 && String(event.date).slice(0, 10) <= todayIsoLocal() && (
+          {(event.status === 'upcoming' || event.status === 'inprogress') && String(event.date).slice(0, 10) <= todayIsoLocal() && (
             <Tooltip title="Mark this session as conducted — it then counts in reports and walk-ins can be recorded">
               <Button variant="pill" disabled={markCompleted.isPending} onClick={() => markCompleted.mutate()}>
                 ✓ Mark completed
@@ -645,16 +642,6 @@ export function SessionRecord() {
           </Box>
         )}
       </Paper>
-
-      <PhasesPanel
-        eventId={event.id}
-        eventStatus={event.status}
-        phases={data?.phases ?? []}
-        visits={data?.visits ?? []}
-        enrolledIds={(data?.roster ?? [])
-          .filter((r) => r.enrollment_status === 'enrolled')
-          .map((r) => r.volunteer_id)}
-      />
 
       <Box
         sx={{

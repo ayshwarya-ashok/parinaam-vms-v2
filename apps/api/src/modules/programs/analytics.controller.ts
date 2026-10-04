@@ -27,8 +27,7 @@ export class AnalyticsController {
          -- "Awaiting your review" cards (Round 28): what a staff login should act on.
          (SELECT COUNT(*)::int FROM volunteers WHERE registration_status = 'pending') AS pending_registrations,
          (SELECT COUNT(*)::int FROM events e
-           WHERE e.status = 'upcoming' AND e.date <= CURRENT_DATE
-             AND NOT EXISTS (SELECT 1 FROM event_phases ph WHERE ph.event_id = e.id)) AS sessions_to_close,
+           WHERE e.status = 'upcoming' AND e.date <= CURRENT_DATE) AS sessions_to_close,
          (SELECT COUNT(*)::int FROM v_program_participation pp
            JOIN volunteers v ON v.id = pp.volunteer_id
            JOIN users u ON u.id = v.user_id

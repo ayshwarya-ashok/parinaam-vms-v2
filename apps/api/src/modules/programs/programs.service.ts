@@ -363,10 +363,7 @@ export class ProgramsService {
     const events = await this.dataSource.query(
       `SELECT e.id, e.code, e.name, e.date, e.start_time, e.duration_hours, e.location,
               e.city, e.max_slots, e.status, c.name AS coordinator_name,
-              cap.enrolled_count, cap.waitlist_count, cap.spots_left, cap.is_enrollable,
-              (SELECT COUNT(*)::int FROM event_phases ph WHERE ph.event_id = e.id) AS phase_total,
-              (SELECT COUNT(*)::int FROM event_phases ph
-               WHERE ph.event_id = e.id AND ph.status = 'completed') AS phases_completed
+              cap.enrolled_count, cap.waitlist_count, cap.spots_left, cap.is_enrollable
        FROM events e
        JOIN coordinators c ON c.id = e.coordinator_id
        JOIN v_event_capacity cap ON cap.event_id = e.id

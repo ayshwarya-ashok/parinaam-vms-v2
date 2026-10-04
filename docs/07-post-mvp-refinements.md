@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-10-04 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across forty-six review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across forty-seven review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -1196,6 +1196,47 @@ Completing 8c — manual capture now matches the emailed forms on every path:
 Verified: staff submit + override round-tripped on July Drive via API (the seeded report
 was restored afterwards), the authz matrix passes with the new row, and the browser shows
 the walk-in time fields with the derived-hours note and the prefilled override dialog.
+
+---
+
+## Round 47 — The session-phases concept, removed entirely  (2026-10-04)
+
+A product reversal, by client decision: **there are no session phases**. No phase
+responsibility, no partner leads, no visit-level attendance — every volunteer enrolls
+directly in a session, attendance is one record per volunteer per session, and a session
+closes through the explicit "Mark completed" action. (The volunteer-lifecycle phase —
+Onboarding / In Training / Active / Inactive — is a different concept and is untouched,
+as are beneficiary communities.)
+
+- **V026** drops `event_phases`, `fn_recompute_event_phase_status`, the `phase_status` /
+  `phase_responsibility` enums, and the `phase_id` / `visit_date` columns on
+  `attendance_records`, restoring the full `UNIQUE (event_id, volunteer_id)`. **No hours
+  are lost**: each volunteer's visit rows are folded into a single per-session record
+  whose hours are the sum of their visits — exactly what certificates and reports were
+  already reading (the Chote Kadam mentor's 3 h survive as one plain record).
+- **API**: the nine `/phases/*` routes, `/phases/mine`, partner-complete, and the two
+  visit endpoints are gone (404), along with `PhasesService`, the `EventPhase` entity,
+  the phase DTOs, and every `phase_id` predicate. The session record, admin event
+  detail, and volunteer session detail no longer carry `phases`/`visits`; the dashboard
+  "sessions to close" count no longer excludes phased sessions. "Mark completed" also
+  accepts the legacy `inprogress` status, so sessions stranded in it close normally —
+  the enum value stays for history.
+- **Web**: `PhasesPanel` deleted; the session record's Phases section, the volunteer
+  dashboard's "My phase responsibilities", the session detail's phase cards and
+  "Mark my side complete", and the activity table's n/n-phases counter are all gone.
+  "Mark completed" now also appears on `inprogress` sessions whose date has passed.
+- **Seeds**: S005 no longer plants the seven-phase mentor journey — it seeds the same
+  single attendance record V026 produces on a migrated database; S002's attendance
+  conflict target returns to the plain `(event_id, volunteer_id)`.
+- The authz matrix shed the nine phase/visit rows: **73 endpoints × 4 roles = 292
+  checks**, all passing. `docs/08`/`docs/09` carry superseded banners.
+
+Verified: fresh-boot dry-run on a throwaway Postgres 16 (26 migrations incl. V026, no
+phase tables/types/columns, seeds apply cleanly, mentor hours intact); API probes show
+no `phases`/`visits` keys anywhere and 404s on every retired route; the formerly
+seven-phase Anganwadi session was closed live via "Mark completed"; browser checks
+(admin session record, activity detail, volunteer dashboard and session detail) render
+phase-free with the lifecycle chip still in place.
 
 ---
 

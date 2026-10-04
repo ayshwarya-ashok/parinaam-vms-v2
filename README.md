@@ -2,8 +2,8 @@
 
 Volunteer Management System for Parinaam Foundation — a full rebuild derived from
 `VMS_prototype_v2.html` and `VMS_database_model.md`, delivered in eight phases and refined
-through forty-six post-MVP review rounds (`docs/07-post-mvp-refinements.md`) and the client's
-phased-sessions refinement (`docs/08`, `docs/09`).
+through forty-seven post-MVP review rounds (`docs/07-post-mvp-refinements.md`) and the client's
+communities refinement (`docs/08`, `docs/09` — the phases half was later retired in Round 47).
 
 **Stack** React 18 + MUI · NestJS 10 · PostgreSQL 16 · Redis · **n8n** (email orchestration) ·
 **Mailpit** (sample mailbox) — all in Docker, all local.
@@ -19,10 +19,10 @@ programs            (no dates)      "Community Health Camp"      ← can be disc
           └── events (DATED)        15 Jul 09:00 · 19 Aug 09:00  ← volunteers enroll HERE
 ```
 
-Certificates attach to **programmes** (hours summed across attended occurrences — visit rows
-included); feedback and attendance attach to **occurrences**. A session may carry **phases**
-(multi-day, owned by Parinaam / a partner lead / both) and must serve at least one
-**beneficiary community**. `docs/01-design-document.md` §2 has the full model.
+Certificates attach to **programmes** (hours summed across attended occurrences); feedback
+and attendance attach to **occurrences**. Volunteers enroll directly in a session — one
+attendance record per volunteer per session — and every published session must serve at
+least one **beneficiary community**. `docs/01-design-document.md` §2 has the full model.
 
 ---
 
@@ -86,8 +86,8 @@ the box** (reference date 2026-08-18):
 - Two issued certificates (individual + corporate), published testimonials feeding the public page
 - Two sessions on 10 Sep that deliberately **overlap**, for the scheduling-conflict flow
 - **The four client-document scenarios** (S005): AAP Exposure Visit and Read to Rise, the
-  **seven-phase Chote Kadam mentor journey** (in progress, CSR volunteer as named lead, one
-  logged visit), and the Snow City outing — each linked to a beneficiary community
+  **Chote Kadam mentor journey** (in progress, with the CSR mentor's logged hours), and the
+  Snow City outing — each linked to a beneficiary community
 - Real PDF training materials — run once after first boot:
 
 ```bash
@@ -147,7 +147,7 @@ from Volunteers → **🔑 Reset a password**, which forces the owner to set the
 | Volunteer | `meera@example.com` | Active; enrolled in the (full) Sept Lake drive; a published testimonial is hers |
 | Volunteer | `ananya@example.com` | Active, all compliance passed |
 | Volunteer | `deepa@example.com` | Onboarding — hasn't signed consent yet; shows the consent gate |
-| CSR volunteer | `csr@techcorp.in` | Holds the **corporate** certificate naming TechCorp; named **mentor lead** on the Chote Kadam phases (EVT-2026-0204) |
+| CSR volunteer | `csr@techcorp.in` | Holds the **corporate** certificate naming TechCorp; mentor with logged hours on the Chote Kadam journey (EVT-2026-0204) |
 | Volunteer | `kavya@techcorp.in` | **Individual affiliated to TechCorp** (V017 scenario) — same company as the CSR volunteer above, different category |
 | Volunteer | `anita.rao@example.com` | **Registration pending** — can log in and train, cannot enroll until approved |
 | **Field coordinator** | `priya@parinaam.org` | Signs in at **/admin/login**; full Field Execution, Recognition and Metrics; read-only Programs, Communities, Calendar and Volunteers; no Reports or Trainings (`vikram@parinaam.org` is the second one) |
@@ -264,15 +264,6 @@ Admin → **Programs**. The hierarchy is programme → activity → session (dat
 - **Beneficiary communities** (Admin → Communities): every published session must serve at
   least one; the community page lists its sessions by status (upcoming / in progress /
   completed).
-- **Phases** (optional, on the session record): a session can be multi-phase — each phase is a
-  day or a date range owned by the Parinaam team, a partner (a named volunteer lead marks it),
-  or both in collaboration. Completing every phase completes the session automatically; while
-  phases run, the session shows as **in progress** (counted separately from *conducted*).
-  Attendance on phased sessions is logged **per visit** (volunteer + day + hours), and hours
-  add up across all phases for certificates. Admin overrides of phase status are audited, and
-  knocking a phase back reverts the session. A session with no phases behaves exactly as the
-  bullet above. Try it: **Green Bengaluru → Lakefront Sapling Drive**.
-
 ## 2.5 Orientation & training
 
 - Admin → **Trainings**: compliance (mandatory) vs activity trainings, materials (PDFs open
@@ -299,9 +290,6 @@ Admin → **Field Execution** — one row per session:
 - **Pre-session emails go out automatically**: programme details up to a week before and a
   reminder the day before (daily sweep, 09:30 IST) — and the session record has **re-send
   buttons** with sent counts for both.
-- On **phased** sessions, attendance is logged per **visit** (volunteer + day + hours) under
-  each phase; hours add up across phases for certificates. The admin can add any active
-  volunteer to a phase mid-session.
 - On a **completed** session, **✉ Send sponsor pack** emails the corporate sponsor the
   session's outcomes plus 7-day links to its photos.
 - Volunteers can attach up to two **photos to their feedback** (EXIF-stripped, private until
@@ -371,12 +359,10 @@ Each of these runs end to end on the seed data, in a few minutes:
 8. **The retake rule.** As `rahul@example.com` open the *Orientation* training: it offers a
    retake with the latest-score warning. Fail it on purpose — the pass is revoked; pass it
    again — restored, with the full attempt history kept.
-9. **Walk the Chote Kadam mentor journey.** Programs → Chote Kadam → open **Anganwadi
-   Renovation — Hosur Road** (EVT-2026-0204): seven phases, phase 1 done, phase 2 running
-   with a logged mentor visit. **Log a visit** under phase 2 (any date in its window), mark
-   the Parinaam side of a collab phase, then **Override** one with a reason and watch the
-   session status follow. As `csr@techcorp.in`, see the same phases on the session detail
-   with **"Mark my side complete"**, and the open responsibilities on the dashboard.
+9. **Close the Chote Kadam mentor journey.** Programs → Chote Kadam → open **Anganwadi
+   Renovation — Hosur Road** (EVT-2026-0204): the session is **in progress** with the CSR
+   mentor's 3 logged hours on the roster. Its date has passed, so **✓ Mark completed**
+   closes it — the hours then count toward the corporate certificate.
 10. **Communities and pre-session emails.** Admin → **Communities** → open *DJ Halli Learning
     Community* and filter its sessions by status. Then open any upcoming session's record and
     hit **✉ Send details email** — the T-7 programme-details mail (normally sent
@@ -410,8 +396,9 @@ Each top-level directory has its own README with the conventions that matter ins
 
 1. **`docs/07-post-mvp-refinements.md`** — what changed after the MVP and why; the product
    decisions and app-wide conventions live here.
-2. `docs/08-phased-sessions-and-communities.md` — the client refinement of Aug 2026: phases,
-   communities, visit-level attendance, and the demo scenarios for all four client programmes.
+2. `docs/08-phased-sessions-and-communities.md` — the client refinement of Aug 2026
+   (communities, plus the session-phases model **removed again in Round 47** — the banner
+   at its top says what still applies) and the demo scenarios for the client programmes.
 3. `docs/09-client-doc-impact-analysis.md` — the client requirements document checked against
    the implementation: what fits, the gap register, and the pending decisions.
 4. `docs/10-brand-palette.md` — the logo-derived color palette, **applied app-wide** (toasts

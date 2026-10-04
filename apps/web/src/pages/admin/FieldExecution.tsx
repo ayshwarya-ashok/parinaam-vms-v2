@@ -235,7 +235,7 @@ export function FieldExecution() {
                   )}
                 </TableCell>
                 <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                  <Tooltip title="Open this session's record — roster, attendance, phases, corrections">
+                  <Tooltip title="Open this session's record — roster, attendance, corrections">
                     <Button
                       size="small"
                       variant="pillOutlined"
