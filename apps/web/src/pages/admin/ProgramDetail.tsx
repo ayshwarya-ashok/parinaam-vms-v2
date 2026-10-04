@@ -9,6 +9,7 @@ import {
   DialogTitle,
   Paper,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -112,61 +113,75 @@ export function ProgramDetail() {
         <>
           <StatusPill status={program.status} />
           {!readOnly && !isDeleted && (<>
-          <Button component={RouterLink} to={`/admin/programs/${id}/edit`} variant="pillOutlined" size="small">
-            ✏️ Edit
-          </Button>
-          {program.status === 'draft' && (
-            <Button
-              variant="pill"
-              size="small"
-              onClick={() =>
-                action.mutate('publish', {
-                  onSuccess: () => enqueueSnackbar('Program published', { variant: 'success' }),
-                })
-              }
-            >
-              Publish
+          <Tooltip title="Edit the program's name, description and default coordinator">
+            <Button component={RouterLink} to={`/admin/programs/${id}/edit`} variant="pillOutlined" size="small">
+              ✏️ Edit
             </Button>
+          </Tooltip>
+          {program.status === 'draft' && (
+            <Tooltip title="Make the program active — its sessions can then open for enrollment">
+              <Button
+                variant="pill"
+                size="small"
+                onClick={() =>
+                  action.mutate('publish', {
+                    onSuccess: () => enqueueSnackbar('Program published', { variant: 'success' }),
+                  })
+                }
+              >
+                Publish
+              </Button>
+            </Tooltip>
           )}
           {program.status === 'active' && (
             <>
-              <Button variant="pillOutlined" size="small" onClick={() => openAnnounce.mutate()}>
-                📢 Announce
-              </Button>
-              <Button
-                variant="pillOutlined"
-                size="small"
-                sx={{ color: 'secondary.dark', borderColor: 'rgba(27,110,160,0.4)' }}
-                onClick={() => setDiscontinueOpen(true)}
-              >
-                ✕ Discontinue
-              </Button>
+              <Tooltip title="Preview and email an announcement of this program's upcoming sessions to opted-in volunteers">
+                <Button variant="pillOutlined" size="small" onClick={() => openAnnounce.mutate()}>
+                  📢 Announce
+                </Button>
+              </Tooltip>
+              <Tooltip title="Pause the program: new enrollment stops, nothing is cancelled, reversible">
+                <Button
+                  variant="pillOutlined"
+                  size="small"
+                  sx={{ color: 'secondary.dark', borderColor: 'rgba(27,110,160,0.4)' }}
+                  onClick={() => setDiscontinueOpen(true)}
+                >
+                  ✕ Discontinue
+                </Button>
+              </Tooltip>
             </>
           )}
           {isDiscontinued && (
-            <Button
-              variant="pill"
-              size="small"
-              onClick={() =>
-                action.mutate('reactivate', {
-                  onSuccess: () => enqueueSnackbar('Program reactivated', { variant: 'success' }),
-                })
-              }
-            >
-              Reactivate
-            </Button>
+            <Tooltip title="Resume the program — enrollment opens again">
+              <Button
+                variant="pill"
+                size="small"
+                onClick={() =>
+                  action.mutate('reactivate', {
+                    onSuccess: () => enqueueSnackbar('Program reactivated', { variant: 'success' }),
+                  })
+                }
+              >
+                Reactivate
+              </Button>
+            </Tooltip>
           )}
-          <Button component={RouterLink} to={`/admin/programs/${id}/activities/new`} variant="pill" size="small">
-            + Add Activity
-          </Button>
-          <Button
-            variant="pillOutlined"
-            size="small"
-            sx={{ color: '#8B1A1A', borderColor: 'rgba(139,26,26,0.4)' }}
-            onClick={() => { setDeleteConfirmName(''); setDeleteReason(''); setDeleteOpen(true); }}
-          >
-            🗑 Delete
-          </Button>
+          <Tooltip title="Add a new activity under this program">
+            <Button component={RouterLink} to={`/admin/programs/${id}/activities/new`} variant="pill" size="small">
+              + Add Activity
+            </Button>
+          </Tooltip>
+          <Tooltip title="Permanently delete the program and everything under it — cannot be reversed">
+            <Button
+              variant="pillOutlined"
+              size="small"
+              sx={{ color: '#8B1A1A', borderColor: 'rgba(139,26,26,0.4)' }}
+              onClick={() => { setDeleteConfirmName(''); setDeleteReason(''); setDeleteOpen(true); }}
+            >
+              🗑 Delete
+            </Button>
+          </Tooltip>
           </>)}
         </>
       }
@@ -247,21 +262,25 @@ export function ProgramDetail() {
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start', flexShrink: 0 }}>
-                <Button component={RouterLink} to={`/admin/activities/${a.id}`} variant="pillOutlined" size="small" sx={{ px: 2, py: 0.5 }}>
-                  Sessions
-                </Button>
+                <Tooltip title="Open this activity and its scheduled sessions">
+                  <Button component={RouterLink} to={`/admin/activities/${a.id}`} variant="pillOutlined" size="small" sx={{ px: 2, py: 0.5 }}>
+                    Sessions
+                  </Button>
+                </Tooltip>
                 {/* Nothing new is scheduled under a deleted activity or
                     program — the button goes, not just the endpoint (6b). */}
                 {!readOnly && a.status !== 'deleted' && !isDeleted && (
-                  <Button
-                    component={RouterLink}
-                    to={`/admin/activities/${a.id}/events/new`}
-                    variant="pill"
-                    size="small"
-                    sx={{ px: 2, py: 0.5 }}
-                  >
-                    + Schedule
-                  </Button>
+                  <Tooltip title="Schedule a new session of this activity">
+                    <Button
+                      component={RouterLink}
+                      to={`/admin/activities/${a.id}/events/new`}
+                      variant="pill"
+                      size="small"
+                      sx={{ px: 2, py: 0.5 }}
+                    >
+                      + Schedule
+                    </Button>
+                  </Tooltip>
                 )}
               </Box>
             </Box>

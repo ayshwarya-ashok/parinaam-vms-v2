@@ -1,8 +1,16 @@
 import {
   Box,
   Button,
+  Checkbox,
   Chip,
+  FormControl,
+  InputLabel,
+  ListItemText,
+  MenuItem,
+  OutlinedInput,
   Paper,
+  Select,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -24,14 +32,22 @@ function fmtDate(iso: string): string {
 
 /** Per-occurrence feedback review: aggregates on top, submissions below, publish per card (BR-16). */
 export function FeedbackAdmin() {
-  const [programId, setProgramId] = useState('');
+  // Multi-select program filter (Round 43): empty selection means "All".
+  const [programIds, setProgramIds] = useState<string[]>([]);
   const [rating, setRating] = useState('all');
   const queryClient = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
 
   const { data: programs } = usePrograms('', 'all');
-  const { data: analytics } = useFeedbackAnalytics(programId || undefined);
-  const { data: rows } = useAdminFeedback({ programId, rating });
+  // The analytics endpoint takes one program; the tiles follow the selection
+  // when it is a single program and show the whole picture otherwise.
+  const { data: analytics } = useFeedbackAnalytics(
+    programIds.length === 1 ? programIds[0] : undefined,
+  );
+  const { data: allRows } = useAdminFeedback({ programId: '', rating });
+  const rows = programIds.length
+    ? (allRows ?? []).filter((r) => programIds.includes(r.program_id))
+    : allRows;
 
   const publish = useMutation({
     mutationFn: async (input: { id: string; publish: boolean }) =>
@@ -64,31 +80,59 @@ export function FeedbackAdmin() {
         <StatTile label="Published testimonials" value={analytics?.published ?? '—'} />
       </Box>
 
-      <FilterBar
-        groups={[
-          {
-            label: 'Program',
-            value: programId || 'all',
-            onChange: (v) => setProgramId(v === 'all' ? '' : v),
-            options: [
-              { value: 'all', label: 'All programs' },
-              ...(programs ?? []).map((p) => ({ value: p.id, label: p.name })),
-            ],
-          },
-          {
-            label: 'Rating',
-            value: rating,
-            onChange: setRating,
-            options: [
-              { value: 'all', label: 'All' },
-              { value: '5', label: '5★' },
-              { value: '4', label: '4★' },
-              { value: '3', label: '3★' },
-              { value: '2', label: '≤2★' },
-            ],
-          },
-        ]}
-      />
+      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', mb: 2 }}>
+        {/* Program list comes from the live catalog; multiple programs can be
+            ticked at once, and "All programs" clears the selection. */}
+        <FormControl size="small" sx={{ minWidth: 260 }}>
+          <InputLabel id="feedback-programs-label">Programs</InputLabel>
+          <Select
+            labelId="feedback-programs-label"
+            multiple
+            value={programIds}
+            input={<OutlinedInput label="Programs" />}
+            renderValue={(selected) =>
+              selected.length === 0
+                ? 'All programs'
+                : (programs ?? [])
+                    .filter((p) => selected.includes(p.id))
+                    .map((p) => p.name)
+                    .join(', ')
+            }
+            displayEmpty
+            onChange={(e) => {
+              const value = e.target.value as string[];
+              setProgramIds(value.includes('__all') ? [] : value);
+            }}
+          >
+            <MenuItem value="__all">
+              <Checkbox size="small" checked={programIds.length === 0} />
+              <ListItemText primary="All programs" />
+            </MenuItem>
+            {(programs ?? []).map((p) => (
+              <MenuItem key={p.id} value={p.id}>
+                <Checkbox size="small" checked={programIds.includes(p.id)} />
+                <ListItemText primary={p.name} />
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <FilterBar
+          groups={[
+            {
+              label: 'Rating',
+              value: rating,
+              onChange: setRating,
+              options: [
+                { value: 'all', label: 'All' },
+                { value: '5', label: '5★' },
+                { value: '4', label: '4★' },
+                { value: '3', label: '3★' },
+                { value: '2', label: '≤2★' },
+              ],
+            },
+          ]}
+        />
+      </Box>
 
       {rows?.length === 0 && <EmptyState message="No feedback matches your filters." />}
 
@@ -162,15 +206,25 @@ function FeedbackCard({
           <Chip label="Published testimonial" size="small"
             sx={{ height: 22, fontSize: '0.72rem', bgcolor: 'rgba(30,127,79,0.12)', color: tokens.success, fontWeight: 700 }} />
         )}
-        <Button
-          size="small"
-          variant={row.is_published_testimonial ? 'pillOutlined' : 'pill'}
-          sx={{ px: 1.5, py: 0.35 }}
-          disabled={busy}
-          onClick={() => onPublish(!row.is_published_testimonial)}
+        <Tooltip
+          title={
+            row.is_published_testimonial
+              ? 'Take this quote off the public impact page'
+              : 'Show this feedback as a quote on the public impact page'
+          }
         >
-          {row.is_published_testimonial ? 'Retract testimonial' : '📣 Publish as testimonial'}
-        </Button>
+          <span>
+            <Button
+              size="small"
+              variant={row.is_published_testimonial ? 'pillOutlined' : 'pill'}
+              sx={{ px: 1.5, py: 0.35 }}
+              disabled={busy}
+              onClick={() => onPublish(!row.is_published_testimonial)}
+            >
+              {row.is_published_testimonial ? 'Retract testimonial' : '📣 Publish as testimonial'}
+            </Button>
+          </span>
+        </Tooltip>
       </Box>
     </Paper>
   );

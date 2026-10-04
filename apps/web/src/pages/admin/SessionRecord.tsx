@@ -16,6 +16,7 @@ import {
   TableHead,
   TableRow,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -391,21 +392,27 @@ export function SessionRecord() {
       actions={
         <>
           {event.status === 'upcoming' && (data?.phases?.length ?? 0) === 0 && String(event.date).slice(0, 10) <= todayIsoLocal() && (
-            <Button variant="pill" disabled={markCompleted.isPending} onClick={() => markCompleted.mutate()}>
-              ✓ Mark completed
-            </Button>
+            <Tooltip title="Mark this session as conducted — it then counts in reports and walk-ins can be recorded">
+              <Button variant="pill" disabled={markCompleted.isPending} onClick={() => markCompleted.mutate()}>
+                ✓ Mark completed
+              </Button>
+            </Tooltip>
           )}
           {/* Enrollment closes when the date passes (BR-17) — the server
               would refuse anyway, so don't offer a dead-end button. */}
           {event.status === 'upcoming' && String(event.date).slice(0, 10) >= todayIsoLocal() && (
-            <Button variant="pillOutlined" onClick={() => { setEnrollVolunteer(null); setEnrollOpen(true); }}>
-              ＋ Enroll volunteer
-            </Button>
+            <Tooltip title="Enroll a volunteer on their behalf — they get the usual confirmation email">
+              <Button variant="pillOutlined" onClick={() => { setEnrollVolunteer(null); setEnrollOpen(true); }}>
+                ＋ Enroll volunteer
+              </Button>
+            </Tooltip>
           )}
           {event.status === 'completed' && (
-            <Button variant="pillOutlined" onClick={() => setSponsorOpen(true)}>
-              ✉ Send sponsor pack
-            </Button>
+            <Tooltip title="Email a sponsor the session's outcomes with links to its photos">
+              <Button variant="pillOutlined" onClick={() => setSponsorOpen(true)}>
+                ✉ Send sponsor pack
+              </Button>
+            </Tooltip>
           )}
           <StatusPill status={event.status} />
         </>
@@ -536,24 +543,28 @@ export function SessionRecord() {
             <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary', mr: 0.5 }}>
               Pre-session emails (T-7 details / T-1 reminder go out automatically — these re-send now):
             </Typography>
-            <Button
-              size="small"
-              variant="pillOutlined"
-              sx={{ px: 1.5, py: 0.25 }}
-              disabled={preSessionSend.isPending}
-              onClick={() => preSessionSend.mutate('details')}
-            >
-              ✉ Send details email{data?.preSession?.details_sent ? ` (${data.preSession.details_sent} sent)` : ''}
-            </Button>
-            <Button
-              size="small"
-              variant="pillOutlined"
-              sx={{ px: 1.5, py: 0.25 }}
-              disabled={preSessionSend.isPending}
-              onClick={() => preSessionSend.mutate('reminder')}
-            >
-              ✉ Send reminder email{data?.preSession?.reminder_sent ? ` (${data.preSession.reminder_sent} sent)` : ''}
-            </Button>
+            <Tooltip title="Email every enrolled volunteer the session details (venue, time, what to bring) now">
+              <Button
+                size="small"
+                variant="pillOutlined"
+                sx={{ px: 1.5, py: 0.25 }}
+                disabled={preSessionSend.isPending}
+                onClick={() => preSessionSend.mutate('details')}
+              >
+                ✉ Send details email{data?.preSession?.details_sent ? ` (${data.preSession.details_sent} sent)` : ''}
+              </Button>
+            </Tooltip>
+            <Tooltip title="Email every enrolled volunteer a day-before reminder now">
+              <Button
+                size="small"
+                variant="pillOutlined"
+                sx={{ px: 1.5, py: 0.25 }}
+                disabled={preSessionSend.isPending}
+                onClick={() => preSessionSend.mutate('reminder')}
+              >
+                ✉ Send reminder email{data?.preSession?.reminder_sent ? ` (${data.preSession.reminder_sent} sent)` : ''}
+              </Button>
+            </Tooltip>
           </Box>
         )}
       </Paper>
@@ -621,9 +632,11 @@ export function SessionRecord() {
           {isUpcoming ? `Enrolled volunteers (${summary.enrolled})` : 'Volunteer attendance'}
         </Typography>
         {!isUpcoming && event.status === 'completed' && (
-          <Button size="small" variant="pillOutlined" sx={{ px: 1.5 }} onClick={() => setWalkInOpen(true)}>
-            + Add walk-in
-          </Button>
+          <Tooltip title="Record attendance for someone who showed up without enrolling">
+            <Button size="small" variant="pillOutlined" sx={{ px: 1.5 }} onClick={() => setWalkInOpen(true)}>
+              + Add walk-in
+            </Button>
+          </Tooltip>
         )}
       </Box>
       <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary', mb: 1 }}>
@@ -683,10 +696,12 @@ export function SessionRecord() {
                       )}
                     </TableCell>
                     <TableCell align="right">
-                      <Button size="small" variant="pillOutlined" sx={{ px: 1.5, py: 0.25, color: tokens.accentStrong }}
-                        onClick={() => setRemoveTarget({ id: r.volunteer_id, name: `${r.first_name} ${r.last_name}` })}>
-                        Unenroll
-                      </Button>
+                      <Tooltip title="Remove them from this session — they are emailed, and the waitlist head takes the seat">
+                        <Button size="small" variant="pillOutlined" sx={{ px: 1.5, py: 0.25, color: tokens.accentStrong }}
+                          onClick={() => setRemoveTarget({ id: r.volunteer_id, name: `${r.first_name} ${r.last_name}` })}>
+                          Unenroll
+                        </Button>
+                      </Tooltip>
                     </TableCell>
                   </>
                 ) : (
@@ -741,25 +756,33 @@ export function SessionRecord() {
                   {r.notes ?? r.absence_detail ?? '—'}
                 </TableCell>
                 <TableCell align="right">
-                  <Button
-                    size="small"
-                    variant="pillOutlined"
-                    sx={{ px: 1.25, py: 0.3, whiteSpace: 'nowrap' }}
-                    onClick={() =>
-                      setEdit({
-                        row: r,
-                        attended: r.attended ?? true,
-                        hours: r.hours_contributed ? String(Number(r.hours_contributed)) : '',
-                        arrivalTime: r.arrival_time ? r.arrival_time.slice(0, 5) : '',
-                        departureTime: r.departure_time ? r.departure_time.slice(0, 5) : '',
-                        notes: r.notes ?? '',
-                        absenceReason: r.absence_reason ?? '',
-                        absenceDetail: r.absence_detail ?? '',
-                      })
+                  <Tooltip
+                    title={
+                      r.record_id
+                        ? 'Correct what was logged — attributed to you in the audit trail'
+                        : 'Log attendance for a volunteer who never submitted the form'
                     }
                   >
-                    {r.record_id ? '✏️ Correct' : '+ Log'}
-                  </Button>
+                    <Button
+                      size="small"
+                      variant="pillOutlined"
+                      sx={{ px: 1.25, py: 0.3, whiteSpace: 'nowrap' }}
+                      onClick={() =>
+                        setEdit({
+                          row: r,
+                          attended: r.attended ?? true,
+                          hours: r.hours_contributed ? String(Number(r.hours_contributed)) : '',
+                          arrivalTime: r.arrival_time ? r.arrival_time.slice(0, 5) : '',
+                          departureTime: r.departure_time ? r.departure_time.slice(0, 5) : '',
+                          notes: r.notes ?? '',
+                          absenceReason: r.absence_reason ?? '',
+                          absenceDetail: r.absence_detail ?? '',
+                        })
+                      }
+                    >
+                      {r.record_id ? '✏️ Correct' : '+ Log'}
+                    </Button>
+                  </Tooltip>
                 </TableCell>
                   </>
                 )}

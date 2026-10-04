@@ -168,30 +168,44 @@ export function ActivityDetail() {
         <>
           <StatusPill status={activity.status} />
           {!readOnly && activity.status !== 'deleted' && (<>
-          <Button component={RouterLink} to={`/admin/activities/${id}/edit`} variant="pillOutlined" size="small">
-            ✏️ Edit
-          </Button>
-          <Button
-            variant="pillOutlined"
-            size="small"
-            sx={activity.status === 'active' ? { color: 'secondary.dark', borderColor: 'rgba(27,110,160,0.4)' } : undefined}
-            onClick={() =>
-              activity.status === 'active' ? setDiscontinueOpen(true) : toggleActivity.mutate()
+          <Tooltip title="Edit the activity's details and default session settings">
+            <Button component={RouterLink} to={`/admin/activities/${id}/edit`} variant="pillOutlined" size="small">
+              ✏️ Edit
+            </Button>
+          </Tooltip>
+          <Tooltip
+            title={
+              activity.status === 'active'
+                ? 'Pause the activity: its sessions stop accepting enrollment, nothing is cancelled, reversible'
+                : 'Resume the activity — its sessions accept enrollment again'
             }
           >
-            {activity.status === 'active' ? '✕ Discontinue' : 'Reactivate'}
-          </Button>
-          <Button component={RouterLink} to={`/admin/activities/${id}/events/new`} variant="pill" size="small">
-            + Schedule Session
-          </Button>
-          <Button
-            variant="pillOutlined"
-            size="small"
-            sx={{ color: '#8B1A1A', borderColor: 'rgba(139,26,26,0.4)' }}
-            onClick={() => { setDeleteConfirmName(''); setDeleteReason(''); setDeleteOpen(true); }}
-          >
-            🗑 Delete
-          </Button>
+            <Button
+              variant="pillOutlined"
+              size="small"
+              sx={activity.status === 'active' ? { color: 'secondary.dark', borderColor: 'rgba(27,110,160,0.4)' } : undefined}
+              onClick={() =>
+                activity.status === 'active' ? setDiscontinueOpen(true) : toggleActivity.mutate()
+              }
+            >
+              {activity.status === 'active' ? '✕ Discontinue' : 'Reactivate'}
+            </Button>
+          </Tooltip>
+          <Tooltip title="Schedule a new session of this activity">
+            <Button component={RouterLink} to={`/admin/activities/${id}/events/new`} variant="pill" size="small">
+              + Schedule Session
+            </Button>
+          </Tooltip>
+          <Tooltip title="Permanently delete the activity — its future sessions are cancelled; cannot be reversed">
+            <Button
+              variant="pillOutlined"
+              size="small"
+              sx={{ color: '#8B1A1A', borderColor: 'rgba(139,26,26,0.4)' }}
+              onClick={() => { setDeleteConfirmName(''); setDeleteReason(''); setDeleteOpen(true); }}
+            >
+              🗑 Delete
+            </Button>
+          </Tooltip>
           </>)}
         </>
       }

@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
-| **Period** | 2026-08-20 → 2026-10-02 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across forty-two review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Period** | 2026-08-20 → 2026-10-04 (ongoing) |
+| **Driver** | Hands-on testing by the product owner across forty-three review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -1066,6 +1066,34 @@ answered CATALOG_DELETED, Kavya's session detail returned 200/cancelled/isDelete
 of 404, her `/enrollments/me` and `/phases/mine` both carried the deleted flag, December's
 calendar had no trace of it, and the dashboard screenshot shows the struck-through phase
 and the "No longer happening" card. Scratch data removed after.
+
+---
+
+## Round 43 — Pagination, a real program picker, and tooltips everywhere  (2026-10-04)
+
+- **Pagination** came to the two remaining long tables — Issue Certificates and Field
+  Execution — 25 rows per page, controls above the table per the house convention,
+  client-side over the filtered rows, snapping back to page one when the search or a
+  funnel changes.
+- **The feedback Program filter became a true multi-select dropdown.** It was already
+  dynamic (fed by the live program catalog); now several programs can be ticked at once,
+  "All programs" heads the list and clears the selection, and the submissions filter
+  client-side on `program_id`. The analytics tiles follow the selection when it is a
+  single program and show the whole picture otherwise (their endpoint takes one program).
+- **Tooltips on the action buttons, app-wide, both roles.** Every consequential button
+  now explains itself on hover in one precise sentence — what happens, who gets emailed,
+  and whether it can be undone. Covered: the volunteer directory (add/import/invite/
+  reset, approve/reject/welcome-back/inactivate/activate/delete, edit details), field
+  execution (record, send/resend), the session record (mark completed, enroll, sponsor
+  pack, pre-session emails, walk-in, unenroll, log/correct), program and activity pages
+  (edit, publish, announce, discontinue/reactivate, add activity, schedule, delete),
+  certificates (issue, bulk issue, PDF, preview, resend, reissue), reports (every
+  export), trainings (add, assessments, edit, inactivate), feedback (publish/retract
+  testimonial), and the volunteer's own enroll/withdraw/waitlist and certificate buttons.
+
+Browser-verified: Field Execution pages 49 rows as 1–25 / 26–49, certificates shows its
+pagination, hovering "✉ Send emails" renders its exact tooltip, and ticking one program
+in the feedback dropdown narrows five cards to that program's one.
 
 ---
 

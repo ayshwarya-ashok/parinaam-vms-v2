@@ -12,14 +12,16 @@ import {
   TableCell,
   TableContainer,
   TableHead,
+  TablePagination,
   TableRow,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
 import { useDebouncedValue } from '@/app/use-debounced';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api, asApiError } from '@/api/client';
 import { usePrograms } from '@/api/admin';
 import {
@@ -128,6 +130,14 @@ export function CertificatesAdmin() {
     certificate: (r) => r.certificate?.certificateNumber ?? null,
   });
 
+  // Pagination (Round 43) — client-side over the filtered rows, controls
+  // above the table per the house convention; search/funnel changes go back
+  // to page one.
+  const PAGE_SIZE = 25;
+  const [page, setPage] = useState(0);
+  useEffect(() => setPage(0), [dq, cf.filtered.length]);
+  const paged = sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
   const pendingInProgram = cf.filtered.filter((c) => !c.certificate?.issued).length;
 
   return (
@@ -136,9 +146,13 @@ export function CertificatesAdmin() {
       description="Every volunteer with attended hours, per program. Issuing renders the PDF, stores it, and emails it with the document attached."
       actions={
         bulkProgramId ? (
-          <Button variant="pill" disabled={pendingInProgram === 0} onClick={() => setBulkOpen(true)}>
-            🏆 Issue all pending ({pendingInProgram})
-          </Button>
+          <Tooltip title="Issue every pending certificate in the filtered program — each is rendered and emailed">
+            <span>
+              <Button variant="pill" disabled={pendingInProgram === 0} onClick={() => setBulkOpen(true)}>
+                🏆 Issue all pending ({pendingInProgram})
+              </Button>
+            </span>
+          </Tooltip>
         ) : undefined
       }
     >
@@ -148,6 +162,16 @@ export function CertificatesAdmin() {
         search={{ value: q, onChange: setQ, placeholder: 'Search volunteer, email or program…' }}
       />
 
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <TablePagination
+          component="div"
+          count={sorted.length}
+          page={page}
+          onPageChange={(_, p) => setPage(p)}
+          rowsPerPage={PAGE_SIZE}
+          rowsPerPageOptions={[PAGE_SIZE]}
+        />
+      </Box>
       <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3 }}>
         <Table size="small">
           <TableHead>
@@ -160,7 +184,7 @@ export function CertificatesAdmin() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {sorted.map((c) => (
+            {paged.map((c) => (
               <TableRow key={`${c.volunteerId}-${c.programId}`}>
                 <TableCell>
                   <Typography sx={{ fontWeight: 600, fontSize: '0.9rem' }}>
@@ -204,33 +228,43 @@ export function CertificatesAdmin() {
                 <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                   {c.certificate?.issued ? (
                     <>
-                      <Button size="small" variant="pillOutlined" sx={{ px: 1.25, py: 0.3, mr: 0.5 }}
-                        onClick={() => void openCertificate(c.certificate!.id)}>
-                        ⬇ PDF
-                      </Button>
-                      <Button size="small" variant="pillOutlined" sx={{ px: 1.25, py: 0.3, mr: 0.5 }}
-                        onClick={() => setPreviewId(c.certificate!.id)}>
-                        👁 Preview
-                      </Button>
-                      <Button size="small" variant="pillOutlined" sx={{ px: 1.25, py: 0.3, mr: 0.5 }}
-                        disabled={resend.isPending}
-                        onClick={() => resend.mutate(c.certificate!.id)}>
-                        ✉ Resend
-                      </Button>
-                      {c.certificate.stale && (
-                        <Button size="small" variant="pill" sx={{ px: 1.25, py: 0.3 }}
-                          disabled={reissue.isPending}
-                          onClick={() => reissue.mutate(c.certificate!.id)}>
-                          ↻ Reissue
+                      <Tooltip title="Download the certificate PDF">
+                        <Button size="small" variant="pillOutlined" sx={{ px: 1.25, py: 0.3, mr: 0.5 }}
+                          onClick={() => void openCertificate(c.certificate!.id)}>
+                          ⬇ PDF
                         </Button>
+                      </Tooltip>
+                      <Tooltip title="View the certificate here without downloading it">
+                        <Button size="small" variant="pillOutlined" sx={{ px: 1.25, py: 0.3, mr: 0.5 }}
+                          onClick={() => setPreviewId(c.certificate!.id)}>
+                          👁 Preview
+                        </Button>
+                      </Tooltip>
+                      <Tooltip title="Email the existing certificate PDF to the volunteer again">
+                        <Button size="small" variant="pillOutlined" sx={{ px: 1.25, py: 0.3, mr: 0.5 }}
+                          disabled={resend.isPending}
+                          onClick={() => resend.mutate(c.certificate!.id)}>
+                          ✉ Resend
+                        </Button>
+                      </Tooltip>
+                      {c.certificate.stale && (
+                        <Tooltip title="Hours changed since issue — recompute, re-render the PDF and email it again">
+                          <Button size="small" variant="pill" sx={{ px: 1.25, py: 0.3 }}
+                            disabled={reissue.isPending}
+                            onClick={() => reissue.mutate(c.certificate!.id)}>
+                            ↻ Reissue
+                          </Button>
+                        </Tooltip>
                       )}
                     </>
                   ) : (
-                    <Button size="small" variant="pill" sx={{ px: 1.5, py: 0.4 }}
-                      disabled={issue.isPending}
-                      onClick={() => setIssuing(c)}>
-                      🏆 Issue
-                    </Button>
+                    <Tooltip title="Issue the certificate — renders the PDF, stores it, and emails it to the volunteer">
+                      <Button size="small" variant="pill" sx={{ px: 1.5, py: 0.4 }}
+                        disabled={issue.isPending}
+                        onClick={() => setIssuing(c)}>
+                        🏆 Issue
+                      </Button>
+                    </Tooltip>
                   )}
                 </TableCell>
               </TableRow>

@@ -1,4 +1,4 @@
-import { Box, Button, Paper, Typography } from '@mui/material';
+import { Box, Button, Paper, Tooltip, Typography } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { useState } from 'react';
 import { openCertificate, useMyCertificates } from '@/api/recognition';
@@ -88,12 +88,16 @@ export function MyCertificates() {
                 {cert.certificateNumber} · issued {fmtDate(cert.issuedAt)}
               </Typography>
               <Box sx={{ display: 'flex', gap: 0.75 }}>
-                <Button size="small" variant="pillOutlined" sx={{ px: 1.5, py: 0.5 }} onClick={() => setPreviewId(cert.id)}>
-                  👁 Preview
-                </Button>
-                <Button size="small" variant="pill" sx={{ px: 1.75, py: 0.5 }} onClick={() => void openCertificate(cert.id)}>
-                  ⬇ Download PDF
-                </Button>
+                <Tooltip title="View your certificate here without downloading it">
+                  <Button size="small" variant="pillOutlined" sx={{ px: 1.5, py: 0.5 }} onClick={() => setPreviewId(cert.id)}>
+                    👁 Preview
+                  </Button>
+                </Tooltip>
+                <Tooltip title="Save the certificate PDF to your device">
+                  <Button size="small" variant="pill" sx={{ px: 1.75, py: 0.5 }} onClick={() => void openCertificate(cert.id)}>
+                    ⬇ Download PDF
+                  </Button>
+                </Tooltip>
               </Box>
             </Box>
           </Paper>

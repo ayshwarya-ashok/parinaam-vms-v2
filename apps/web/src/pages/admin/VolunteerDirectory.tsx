@@ -23,6 +23,7 @@ import {
   TablePagination,
   TableRow,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useSearchParams } from 'react-router-dom';
@@ -439,18 +440,26 @@ export function VolunteerDirectory() {
       actions={
         <>
           {!readOnly && (<>
-          <Button variant="pill" onClick={() => { setAddError(null); setAddForm({ ...emptyAdd }); }}>
-            ＋ Add volunteer
-          </Button>
-          <Button variant="pillOutlined" onClick={() => { setImportResult(null); setImportOpen(true); }}>
-            ⬆ Import XLSX/CSV
-          </Button>
-          <Button variant="pillOutlined" onClick={() => setInviteOpen(true)}>
-            ✉ Invite volunteers
-          </Button>
-          <Button variant="pillOutlined" onClick={() => { setResetResult(null); setResetEmail(''); setResetOpen(true); }}>
-            🔑 Reset a password
-          </Button>
+          <Tooltip title="Create one volunteer directly — arrives approved, with the initial password">
+            <Button variant="pill" onClick={() => { setAddError(null); setAddForm({ ...emptyAdd }); }}>
+              ＋ Add volunteer
+            </Button>
+          </Tooltip>
+          <Tooltip title="Bulk-create volunteers from an Excel or CSV file, using the downloadable template">
+            <Button variant="pillOutlined" onClick={() => { setImportResult(null); setImportOpen(true); }}>
+              ⬆ Import XLSX/CSV
+            </Button>
+          </Tooltip>
+          <Tooltip title="Email a registration link to one or more addresses">
+            <Button variant="pillOutlined" onClick={() => setInviteOpen(true)}>
+              ✉ Invite volunteers
+            </Button>
+          </Tooltip>
+          <Tooltip title="Reset a volunteer's or field coordinator's password to the default — they must change it on next login">
+            <Button variant="pillOutlined" onClick={() => { setResetResult(null); setResetEmail(''); setResetOpen(true); }}>
+              🔑 Reset a password
+            </Button>
+          </Tooltip>
           </>)}
           {pending > 0 && (
             <Button
@@ -606,67 +615,79 @@ export function VolunteerDirectory() {
                 <TableCell align="right" onClick={(e) => e.stopPropagation()} sx={{ whiteSpace: 'nowrap' }}>
                   {readOnly ? null : v.registrationStatus === 'pending' ? (
                     <>
+                      <Tooltip title="Approve this registration — the volunteer is emailed and can start enrolling">
+                        <Button
+                          size="small"
+                          variant="pill"
+                          sx={{ px: 1.1, py: 0.2, mr: 0.5, fontSize: '0.72rem' }}
+                          disabled={review.isPending}
+                          onClick={() => review.mutate({ id: v.id, decision: 'approve' })}
+                        >
+                          ✓ Approve
+                        </Button>
+                      </Tooltip>
+                      <Tooltip title="Reject with a reason — deactivates the account and emails the reason to the volunteer">
+                        <Button
+                          size="small"
+                          variant="pillOutlined"
+                          sx={{ px: 1.1, py: 0.2, color: tokens.accentStrong, fontSize: '0.72rem' }}
+                          onClick={() => { setRejecting(v); setRejectReason(''); }}
+                        >
+                          ✕ Reject
+                        </Button>
+                      </Tooltip>
+                    </>
+                  ) : v.isActive ? (
+                    <>
+                    <Tooltip title="Email them a welcome-back note with their upcoming sessions">
                       <Button
                         size="small"
-                        variant="pill"
-                        sx={{ px: 1.1, py: 0.2, mr: 0.5, fontSize: '0.72rem' }}
-                        disabled={review.isPending}
-                        onClick={() => review.mutate({ id: v.id, decision: 'approve' })}
+                        variant="pillOutlined"
+                        sx={{ px: 1.1, py: 0.2, fontSize: '0.72rem' }}
+                        disabled={welcomeBack.isPending}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          welcomeBack.mutate(v.id);
+                        }}
                       >
-                        ✓ Approve
+                        ✉ Welcome-back
                       </Button>
+                    </Tooltip>
+                    <Tooltip title="Block sign-in without deleting anything — history and hours are kept; reversible">
                       <Button
                         size="small"
                         variant="pillOutlined"
                         sx={{ px: 1.1, py: 0.2, color: tokens.accentStrong, fontSize: '0.72rem' }}
-                        onClick={() => { setRejecting(v); setRejectReason(''); }}
+                        onClick={() => setDeactivating(v)}
                       >
-                        ✕ Reject
+                        Inactivate
                       </Button>
-                    </>
-                  ) : v.isActive ? (
-                    <>
-                    <Button
-                      size="small"
-                      variant="pillOutlined"
-                      sx={{ px: 1.1, py: 0.2, fontSize: '0.72rem' }}
-                      disabled={welcomeBack.isPending}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        welcomeBack.mutate(v.id);
-                      }}
-                    >
-                      ✉ Welcome-back
-                    </Button>
-                    <Button
-                      size="small"
-                      variant="pillOutlined"
-                      sx={{ px: 1.1, py: 0.2, color: tokens.accentStrong, fontSize: '0.72rem' }}
-                      onClick={() => setDeactivating(v)}
-                    >
-                      Inactivate
-                    </Button>
+                    </Tooltip>
                     </>
                   ) : (
-                    <Button
-                      size="small"
-                      variant="pillOutlined"
-                      sx={{ px: 1.1, py: 0.2, fontSize: '0.72rem' }}
-                      disabled={setActive.isPending}
-                      onClick={() => setActive.mutate({ id: v.id, isActive: true })}
-                    >
-                      Activate
-                    </Button>
+                    <Tooltip title="Restore sign-in for this account">
+                      <Button
+                        size="small"
+                        variant="pillOutlined"
+                        sx={{ px: 1.1, py: 0.2, fontSize: '0.72rem' }}
+                        disabled={setActive.isPending}
+                        onClick={() => setActive.mutate({ id: v.id, isActive: true })}
+                      >
+                        Activate
+                      </Button>
+                    </Tooltip>
                   )}
                   {!readOnly && !v.firstName.startsWith('Erased') && (
-                    <Button
-                      size="small"
-                      variant="pillOutlined"
-                      sx={{ px: 1.1, py: 0.2, ml: 0.5, color: '#8B1A1A', borderColor: 'rgba(139,26,26,0.4)', fontSize: '0.72rem' }}
-                      onClick={() => setDeleting(v)}
-                    >
-                      Delete
-                    </Button>
+                    <Tooltip title="Permanently erase their identity (name, email, phone, sign-in) — hours stay in totals; cannot be undone">
+                      <Button
+                        size="small"
+                        variant="pillOutlined"
+                        sx={{ px: 1.1, py: 0.2, ml: 0.5, color: '#8B1A1A', borderColor: 'rgba(139,26,26,0.4)', fontSize: '0.72rem' }}
+                        onClick={() => setDeleting(v)}
+                      >
+                        Delete
+                      </Button>
+                    </Tooltip>
                   )}
                 </TableCell>
               </TableRow>
@@ -1254,9 +1275,11 @@ function VolunteerDetailDrawer({
             {/* Staff can correct details at ANY lifecycle stage (Round 36) —
                 admins and field coordinators alike; the API audits each edit. */}
             {!editing && (
-              <Button variant="pillOutlined" size="small" sx={{ px: 2, ml: 'auto' }} onClick={startEditing}>
-                ✏️ Edit details
-              </Button>
+              <Tooltip title="Correct this volunteer's details — works at any status; every edit is audited">
+                <Button variant="pillOutlined" size="small" sx={{ px: 2, ml: 'auto' }} onClick={startEditing}>
+                  ✏️ Edit details
+                </Button>
+              </Tooltip>
             )}
           </Box>
 

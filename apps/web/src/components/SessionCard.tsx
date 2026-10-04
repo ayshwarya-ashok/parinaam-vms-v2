@@ -1,5 +1,5 @@
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import { Box, Button, Chip, LinearProgress, Paper, Typography } from '@mui/material';
+import { Box, Button, Chip, LinearProgress, Paper, Tooltip, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import type { SessionRow } from '@/api/volunteer';
@@ -69,9 +69,11 @@ export function SessionCard({ session, onEnroll, onWithdraw, onLeaveWaitlist }: 
         <Button fullWidth disabled variant="pillOutlined" sx={{ color: `${tokens.success} !important`, borderColor: alpha(tokens.success, 0.4) }}>
           ✓ Enrolled
         </Button>
-        <Button fullWidth size="small" variant="pillOutlined" onClick={() => onWithdraw(session)}>
-          Withdraw
-        </Button>
+        <Tooltip title="Give up your seat — the first person on the waitlist takes it automatically">
+          <Button fullWidth size="small" variant="pillOutlined" onClick={() => onWithdraw(session)}>
+            Withdraw
+          </Button>
+        </Tooltip>
       </Box>
     );
   } else if (session.myState === 'waitlisted') {
@@ -80,9 +82,11 @@ export function SessionCard({ session, onEnroll, onWithdraw, onLeaveWaitlist }: 
         <Button fullWidth disabled variant="pillOutlined" sx={{ color: `${tokens.info} !important`, borderColor: alpha(tokens.info, 0.4) }}>
           ⏳ On waitlist #{session.waitlistPosition}
         </Button>
-        <Button fullWidth size="small" variant="pillOutlined" onClick={() => onLeaveWaitlist(session)}>
-          Leave waitlist
-        </Button>
+        <Tooltip title="Remove yourself from the waitlist — people behind you move up">
+          <Button fullWidth size="small" variant="pillOutlined" onClick={() => onLeaveWaitlist(session)}>
+            Leave waitlist
+          </Button>
+        </Tooltip>
       </Box>
     );
   } else if (locked) {
@@ -93,15 +97,19 @@ export function SessionCard({ session, onEnroll, onWithdraw, onLeaveWaitlist }: 
     );
   } else if (full) {
     action = (
-      <Button fullWidth variant="pillOutlined" sx={{ color: tokens.info, borderColor: alpha(tokens.info, 0.4) }} onClick={() => onEnroll(session)}>
-        Join waitlist
-      </Button>
+      <Tooltip title="The session is full — join the queue and you are enrolled automatically if a seat frees up">
+        <Button fullWidth variant="pillOutlined" sx={{ color: tokens.info, borderColor: alpha(tokens.info, 0.4) }} onClick={() => onEnroll(session)}>
+          Join waitlist
+        </Button>
+      </Tooltip>
     );
   } else {
     action = (
-      <Button fullWidth variant="pill" onClick={() => onEnroll(session)}>
-        Enroll now{capacity.spotsLeft <= 2 ? ` — ${capacity.spotsLeft} left!` : ''}
-      </Button>
+      <Tooltip title="Take a seat in this session — you get a confirmation email right away">
+        <Button fullWidth variant="pill" onClick={() => onEnroll(session)}>
+          Enroll now{capacity.spotsLeft <= 2 ? ` — ${capacity.spotsLeft} left!` : ''}
+        </Button>
+      </Tooltip>
     );
   }
 

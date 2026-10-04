@@ -8,6 +8,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
@@ -137,25 +138,34 @@ export function ReportsPage() {
       actions={
         <>
           {(['CSV', 'Excel', 'PDF'] as const).map((format) => (
-            <Button
-              key={format}
-              variant="pillOutlined"
-              disabled={exporting !== null}
-              onClick={() => void doExport(format)}
-            >
-              {exporting === format ? 'Exporting…' : `⬇ ${format}`}
-            </Button>
+            <Tooltip key={format} title={`Download the volunteer table below as a ${format} file`}>
+              <span>
+                <Button
+                  variant="pillOutlined"
+                  disabled={exporting !== null}
+                  onClick={() => void doExport(format)}
+                >
+                  {exporting === format ? 'Exporting…' : `⬇ ${format}`}
+                </Button>
+              </span>
+            </Tooltip>
           ))}
-          <Button
-            variant="pillOutlined"
-            disabled={exporting !== null}
-            onClick={() => void doCalendarExport()}
-          >
-            {exporting === 'Calendar' ? 'Exporting…' : `📅 ${new Date().getFullYear()} calendar`}
-          </Button>
-          <Button variant="pill" component={RouterLink} to="/admin/reports/scheduled">
-            🕐 Automated reports
-          </Button>
+          <Tooltip title="Download this year's full session calendar as an Excel file">
+            <span>
+              <Button
+                variant="pillOutlined"
+                disabled={exporting !== null}
+                onClick={() => void doCalendarExport()}
+              >
+                {exporting === 'Calendar' ? 'Exporting…' : `📅 ${new Date().getFullYear()} calendar`}
+              </Button>
+            </span>
+          </Tooltip>
+          <Tooltip title="Manage reports that email themselves on a schedule">
+            <Button variant="pill" component={RouterLink} to="/admin/reports/scheduled">
+              🕐 Automated reports
+            </Button>
+          </Tooltip>
         </>
       }
     >
@@ -177,15 +187,18 @@ export function ReportsPage() {
           List exports (Excel)
         </Typography>
         {LIST_EXPORTS.map((x) => (
-          <Button
-            key={x.type}
-            size="small"
-            variant="pillOutlined"
-            disabled={exporting !== null}
-            onClick={() => void doListExport(x.type, x.label)}
-          >
-            {exporting === x.type ? 'Exporting…' : `⬇ ${x.label}`}
-          </Button>
+          <Tooltip key={x.type} title={`Download the complete ${x.label.toLowerCase()} dataset as Excel`}>
+            <span>
+              <Button
+                size="small"
+                variant="pillOutlined"
+                disabled={exporting !== null}
+                onClick={() => void doListExport(x.type, x.label)}
+              >
+                {exporting === x.type ? 'Exporting…' : `⬇ ${x.label}`}
+              </Button>
+            </span>
+          </Tooltip>
         ))}
       </Paper>
 

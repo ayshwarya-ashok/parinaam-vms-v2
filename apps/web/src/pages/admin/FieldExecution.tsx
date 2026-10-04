@@ -11,12 +11,14 @@ import {
   TableCell,
   TableContainer,
   TableHead,
+  TablePagination,
   TableRow,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { api, asApiError } from '@/api/client';
 import { FilterBar, PageShell, SortableCell, StatusPill, useColumnFilters, useTableSort } from '@/components';
@@ -144,6 +146,12 @@ export function FieldExecution() {
     report: (r) => r.reportSubmitted,
   });
 
+  // Pagination (Round 43) — above the table per the house convention.
+  const PAGE_SIZE = 25;
+  const [page, setPage] = useState(0);
+  useEffect(() => setPage(0), [dq, cf.filtered.length]);
+  const paged = sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
   return (
     <PageShell
       title="Field Execution & Attendance"
@@ -155,6 +163,16 @@ export function FieldExecution() {
         search={{ value: q, onChange: setQ, placeholder: 'Search session, activity or program…' }}
       />
 
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <TablePagination
+          component="div"
+          count={sorted.length}
+          page={page}
+          onPageChange={(_, p) => setPage(p)}
+          rowsPerPage={PAGE_SIZE}
+          rowsPerPageOptions={[PAGE_SIZE]}
+        />
+      </Box>
       <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3 }}>
         <Table size="small">
           <TableHead>
@@ -171,7 +189,7 @@ export function FieldExecution() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {sorted.map((row) => (
+            {paged.map((row) => (
               <TableRow key={row.id} hover>
                 <TableCell sx={{ fontSize: '0.85rem' }}>{row.program.name}</TableCell>
                 <TableCell sx={{ fontSize: '0.85rem' }}>{row.activity.name}</TableCell>
@@ -217,23 +235,33 @@ export function FieldExecution() {
                   )}
                 </TableCell>
                 <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                  <Button
-                    size="small"
-                    variant="pillOutlined"
-                    sx={{ px: 1.25, py: 0.25, mr: 0.5, fontSize: '0.72rem' }}
-                    component={RouterLink}
-                    to={`/admin/sessions/${row.id}`}
+                  <Tooltip title="Open this session's record — roster, attendance, phases, corrections">
+                    <Button
+                      size="small"
+                      variant="pillOutlined"
+                      sx={{ px: 1.25, py: 0.25, mr: 0.5, fontSize: '0.72rem' }}
+                      component={RouterLink}
+                      to={`/admin/sessions/${row.id}`}
+                    >
+                      Record ↗
+                    </Button>
+                  </Tooltip>
+                  <Tooltip
+                    title={
+                      row.volunteerEmail.sent && row.coordinatorEmail.sent
+                        ? 'Preview and resend the attendance links to volunteers and/or the coordinator'
+                        : 'Preview and send the attendance links — one email per volunteer, one report link for the coordinator'
+                    }
                   >
-                    Record ↗
-                  </Button>
-                  <Button
-                    size="small"
-                    variant={row.volunteerEmail.sent && row.coordinatorEmail.sent ? 'pillOutlined' : 'pill'}
-                    sx={{ px: 1.25, py: 0.25, fontSize: '0.72rem' }}
-                    onClick={() => openModal.mutate(row)}
-                  >
-                    {row.volunteerEmail.sent && row.coordinatorEmail.sent ? '↻ Resend' : '✉ Send emails'}
-                  </Button>
+                    <Button
+                      size="small"
+                      variant={row.volunteerEmail.sent && row.coordinatorEmail.sent ? 'pillOutlined' : 'pill'}
+                      sx={{ px: 1.25, py: 0.25, fontSize: '0.72rem' }}
+                      onClick={() => openModal.mutate(row)}
+                    >
+                      {row.volunteerEmail.sent && row.coordinatorEmail.sent ? '↻ Resend' : '✉ Send emails'}
+                    </Button>
+                  </Tooltip>
                 </TableCell>
               </TableRow>
             ))}

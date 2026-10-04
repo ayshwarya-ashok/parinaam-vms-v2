@@ -1,4 +1,4 @@
-import { Box, Button, Chip, Paper, Typography } from '@mui/material';
+import { Box, Button, Chip, Paper, Tooltip, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useMutation } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
@@ -49,9 +49,11 @@ export function TrainingsList() {
     <PageShell
       title="Trainings"
       actions={
-        <Button component={RouterLink} to="/admin/trainings/new" variant="pill">
-          + Add Training
-        </Button>
+        <Tooltip title="Create a training — materials, quiz questions and pass rules">
+          <Button component={RouterLink} to="/admin/trainings/new" variant="pill">
+            + Add Training
+          </Button>
+        </Tooltip>
       }
     >
       <FilterBar
@@ -120,21 +122,33 @@ export function TrainingsList() {
               </Box>
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start', flexShrink: 0, flexWrap: 'wrap' }}>
                 {t.isMandatory && (
-                  <Button component={RouterLink} to={`/admin/trainings/${t.id}/assessments`} variant="pillOutlined" size="small" sx={{ px: 2, py: 0.5 }}>
-                    Assessments
-                  </Button>
+                  <Tooltip title="See who passed, who failed and who exhausted their attempts — with per-volunteer resets">
+                    <Button component={RouterLink} to={`/admin/trainings/${t.id}/assessments`} variant="pillOutlined" size="small" sx={{ px: 2, py: 0.5 }}>
+                      Assessments
+                    </Button>
+                  </Tooltip>
                 )}
-                <Button component={RouterLink} to={`/admin/trainings/${t.id}/edit`} variant="pillOutlined" size="small" sx={{ px: 2, py: 0.5 }}>
-                  Edit
-                </Button>
-                <Button
-                  variant="pillOutlined"
-                  size="small"
-                  sx={{ px: 2, py: 0.5, color: t.status === 'active' ? 'secondary.dark' : undefined }}
-                  onClick={() => toggle.mutate(t)}
+                <Tooltip title="Edit the training's materials, questions and rules">
+                  <Button component={RouterLink} to={`/admin/trainings/${t.id}/edit`} variant="pillOutlined" size="small" sx={{ px: 2, py: 0.5 }}>
+                    Edit
+                  </Button>
+                </Tooltip>
+                <Tooltip
+                  title={
+                    t.status === 'active'
+                      ? 'Hide this training from volunteers — existing passes stay valid; reversible'
+                      : 'Make this training available to volunteers again'
+                  }
                 >
-                  {t.status === 'active' ? 'Inactivate' : 'Reactivate'}
-                </Button>
+                  <Button
+                    variant="pillOutlined"
+                    size="small"
+                    sx={{ px: 2, py: 0.5, color: t.status === 'active' ? 'secondary.dark' : undefined }}
+                    onClick={() => toggle.mutate(t)}
+                  >
+                    {t.status === 'active' ? 'Inactivate' : 'Reactivate'}
+                  </Button>
+                </Tooltip>
               </Box>
             </Box>
           </Paper>
