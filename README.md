@@ -57,7 +57,7 @@ The defaults run out of the box. The ones worth knowing:
 | Variable | Default | Meaning |
 |---|---|---|
 | `SEED_DEMO_DATA` | `true` | Load the demo dataset on first boot (set `false` for a clean DB) |
-| `DATA_TOOLS_ENABLED` | `false` | Round 49: the admin **Data Tools** page (reset to the client baseline). Needs an API restart to take effect; keep `false` wherever real records accumulate |
+| `DATA_TOOLS_ENABLED` | `false` | The admin **Data Tools** page (Reset & seed demo data, §2.9). Needs an API restart to take effect; keep `false` wherever real records accumulate |
 | `API_PORT` / `WEB_PORT` | `3001` / `5174` | Host ports for API and web app |
 | `VITE_API_BASE_URL` | `/api/v1` | **Relative** — the app works behind any host: Caddy (:8090), the Vite dev server (:5174, which proxies `/api`), a tailnet name, a tunnel, or a production domain |
 | `VMS_WEBHOOK_SECRET` | dev value | HMAC secret shared between API and n8n — change per environment |
