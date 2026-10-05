@@ -361,11 +361,10 @@ export class CertificatesService {
    */
   async previewCustom(volunteerId: string, content: string): Promise<Buffer> {
     const volunteer = await this.requireCertifiableVolunteer(volunteerId);
-    const text = this.normalizeCustomText(content);
     return this.pdf.renderCustom({
       certificateNumber: '',
       volunteerName: volunteer.fullName,
-      bodyText: text,
+      bodyText: content,
       issuedOn: new Date().toISOString(),
       preview: true,
     });
@@ -379,7 +378,7 @@ export class CertificatesService {
    */
   async issueCustom(volunteerId: string, content: string, issuedBy: string): Promise<Certificate> {
     const volunteer = await this.requireCertifiableVolunteer(volunteerId);
-    const text = this.normalizeCustomText(content);
+    const text = content.replace(/\s+/g, ' ').trim();
 
     // Dry-run render BEFORE anything persists: text that cannot fit the
     // artwork must fail here, not after a number is consumed and a row saved.
@@ -466,21 +465,6 @@ export class CertificatesService {
       [`PAR-${year}-%`],
     );
     return `PAR-${year}-${String(next).padStart(6, '0')}`;
-  }
-
-  /** The word cap the compose screen shows — enforced here too, so the API
-   *  and the UI never disagree about what "too long" means. The renderer's
-   *  geometric fit check still applies on top (wide text can fail sooner). */
-  private normalizeCustomText(content: string): string {
-    const text = content.replace(/\s+/g, ' ').trim();
-    if (text.split(' ').length > 75) {
-      throw new BusinessException(
-        'TEXT_TOO_LONG',
-        'Keep the appreciation text under 75 words — the certificate holds only a short paragraph.',
-        400,
-      );
-    }
-    return text;
   }
 
   /**

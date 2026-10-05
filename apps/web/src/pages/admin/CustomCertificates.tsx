@@ -173,15 +173,7 @@ export function CustomCertificates() {
                 </Button>
               </Tooltip>
               <Box sx={{ flex: 1 }} />
-              <Tooltip
-                title={
-                  tooLong
-                    ? 'The text is too long for the certificate — shorten it to enable Preview'
-                    : tooShort
-                      ? 'Write at least a sentence to enable Preview'
-                      : 'Render the exact PDF, watermarked PREVIEW — nothing is stored or emailed'
-                }
-              >
+              <Tooltip title="Render the exact PDF, watermarked PREVIEW — nothing is stored or emailed">
                 <span>
                   <Button
                     size="small"
@@ -193,15 +185,7 @@ export function CustomCertificates() {
                   </Button>
                 </span>
               </Tooltip>
-              <Tooltip
-                title={
-                  tooLong
-                    ? 'The text is too long for the certificate — shorten it to enable Issue'
-                    : tooShort
-                      ? 'Write at least a sentence to enable Issue'
-                      : 'Issue the certificate — it is numbered, stored, and emailed to the volunteer immediately'
-                }
-              >
+              <Tooltip title="Issue the certificate — it is numbered, stored, and emailed to the volunteer immediately">
                 <span>
                   <Button
                     size="small"

@@ -95,13 +95,7 @@ export const theme = createTheme({
               boxShadow: '0 18px 36px rgba(27,110,160,0.34)',
               background: `linear-gradient(135deg, ${tokens.accent} 0%, ${tokens.accentStrong} 100%)`,
             },
-            // A disabled pill must READ disabled — keeping the blue gradient
-            // at half opacity looked clickable (Round 48 fix).
-            '&.Mui-disabled': {
-              background: alpha(tokens.textMain, 0.18),
-              color: 'rgba(255,255,255,0.85)',
-              boxShadow: 'none',
-            },
+            '&.Mui-disabled': { opacity: 0.5, color: '#fff' },
           },
         },
         {
