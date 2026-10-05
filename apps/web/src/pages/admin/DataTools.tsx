@@ -80,8 +80,8 @@ export function DataTools() {
               </li>
             </Box>
             <Alert severity="warning" sx={{ borderRadius: 2, mb: 2 }}>
-              This cannot be undone. A fresh full demo dataset only comes back with
-              <code> docker compose down -v && up</code>.
+              This cannot be undone. The reset touches <strong>only the database</strong> — it
+              runs in place, nothing is restarted, and the app stays up throughout.
             </Alert>
             <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
               <TextField

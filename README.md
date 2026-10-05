@@ -345,8 +345,10 @@ client-document catalog (AAP, Chote Kadam, Activity-Based Volunteering: 3 progra
 admin and 3 field coordinators (plus trainings, coordinators and the audit trail); removes
 every other program/activity/session/volunteer and all enrollments, attendance, certificates,
 feedback and email logs. The button arms only after typing **RESET**, the API additionally
-demands `confirm: "RESET"`, and running it twice lands on the same baseline. The full demo
-dataset only comes back with `docker compose down -v && up`.
+demands `confirm: "RESET"`, and running it twice lands on the same baseline. The reset is
+**database-only** — one transaction, nothing restarted, the app stays up. (Restoring the
+*full* demo dataset is the one thing it doesn't do; that remains the first-boot seed via
+`docker compose down -v && up`.)
 
 ## 2.10 Key workflows to try
 
