@@ -81,6 +81,13 @@ export function CustomCertificates() {
   const words = content.trim() === '' ? 0 : content.trim().split(/\s+/).length;
   const tooLong = words > MAX_WORDS || content.length > MAX_CHARS;
   const tooShort = content.trim().length < 20;
+  // One combined counter: show only the binding limit — whichever of the two
+  // caps the text is closer to (words for short-word prose, characters for
+  // long-word prose). Both still gate; only the display is singular.
+  const counter =
+    words / MAX_WORDS >= content.length / MAX_CHARS
+      ? `${words} / ${MAX_WORDS} words`
+      : `${content.length} / ${MAX_CHARS} characters`;
 
   const openPreview = async () => {
     if (!volunteer) return;
@@ -161,7 +168,7 @@ export function CustomCertificates() {
               inputProps={{ maxLength: MAX_CHARS }}
               helperText={
                 <Box component="span" sx={{ color: tooLong ? 'error.main' : undefined }}>
-                  {words} / {MAX_WORDS} words · {content.length} / {MAX_CHARS} characters
+                  {counter}
                   {tooLong ? ' — too long for the certificate' : ''}
                 </Box>
               }

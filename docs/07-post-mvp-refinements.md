@@ -1279,6 +1279,12 @@ already issued to that volunteer, each with a real thumbnail of its document.
   document itself clean (program certificates keep their facts caption; previews keep the
   "PREVIEW — not issued" notice). The three custom PDFs already issued were re-rendered in
   place to the new look.
+- **Fix (same round):** the compose counter shows **one combined message** — only the
+  binding limit (words for short-word prose, characters for long-word prose; e.g.
+  "76 / 75 words — too long for the certificate"), instead of the two side-by-side
+  counters that could look out of sync. Both caps still gate; only the display changed.
+  (An earlier variant of this fix — gray disabled pills app-wide plus a server-side word
+  cap — was applied and then reverted at the product owner's request.)
 
 Verified: ruler-overlay measurement of the artwork, Ghostscript renders of an issued
 PDF and a watermarked preview inspected visually; API round-trip as both admin and
