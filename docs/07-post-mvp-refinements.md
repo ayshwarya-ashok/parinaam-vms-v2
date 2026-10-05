@@ -1285,6 +1285,10 @@ already issued to that volunteer, each with a real thumbnail of its document.
   counters that could look out of sync. Both caps still gate; only the display changed.
   (An earlier variant of this fix — gray disabled pills app-wide plus a server-side word
   cap — was applied and then reverted at the product owner's request.)
+- **Fix (same round):** the Feedback page's Programs filter printed its label on top of
+  the rendered "All programs" value — a `displayEmpty` Select whose `InputLabel` stayed
+  un-shrunk at the empty value. The label is now pinned `shrink` with a `notched`
+  outline, so it floats on the border like every other filled field.
 
 Verified: ruler-overlay measurement of the artwork, Ghostscript renders of an issued
 PDF and a watermarked preview inspected visually; API round-trip as both admin and

@@ -84,12 +84,15 @@ export function FeedbackAdmin() {
         {/* Program list comes from the live catalog; multiple programs can be
             ticked at once, and "All programs" clears the selection. */}
         <FormControl size="small" sx={{ minWidth: 260 }}>
-          <InputLabel id="feedback-programs-label">Programs</InputLabel>
+          {/* displayEmpty renders "All programs" even with nothing selected, so
+              the label must stay floated (shrink) and the outline notched — an
+              un-shrunk label prints straight over the rendered value. */}
+          <InputLabel shrink id="feedback-programs-label">Programs</InputLabel>
           <Select
             labelId="feedback-programs-label"
             multiple
             value={programIds}
-            input={<OutlinedInput label="Programs" />}
+            input={<OutlinedInput notched label="Programs" />}
             renderValue={(selected) =>
               selected.length === 0
                 ? 'All programs'
