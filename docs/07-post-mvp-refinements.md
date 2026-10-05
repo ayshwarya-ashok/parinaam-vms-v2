@@ -1285,6 +1285,10 @@ already issued to that volunteer, each with a real thumbnail of its document.
   counters that could look out of sync. Both caps still gate; only the display changed.
   (An earlier variant of this fix — gray disabled pills app-wide plus a server-side word
   cap — was applied and then reverted at the product owner's request.)
+- **Fix (same round):** Adminer was unreachable after a from-scratch rebuild — the compose
+  port mapping pointed host 8082 at container port 8090, but Adminer listens on 8080; the
+  long-lived typo was masked by a container that predated it and surfaced when
+  `down -v && up` recreated everything. Mapping corrected (local and VM).
 - **Fix (same round):** the Feedback page's Programs filter printed its label on top of
   the rendered "All programs" value — a `displayEmpty` Select whose `InputLabel` stayed
   un-shrunk at the empty value. The label is now pinned `shrink` with a `notched`
