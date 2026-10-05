@@ -1279,6 +1279,11 @@ already issued to that volunteer, each with a real thumbnail of its document.
   document itself clean (program certificates keep their facts caption; previews keep the
   "PREVIEW — not issued" notice). The three custom PDFs already issued were re-rendered in
   place to the new look.
+- **Fix (same round):** over the word limit, the Issue button looked clickable — the `pill`
+  variant's disabled state kept its blue gradient at half opacity. Disabled pills now go
+  flat gray app-wide (`theme/index.ts`), both buttons' tooltips say *why* they are off, and
+  the **75-word cap is enforced server-side too** (`TEXT_TOO_LONG` from preview and issue),
+  so the API and the UI can never disagree about "too long".
 
 Verified: ruler-overlay measurement of the artwork, Ghostscript renders of an issued
 PDF and a watermarked preview inspected visually; API round-trip as both admin and
