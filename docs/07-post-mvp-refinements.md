@@ -1274,6 +1274,11 @@ already issued to that volunteer, each with a real thumbnail of its document.
   works. The volunteer wallet shows custom certificates as "Personal appreciation —
   From Parinaam Foundation".
 - Authz matrix: +3 staff-only rows — **76 endpoints × 4 roles = 304 checks**.
+- **Fix (same round):** issued custom certificates print **no certificate number** on the
+  artwork — the identifier lives in the record, the file name and the email, keeping the
+  document itself clean (program certificates keep their facts caption; previews keep the
+  "PREVIEW — not issued" notice). The three custom PDFs already issued were re-rendered in
+  place to the new look.
 
 Verified: ruler-overlay measurement of the artwork, Ghostscript renders of an issued
 PDF and a watermarked preview inspected visually; API round-trip as both admin and

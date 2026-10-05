@@ -274,16 +274,20 @@ export class CertificatePdfService {
       color: INK,
     });
 
-    // The quiet caption under the name: the number on an issued certificate,
-    // an unmissable notice on a preview.
-    const caption = data.preview ? 'PREVIEW — not issued' : data.certificateNumber;
-    page.drawText(caption, {
-      x: centerX - sansItalic.widthOfTextAtSize(caption, 8.5) / 2,
-      y: 302,
-      size: 8.5,
-      font: sansItalic,
-      color: MUTED,
-    });
+    // No caption under the name on an issued custom certificate (client
+    // decision, Round 48 fix): the number lives in the record, the file name
+    // and the email — the artwork stays clean. A preview still carries its
+    // unmissable notice there.
+    if (data.preview) {
+      const caption = 'PREVIEW — not issued';
+      page.drawText(caption, {
+        x: centerX - sansItalic.widthOfTextAtSize(caption, 8.5) / 2,
+        y: 302,
+        size: 8.5,
+        font: sansItalic,
+        color: MUTED,
+      });
+    }
 
     // The staff-written paragraph, centered line by line like the original.
     const bandMid = (BAND.top + BAND.bottom) / 2;
