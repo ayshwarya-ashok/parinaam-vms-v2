@@ -18,6 +18,7 @@ import { useState } from 'react';
 import { Link as RouterLink, Outlet, useLocation, useMatches, useNavigate } from 'react-router-dom';
 import { Alert } from '@mui/material';
 import { useAuth } from '../auth';
+import { useDataToolsStatus } from '@/api/admin';
 import { BreadcrumbProvider, useBreadcrumbTrail, type Crumb } from '../breadcrumbs';
 
 interface RouteHandle {
@@ -84,11 +85,21 @@ function AppLayoutInner({ variant, nav }: AppLayoutProps) {
   const { logout, user } = useAuth();
   const pendingReview = variant === 'volunteer' && user?.volunteer?.registrationStatus === 'pending';
 
+  // Data Tools (Round 49) is admin-only AND feature-flagged — the item shows
+  // only when the server says DATA_TOOLS_ENABLED is on.
+  const { data: dataTools } = useDataToolsStatus(variant === 'admin' && user?.role === 'admin');
+
   // Field coordinators share the admin shell minus the admin-only sections.
-  const visibleNav =
+  const visibleNav = (
     user?.role === 'field_coordinator'
-      ? nav.filter((item) => item.to !== '/admin/trainings' && item.to !== '/admin/reports')
-      : nav;
+      ? nav.filter(
+          (item) =>
+            item.to !== '/admin/trainings' &&
+            item.to !== '/admin/reports' &&
+            item.to !== '/admin/data-tools',
+        )
+      : nav
+  ).filter((item) => item.to !== '/admin/data-tools' || dataTools?.enabled === true);
 
   // Password-expiry warning (volunteers and field coordinators; admins never
   // expire). Quiet until two weeks out, red inside five days — the guard takes

@@ -73,6 +73,26 @@ export interface EventRow {
   is_enrollable: boolean;
 }
 
+// ── Data tools (Round 49, feature-flagged) ───────────────────────────────────
+
+export interface ResetSummary {
+  programs: number;
+  activities: number;
+  sessions: number;
+  volunteers: number;
+  fieldCoordinators: number;
+  admins: number;
+}
+
+/** Whether DATA_TOOLS_ENABLED is on — drives both the nav item and the page. */
+export const useDataToolsStatus = (isAdmin: boolean) =>
+  useQuery({
+    queryKey: ['data-tools', 'status'],
+    queryFn: async () => (await api.get<{ enabled: boolean }>('/data-tools/status')).data,
+    enabled: isAdmin,
+    staleTime: 5 * 60_000,
+  });
+
 export interface Coordinator {
   id: string;
   name: string;

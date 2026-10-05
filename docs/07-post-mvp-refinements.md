@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-10-05 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across forty-eight review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across forty-nine review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -1301,6 +1301,44 @@ list shows both kinds, reissue 409, resend 201, volunteer download 200); Mailpit
 received the custom email; browser run drove the full screen — picker keystrokes,
 live counter, preview dialog, confirm-and-issue toast (`PAR-2026-000015`), and four
 pdf.js thumbnails with real ink; fresh-boot dry-run applied all 27 migrations cleanly.
+
+---
+
+## Round 49 — Data Tools: the feature-flagged reset to the client baseline  (2026-10-05)
+
+A new **Data Tools** page for operating the demo environment — admin-only **and** behind a
+feature flag, so it exists exactly where it is wanted and nowhere else.
+
+- **Feature flag `DATA_TOOLS_ENABLED`** (env, default `false`): gates the API
+  (`GET /data-tools/status`, `POST /data-tools/reset`) and the UI — the nav item appears
+  only when the server says the flag is on, and the page itself explains how to enable it
+  when visited with the flag off. Flipping the flag is an env change + API restart.
+- **Admin only**: both endpoints are `@Roles('admin')` (matrix rows added — **78 endpoints
+  × 4 roles = 312 checks**); field coordinators neither see the nav item nor pass the
+  route guard; the layout's fc nav filter excludes it explicitly.
+- **The reset** (one transaction, audited as `data.reset`): returns the database to the
+  client baseline —
+  **kept:** the client-document catalog (AAP, Chote Kadam, Activity-Based Volunteering:
+  3 programs, 4 activities, 5 sessions — upserted field-by-field, so renamed / cancelled /
+  soft-deleted client rows come back canonical), **10 curated volunteers** (the
+  demo-interesting set: certificate holders, the CSR + affiliate pair, the consent-gate and
+  pending-registration subjects), the **primary admin**, and **3 field coordinators**
+  (`arjun@parinaam.org` is created when only two exist), plus trainings, coordinators,
+  communities of the client set and the audit trail;
+  **removed:** every other program/activity/session and volunteer, and all enrollments,
+  waitlists, attendance, coordinator reports, certificates (stored PDFs deleted too),
+  feedback and email logs. The CSR mentor's canonical 3 h attendance row is restored.
+- **Safety**: the API demands the literal `confirm: "RESET"` (so the authz matrix's
+  empty-body probe can never fire it), the page arms its button only after typing
+  **RESET** (case-sensitive), and the action is **idempotent** — running it twice lands on
+  the same baseline. With the flag off the reset answers `404 DATA_TOOLS_DISABLED`.
+
+Verified: API round-trip (status, wrong confirm 400, reset → `{3,4,5,10,3,1}`, second
+reset identical); SQL inspection of the kept emails, fc trio, catalog statuses and clean
+residue tables; flag-off behavior (`enabled:false`, reset 404); browser run — admin sees
+the nav item, the type-in gate arms only on the exact word, the summary tiles render, and
+the field coordinator has no nav item and is bounced off the direct URL; the authz matrix
+passes at 312. The local stack was rebuilt to the full demo dataset afterwards.
 
 ---
 

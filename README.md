@@ -2,7 +2,7 @@
 
 Volunteer Management System for Parinaam Foundation — a full rebuild derived from
 `VMS_prototype_v2.html` and `VMS_database_model.md`, delivered in eight phases and refined
-through forty-eight post-MVP review rounds (`docs/07-post-mvp-refinements.md`) and the client's
+through forty-nine post-MVP review rounds (`docs/07-post-mvp-refinements.md`) and the client's
 communities refinement (`docs/08`, `docs/09` — the phases half was later retired in Round 47).
 
 **Stack** React 18 + MUI · NestJS 10 · PostgreSQL 16 · Redis · **n8n** (email orchestration) ·
@@ -57,6 +57,7 @@ The defaults run out of the box. The ones worth knowing:
 | Variable | Default | Meaning |
 |---|---|---|
 | `SEED_DEMO_DATA` | `true` | Load the demo dataset on first boot (set `false` for a clean DB) |
+| `DATA_TOOLS_ENABLED` | `false` | Round 49: the admin **Data Tools** page (reset to the client baseline). Needs an API restart to take effect; keep `false` wherever real records accumulate |
 | `API_PORT` / `WEB_PORT` | `3001` / `5174` | Host ports for API and web app |
 | `VITE_API_BASE_URL` | `/api/v1` | **Relative** — the app works behind any host: Caddy (:8090), the Vite dev server (:5174, which proxies `/api`), a tailnet name, a tunnel, or a production domain |
 | `VMS_WEBHOOK_SECRET` | dev value | HMAC secret shared between API and n8n — change per environment |
@@ -335,7 +336,19 @@ Admin → **Recognition**:
 > programme, communities and enrolment) as one-click Excel — the Goodhearts planning sheet
 > shared with corporate partners.
 
-## 2.9 Key workflows to try
+## 2.9 Data tools (feature-flagged)
+
+Admin → **Data Tools** (visible only when `DATA_TOOLS_ENABLED=true`; admin-only — field
+coordinators never see it). One audited action: **reset to the client baseline** — keeps the
+client-document catalog (AAP, Chote Kadam, Activity-Based Volunteering: 3 programs,
+4 activities, 5 sessions restored to canonical state), 10 curated volunteers, the primary
+admin and 3 field coordinators (plus trainings, coordinators and the audit trail); removes
+every other program/activity/session/volunteer and all enrollments, attendance, certificates,
+feedback and email logs. The button arms only after typing **RESET**, the API additionally
+demands `confirm: "RESET"`, and running it twice lands on the same baseline. The full demo
+dataset only comes back with `docker compose down -v && up`.
+
+## 2.10 Key workflows to try
 
 Each of these runs end to end on the seed data, in a few minutes:
 

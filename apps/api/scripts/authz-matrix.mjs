@@ -101,6 +101,10 @@ const MATRIX = [
   ['POST',   `/reports/scheduled/${UUID}/run-now`,      'D', 'D', 'D', 'A'],
   ['GET',    '/attendance/dispatches',                  'D', 'D', 'A', 'A'],
   ['GET',    '/audit-logs',                             'D', 'D', 'D', 'A'],
+  // Round 49: Data Tools — admin only. The reset probe sends an empty body,
+  // which fails the confirm-word validation (400) without ever executing.
+  ['GET',    '/data-tools/status',                      'D', 'D', 'D', 'A'],
+  ['POST',   '/data-tools/reset',                       'D', 'D', 'D', 'A'],
   ['GET',    '/communities',                            'D', 'D', 'A', 'A'],
   ['POST',   '/communities',                            'D', 'D', 'D', 'A'],
   ['GET',    `/communities/${UUID}`,                    'D', 'D', 'A', 'A'],

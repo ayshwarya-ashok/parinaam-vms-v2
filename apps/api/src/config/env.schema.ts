@@ -53,6 +53,17 @@ export const envSchema = z.object({
   /** How BROWSERS reach this API — used for signed URLs embedded in public pages. */
   PUBLIC_API_URL: z.string().url().default('http://localhost:3001/api/v1'),
 
+  // ── Feature flags ──────────────────────────────────────────────────────────
+  /**
+   * Round 49 — the admin Data Tools page (demo-data reset). Off by default:
+   * flipping data back to the client baseline is a demo/UAT convenience that
+   * has no place running where real records accumulate.
+   */
+  DATA_TOOLS_ENABLED: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
+
   // ── Storage ────────────────────────────────────────────────────────────────
   UPLOAD_DIR: z.string().default('/app/uploads'),
   MAX_UPLOAD_MB: z.coerce.number().int().positive().default(25),

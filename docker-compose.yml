@@ -182,6 +182,7 @@ services:
       # Both loopback spellings: Docker Desktop's IPv6 forwarding is not always
       # available, so the browser may reach the app on either.
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5174,http://127.0.0.1:5174}
+      DATA_TOOLS_ENABLED: ${DATA_TOOLS_ENABLED:-false}
     ports:
       - "${API_PORT:-3000}:3000"
     volumes:

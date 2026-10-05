@@ -31,6 +31,7 @@ import { AssessmentsPage } from '@/pages/admin/AssessmentsPage';
 import { FieldExecution } from '@/pages/admin/FieldExecution';
 import { SessionRecord } from '@/pages/admin/SessionRecord';
 import { CustomCertificates } from '@/pages/admin/CustomCertificates';
+import { DataTools } from '@/pages/admin/DataTools';
 import { RecognitionHub } from '@/pages/admin/RecognitionHub';
 import { CertificatesAdmin } from '@/pages/admin/CertificatesAdmin';
 import { FeedbackAdmin } from '@/pages/admin/FeedbackAdmin';
@@ -68,6 +69,9 @@ const adminNav = [
   { label: 'Recognition', to: '/admin/recognition' },
   { label: 'Metrics', to: '/admin/metrics' },
   { label: 'Reports', to: '/admin/reports' },
+  // Round 49 — admin-only AND feature-flagged; AppLayout hides it unless
+  // GET /data-tools/status says the flag is on.
+  { label: 'Data Tools', to: '/admin/data-tools' },
   { label: 'Profile', to: '/admin/profile' },
 ];
 
@@ -188,6 +192,7 @@ export const router = createBrowserRouter([
         ],
       },
       { path: 'metrics', element: <Suspense fallback={null}><MetricsDashboard /></Suspense>, handle: { crumb: 'Metrics' } },
+      { path: 'data-tools', element: <RequireAdmin><DataTools /></RequireAdmin>, handle: { crumb: 'Data tools' } },
       { path: 'profile', element: <StaffProfile />, handle: { crumb: 'Profile' } },
       {
         path: 'reports',
