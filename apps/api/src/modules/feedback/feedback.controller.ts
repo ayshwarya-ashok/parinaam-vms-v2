@@ -10,7 +10,9 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
+import { Throttle } from '@nestjs/throttler';
 import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
@@ -27,6 +29,7 @@ import {
 import {
   AuthPrincipal,
   CurrentUser,
+  Public,
   Roles,
 } from '../../common/decorators/auth.decorators';
 import { UUID_PATTERN, UuidPipe } from '../../common/pipes/uuid.pipe';
@@ -50,6 +53,30 @@ class PublishDto {
   @IsBoolean() publish!: boolean;
 }
 
+// Multipart fields arrive as strings; coerce explicitly (same pattern as the
+// attendance link form). Tag arrays travel as JSON strings.
+const toInt = ({ value }: { value: unknown }) => (value === '' || value == null ? undefined : Number(value));
+const toArray = ({ value }: { value: unknown }) => {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string' && value.trim() !== '') {
+    try { const parsed = JSON.parse(value); return Array.isArray(parsed) ? parsed : undefined; } catch { return undefined; }
+  }
+  return undefined;
+};
+
+class LinkFeedbackDto {
+  @Transform(toInt) @IsInt() @Min(1) @Max(5) overallRating!: number;
+  @Transform(toInt) @IsInt() @Min(0) @Max(10) npsScore!: number;
+  @IsOptional() @IsIn(['Definitely', 'Probably', 'Not sure', 'Unlikely'])
+  volAgain?: 'Definitely' | 'Probably' | 'Not sure' | 'Unlikely';
+  @IsOptional() @IsString() @MaxLength(4000) wentWell?: string;
+  @IsOptional() @Transform(toArray) @IsArray() @ArrayMaxSize(20) @IsString({ each: true }) issues?: string[];
+  @IsOptional() @IsString() @MaxLength(4000) wentWrongDetail?: string;
+  @IsOptional() @Transform(toArray) @IsArray() @ArrayMaxSize(20) @IsString({ each: true }) improvements?: string[];
+  @IsOptional() @IsString() @MaxLength(4000) improvementDetail?: string;
+  @IsOptional() @IsString() @MaxLength(4000) comments?: string;
+}
+
 @ApiTags('feedback')
 @Controller('feedback')
 export class FeedbackController {
@@ -59,6 +86,30 @@ export class FeedbackController {
   @ApiOperation({ summary: 'Active issue/improvement tag vocabulary for the form' })
   options() {
     return this.feedback.optionCatalog();
+  }
+
+  // ── Link-token form (Round 51) — the token IS the authentication ──────────
+
+  @Public()
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Get('link/:token')
+  @ApiOperation({ summary: 'Feedback form context via the emailed signed link — no login' })
+  linkContext(@Param('token') token: string) {
+    return this.feedback.linkContext(token);
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('link/:token')
+  @UseInterceptors(FilesInterceptor('images', 2, { limits: { fileSize: 8 * 1024 * 1024, files: 2 } }))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Submit feedback via the emailed signed link (BR-09; resubmit replaces within the grace window)' })
+  submitViaLink(
+    @Param('token') token: string,
+    @Body() dto: LinkFeedbackDto,
+    @UploadedFiles() images: Array<{ mimetype: string; buffer: Buffer }> = [],
+  ) {
+    return this.feedback.submitViaToken(token, dto, images);
   }
 
   @Get('eligible-events')

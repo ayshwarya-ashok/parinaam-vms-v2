@@ -1,12 +1,15 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import {
+  EventPhoto,
   FeedbackImprovement,
   FeedbackIssue,
   FeedbackOption,
   FeedbackSubmission,
   Volunteer,
 } from '../../database/entities';
+import { AttendanceModule } from '../attendance/attendance.module';
+import { StorageModule } from '../storage/storage.module';
 import { FeedbackRequestSweeper } from './feedback-request.sweeper';
 import { FeedbackController } from './feedback.controller';
 import { FeedbackService } from './feedback.service';
@@ -23,7 +26,12 @@ const workerOnly = role === 'api' ? [] : [FeedbackRequestSweeper];
       FeedbackImprovement,
       FeedbackOption,
       Volunteer,
+      EventPhoto,
     ]),
+    // LinkTokenService (the signed-link machinery) lives in the attendance
+    // module — Round 51 reuses it for login-free feedback.
+    AttendanceModule,
+    StorageModule,
   ],
   controllers: [FeedbackController],
   providers: [FeedbackService, ...workerOnly],

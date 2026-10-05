@@ -11,6 +11,7 @@ import {
   Volunteer,
   EventPhoto,
 } from '../../database/entities';
+import { LinkTokenService } from '../attendance/link-token.service';
 import { StorageService } from '../storage/storage.service';
 
 export interface SubmitFeedbackInput {
@@ -40,6 +41,7 @@ export class FeedbackService {
     @InjectRepository(Volunteer) private readonly volunteers: Repository<Volunteer>,
     @InjectRepository(EventPhoto) private readonly photos: Repository<EventPhoto>,
     private readonly storage: StorageService,
+    private readonly linkTokens: LinkTokenService,
   ) {}
 
   /** The admin-curated tag vocabulary the form renders from. */
@@ -127,6 +129,105 @@ export class FeedbackService {
 
       return { id: submission.id };
     });
+  }
+
+  // ── Link-token flow (Round 51) — the token IS the authentication ───────────
+
+  /**
+   * Context for the emailed feedback form: who is rating what, the tag
+   * vocabulary, and whether a submission already exists. Mirrors the
+   * attendance link form — no login, the signed token is the authorization.
+   */
+  async linkContext(rawToken: string): Promise<Record<string, unknown>> {
+    const token = await this.linkTokens.verify(rawToken, 'feedback');
+    const [row] = await this.dataSource.query(
+      `SELECT COALESCE(e.name, a.name) AS event_name, e.date, e.start_time, e.duration_hours,
+              e.location, p.name AS program_name, v.first_name,
+              ar.hours_contributed,
+              EXISTS (SELECT 1 FROM feedback_submissions f
+                      WHERE f.event_id = e.id AND f.volunteer_id = v.id) AS already_submitted
+       FROM events e
+       JOIN activities a ON a.id = e.activity_id
+       JOIN programs p ON p.id = a.program_id
+       JOIN volunteers v ON v.id = $2
+       LEFT JOIN attendance_records ar ON ar.event_id = e.id AND ar.volunteer_id = v.id
+       WHERE e.id = $1`,
+      [token.eventId, token.volunteerId],
+    );
+    if (!row) throw new NotFoundException('Session not found');
+
+    return {
+      volunteerName: row.first_name,
+      event: {
+        name: row.event_name,
+        date: row.date,
+        startTime: String(row.start_time).slice(0, 5),
+        durationHours: row.duration_hours,
+        location: row.location,
+        programName: row.program_name,
+        hoursContributed: row.hours_contributed,
+      },
+      options: await this.optionCatalog(),
+      alreadySubmitted: row.already_submitted,
+    };
+  }
+
+  /**
+   * Submit through the emailed link. First submit consumes the token; inside
+   * the grace window a resubmission REPLACES the earlier answers (same
+   * semantics as the attendance form). A submission that already exists
+   * outside that window — e.g. made while signed in — stays untouched.
+   */
+  async submitViaToken(
+    rawToken: string,
+    input: Omit<SubmitFeedbackInput, 'eventId'>,
+    images: Array<{ mimetype: string; buffer: Buffer }> = [],
+  ): Promise<{ id: string; replaced: boolean }> {
+    const { token, isResubmit } = await this.linkTokens.verifyForSubmit(rawToken, 'feedback');
+    const eventId = token.eventId!;
+    const volunteerId = token.volunteerId!;
+
+    const existing = await this.submissions.findOne({ where: { eventId, volunteerId } });
+    if (existing && !isResubmit) throw BusinessErrors.feedbackAlreadySubmitted();
+
+    const id = await this.dataSource.transaction(async (manager) => {
+      const repo = manager.getRepository(FeedbackSubmission);
+      const fields = {
+        overallRating: input.overallRating,
+        npsScore: input.npsScore,
+        volAgain: input.volAgain ?? null,
+        wentWell: input.wentWell?.trim() || null,
+        wentWrongDetail: input.wentWrongDetail?.trim() || null,
+        improvementDetail: input.improvementDetail?.trim() || null,
+        comments: input.comments?.trim() || null,
+      };
+
+      let submissionId: string;
+      if (existing) {
+        await repo.update({ id: existing.id }, { ...fields, submittedAt: new Date() });
+        await manager.getRepository(FeedbackIssue).delete({ feedbackId: existing.id });
+        await manager.getRepository(FeedbackImprovement).delete({ feedbackId: existing.id });
+        submissionId = existing.id;
+      } else {
+        const saved = await repo.save(repo.create({ volunteerId, eventId, ...fields }));
+        submissionId = saved.id;
+      }
+
+      const issueRepo = manager.getRepository(FeedbackIssue);
+      for (const label of new Set(input.issues ?? [])) {
+        await issueRepo.save(issueRepo.create({ feedbackId: submissionId, issueLabel: label }));
+      }
+      const improvementRepo = manager.getRepository(FeedbackImprovement);
+      for (const label of new Set(input.improvements ?? [])) {
+        await improvementRepo.save(
+          improvementRepo.create({ feedbackId: submissionId, improvementLabel: label }),
+        );
+      }
+      return submissionId;
+    });
+
+    await this.storePhotos(eventId, id, images);
+    return { id, replaced: Boolean(existing) };
   }
 
   async mine(userId: string): Promise<Array<Record<string, unknown>>> {
@@ -280,7 +381,15 @@ export class FeedbackService {
       [feedbackId, userId],
     );
     if (!own) throw new NotFoundException('Feedback submission not found');
+    return this.storePhotos(own.event_id, feedbackId, images);
+  }
 
+  /** Shared by the signed-in and link-token flows — same pipeline as attendance evidence. */
+  private async storePhotos(
+    eventId: string,
+    feedbackId: string,
+    images: Array<{ mimetype: string; buffer: Buffer }>,
+  ): Promise<{ stored: number }> {
     let stored = 0;
     for (const image of images.slice(0, 2)) {
       if (!/^image\/(jpeg|png|webp)$/.test(image.mimetype)) {
@@ -288,12 +397,12 @@ export class FeedbackService {
       }
       const cleaned = await sharp(image.buffer).rotate().jpeg({ quality: 85 }).toBuffer();
       const thumb = await sharp(cleaned).resize({ width: 320 }).jpeg({ quality: 70 }).toBuffer();
-      const path = this.storage.buildPath(`evidence/${own.event_id}`, 'jpg');
+      const path = this.storage.buildPath(`evidence/${eventId}`, 'jpg');
       const saved = await this.storage.put(path, cleaned);
       const thumbSaved = await this.storage.put(path.replace('.jpg', '.thumb.jpg'), thumb);
       await this.photos.save(
         this.photos.create({
-          eventId: own.event_id,
+          eventId,
           feedbackId,
           filePath: saved.path,
           thumbnailPath: thumbSaved.path,

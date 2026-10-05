@@ -33,6 +33,12 @@ const MATRIX = [
   // /files/signed is @Public, but an invalid signature is 401 for EVERYONE —
   // identical treatment across roles is exactly what this row asserts.
   ['GET',    `/files/signed?path=x&exp=1&sig=x`,        'D', 'D', 'D', 'D'],
+  // Round 51: the feedback link form is @Public; an invalid token is 401 for
+  // everyone on GET. The POST probe's empty body fails validation (400) before
+  // the token is even looked at — the guard admits everyone identically, and
+  // the in-handler token check 401s any valid-shape body with a bad token.
+  ['GET',    '/feedback/link/not-a-real-token',         'D', 'D', 'D', 'D'],
+  ['POST',   '/feedback/link/not-a-real-token',         'A', 'A', 'A', 'A'],
   // ── authenticated, any role ─────────────────────────────────────────
   ['GET',    '/auth/me',                                'D', 'A', 'A', 'A'],
   ['POST',   '/auth/change-password',                   'D', 'A', 'A', 'A'],

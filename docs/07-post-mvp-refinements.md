@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-10-05 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across fifty review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across fifty-one review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -1390,6 +1390,46 @@ discontinued block (`is_enrollable = false`); the certificates list flags the st
 the wallet/custom listings are right; the public page carries the testimonial; browser run
 drove the renamed button end to end and checked the volunteer-facing browse (today's
 session, full session, waitlist) and wallet; authz matrix 312 — unchanged and passing.
+
+---
+
+## Round 51 — Feedback without login: the signed-link form  (2026-10-05)
+
+"Share my feedback" in the email used to land on the login page. It now opens a
+**standalone feedback form directly — no sign-in** — the same signed-link pattern the
+attendance and coordinator-report emails use (BR-13: the token IS the authentication).
+
+- **The sweeper issues a personal token** per invitation (`access_tokens`, purpose
+  `feedback` — the enum had the value reserved since V-day one, so no migration) and the
+  email button carries `PUBLIC_WEB_URL/feedback/<token>`; the email says plainly that no
+  sign-in is needed.
+- **Public endpoints** (`@Public` + throttled, like the attendance links):
+  `GET /feedback/link/:token` returns the form context — volunteer first name, session
+  facts, the live tag vocabulary, and whether a submission already exists;
+  `POST /feedback/link/:token` (multipart) accepts the same field set as the signed-in
+  form — rating, NPS, would-volunteer-again, went-well, issue/improvement tags with
+  details, comments, and up to two photos through the same EXIF-stripping pipeline.
+- **Same rules as BR-09**: the token is bound to one (volunteer, session); the first
+  submit consumes it; inside the grace window a resubmission **replaces** the earlier
+  answers (tags re-written, same row); a submission made any other way blocks the link
+  with "already submitted". Expired/invalid/consumed links get the same friendly
+  failure pages as attendance.
+- **The web form** (`/feedback/:token`) reuses the `LinkFormShell` — mobile-first, the
+  session facts up top, stars + NPS as the only required answers.
+- **Admin / field coordinator visibility needed no work by design**: link submissions
+  land in the same `feedback_submissions` row set the Recognition → Feedback screen
+  (both roles) and the analytics already read.
+- Authz matrix: +2 rows — **80 endpoints × 4 roles = 320 checks** (the POST row is
+  'allowed' for everyone by matrix semantics: body validation fires before the
+  in-handler token check).
+
+Verified end-to-end on the real pipeline: a forced sweeper run queued two invitations
+(each with its own link), the worker dispatched them through n8n into Mailpit, and the
+link **taken from the email body** was driven in a headless browser — form rendered with
+live tag options, stars + NPS picked, submitted, thank-you page shown — with the row
+visible to the field coordinator in `GET /feedback` seconds later. A forged-token API
+pass additionally proved context, tag + photo storage (1 photo stored), grace-window
+resubmission (`replaced: true`), and 401s on invalid tokens.
 
 ---
 

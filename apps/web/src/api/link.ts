@@ -22,6 +22,13 @@ export interface VolunteerFormContext {
   alreadySubmitted: boolean;
 }
 
+export interface FeedbackLinkContext {
+  event: LinkEventInfo & { programName: string; hoursContributed: string | null };
+  volunteerName: string;
+  alreadySubmitted: boolean;
+  options: { issues: string[]; improvements: string[] };
+}
+
 export interface CoordinatorFormContext {
   event: LinkEventInfo;
   coordinatorName: string;
@@ -62,6 +69,30 @@ export async function submitVolunteerForm(
       `/attendance/link/${token}`,
       body,
     )
+  ).data;
+}
+
+export const fetchFeedbackForm = async (token: string) =>
+  (await linkApi.get<FeedbackLinkContext>(`/feedback/link/${token}`)).data;
+
+/** Tag arrays travel as JSON strings; everything else as plain multipart fields. */
+export async function submitFeedbackForm(
+  token: string,
+  fields: Record<string, string | number | string[] | undefined>,
+  images: File[],
+) {
+  const body = new FormData();
+  for (const [key, value] of Object.entries(fields)) {
+    if (value === undefined || value === '') continue;
+    if (Array.isArray(value)) {
+      if (value.length > 0) body.append(key, JSON.stringify(value));
+    } else {
+      body.append(key, String(value));
+    }
+  }
+  for (const image of images.slice(0, 2)) body.append('images', image);
+  return (
+    await linkApi.post<{ id: string; replaced: boolean }>(`/feedback/link/${token}`, body)
   ).data;
 }
 

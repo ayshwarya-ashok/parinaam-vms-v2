@@ -2,7 +2,7 @@
 
 Volunteer Management System for Parinaam Foundation — a full rebuild derived from
 `VMS_prototype_v2.html` and `VMS_database_model.md`, delivered in eight phases and refined
-through fifty post-MVP review rounds (`docs/07-post-mvp-refinements.md`) and the client's
+through fifty-one post-MVP review rounds (`docs/07-post-mvp-refinements.md`) and the client's
 communities refinement (`docs/08`, `docs/09` — the phases half was later retired in Round 47).
 
 **Stack** React 18 + MUI · NestJS 10 · PostgreSQL 16 · Redis · **n8n** (email orchestration) ·
@@ -315,7 +315,11 @@ Admin → **Recognition**:
   (ranked tags). **Publish as testimonial** is an explicit act; only published quotes appear on
   the public page, attributed as first name + last initial.
 - Volunteer side: **Certificates** (wallet + download) and **Feedback** (rate attended
-  sessions once each; invitations arrive by email after attendance is recorded).
+  sessions once each; invitations arrive by email after attendance is recorded). The
+  email's **"Share my feedback" opens the form directly — no login** (Round 51): a
+  personal signed link, same pattern as the attendance emails, with the full field set
+  including tags and photos; submissions land in the same admin/field-coordinator
+  Feedback screen.
 
 > Issuing a certificate now asks for an optional **tangible-gift note** (memento, sapling…) —
 > recorded on the certificate and mentioned in the email; the handover itself stays offline.

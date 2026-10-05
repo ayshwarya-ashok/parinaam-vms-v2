@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { DataSource } from 'typeorm';
+import { AppConfig } from '../../config';
+import { LinkTokenService } from '../attendance/link-token.service';
 import { NotificationsService } from '../notifications';
 
 /**
@@ -15,6 +17,8 @@ export class FeedbackRequestSweeper {
   constructor(
     private readonly dataSource: DataSource,
     private readonly notifications: NotificationsService,
+    private readonly linkTokens: LinkTokenService,
+    private readonly config: AppConfig,
   ) {}
 
   @Cron('0 30 4 * * *', { name: 'feedback-request-sweep' }) // 10:00 IST = 04:30 UTC
@@ -43,6 +47,14 @@ export class FeedbackRequestSweeper {
 
     this.logger.log(`Feedback invitations due: ${due.length}`);
     for (const r of due) {
+      // Round 51: a signed link per invitation — "Share my feedback" opens the
+      // form directly, no login, exactly like the attendance email (BR-13).
+      const { raw } = await this.linkTokens.issue({
+        purpose: 'feedback',
+        eventId: r.event_id,
+        volunteerId: r.volunteer_id,
+        subjectEmail: r.email,
+      });
       await this.notifications.queueEmail({
         templateKey: 'feedback_request',
         to: r.email,
@@ -57,6 +69,7 @@ export class FeedbackRequestSweeper {
             'en-IN',
             { day: 'numeric', month: 'long', year: 'numeric' },
           ),
+          feedbackLink: `${this.config.get('PUBLIC_WEB_URL')}/feedback/${raw}`,
         },
       });
     }

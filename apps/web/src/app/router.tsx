@@ -44,6 +44,7 @@ import { MyCertificates } from '@/pages/volunteer/MyCertificates';
 import { FeedbackPage } from '@/pages/volunteer/FeedbackPage';
 import { AttendanceFormPage } from '@/pages/public/AttendanceForm';
 import { CoordinatorReportPage } from '@/pages/public/CoordinatorReport';
+import { FeedbackFormPage } from '@/pages/public/FeedbackForm';
 import { Landing } from '@/pages/Landing';
 import { ImpactPage } from '@/pages/public/ImpactPage';
 import { NotFound } from '@/pages/NotFound';
@@ -91,6 +92,7 @@ export const router = createBrowserRouter([
   // Link-token forms — no session, standalone pages.
   { path: '/attendance/:token', element: <AttendanceFormPage /> },
   { path: '/report/:token', element: <CoordinatorReportPage /> },
+  { path: '/feedback/:token', element: <FeedbackFormPage /> },
 
   // ── Volunteer ───────────────────────────────────────────────────────────────
   {
