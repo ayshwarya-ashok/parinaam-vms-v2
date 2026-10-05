@@ -132,7 +132,7 @@ impact page. Everything you need is reachable from there.
 | API (Swagger at `/api/docs`) | http://localhost:3001 |
 | **Mailpit — every email the system sends lands here** | **http://localhost:8026/mailpit/** |
 | n8n editor | http://localhost:5679 |
-| Adminer (DB browser — server `db`, user `parinaam`, db `parinaam_vms`) | http://localhost:8082 |
+| Adminer (DB browser — the link pre-fills PostgreSQL / `db` / `parinaam`; only the password is typed) | http://localhost:8082/?pgsql=db&username=parinaam&db=parinaam_vms |
 
 ## 1.9 Login credentials
 
@@ -162,7 +162,7 @@ defaults every teammate gets on a fresh clone. None of them are production secre
 | Web app | http://localhost:5174 | Demo accounts above (`Parinaam@123`) |
 | API + Swagger | http://localhost:3001 · docs at `/api/docs` | JWT — log in via `POST /api/v1/auth/login` with any demo account |
 | PostgreSQL | `localhost:5432` | user `parinaam` / password `parinaam_dev_pw` · databases `parinaam_vms` (app) and `n8n` |
-| Adminer | http://localhost:8082 | System **PostgreSQL**, server **`db`** (not localhost — Adminer connects inside the Docker network), then the PostgreSQL credentials above |
+| Adminer | http://localhost:8082/?pgsql=db&username=parinaam&db=parinaam_vms | The link pre-selects System **PostgreSQL** and server **`db`** — the form's defaults (MySQL / localhost) both end in "connection refused", since Adminer connects inside the Docker network |
 | Redis | `localhost:6379` | No password (`docker compose exec redis redis-cli ping` → PONG) |
 | n8n editor | http://localhost:5679 | No shared account — n8n v1 forces per-install owner setup: the first visit shows a **set-up-owner** screen where you create your own login. If someone else already claimed it, run `docker compose exec n8n n8n user-management:reset` and set yours (workflows and credentials survive) |
 | Mailpit UI | http://localhost:8026/mailpit/ | No login — open it to read every email the system sends |
