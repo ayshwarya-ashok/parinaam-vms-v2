@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
-| **Period** | 2026-08-20 → 2026-10-04 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across forty-seven review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Period** | 2026-08-20 → 2026-10-05 (ongoing) |
+| **Driver** | Hands-on testing by the product owner across forty-eight review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -1237,6 +1237,51 @@ no `phases`/`visits` keys anywhere and 404s on every retired route; the formerly
 seven-phase Anganwadi session was closed live via "Mark completed"; browser checks
 (admin session record, activity detail, volunteer dashboard and session detail) render
 phase-free with the lifecycle chip still in place.
+
+---
+
+## Round 48 — Custom certificates  (2026-10-05)
+
+Staff can now thank a volunteer personally, not only per program. A new **Recognition →
+Custom certificates** screen (admin **and** field coordinator) carries the whole flow:
+pick the volunteer, write the text, preview the exact PDF, issue — and see everything
+already issued to that volunteer, each with a real thumbnail of its document.
+
+- **Only the appreciation paragraph is editable.** The official artwork stays fixed —
+  logo, title, presentation line, signature, Goodhearts strapline, date. The editable
+  band was measured off the template (baselines ≈278/260.5/243 pt, bounded by the name
+  label above and the strapline below); user text is wrapped and auto-sized through
+  three settings (12.5 pt / 3 lines down to 10.5 pt / 4 lines) and **refused with
+  `TEXT_TOO_LONG` when it cannot fit** — the layout is never squeezed. The UI caps
+  input at 75 words / 480 characters with a live counter; the renderer is the final
+  authority (very wide text can fail sooner, with a clear message).
+- **Preview before issue**: `POST /certificates/custom/preview` renders the exact PDF
+  watermarked **PREVIEW — not issued**, consuming no number and storing nothing.
+- **Issue**: `POST /certificates/custom` numbers it from the same `PAR-<year>-######`
+  sequence, renders on the individual artwork, stores the PDF, and emails it with a
+  dedicated `custom_certificate_issued` template (the program wording would not fit).
+  A volunteer may hold any number of custom certificates; erased volunteers refuse
+  with `VOLUNTEER_ERASED`.
+- **Per-volunteer certificate view**: `GET /certificates/volunteer/:id` (staff) lists
+  both kinds; the screen shows each with number, kind chip, excerpt or program facts,
+  and View / PDF / Resend. **Thumbnails are real**: the question "can a thumbnail be
+  generated?" is answered client-side — pdf.js (`pdfjs-dist`) renders page 1 of the
+  authenticated PDF into a canvas, so no server-side rasterizer (Ghostscript/Chromium)
+  was added to the image.
+- **Schema (V027)**: `certificates.kind` (`program`|`custom`), `custom_text`,
+  `program_id` now nullable, with a CHECK tying the three together. Reissue on a
+  custom certificate refuses (`CUSTOM_CERTIFICATE` — nothing to recompute); resend
+  works. The volunteer wallet shows custom certificates as "Personal appreciation —
+  From Parinaam Foundation".
+- Authz matrix: +3 staff-only rows — **76 endpoints × 4 roles = 304 checks**.
+
+Verified: ruler-overlay measurement of the artwork, Ghostscript renders of an issued
+PDF and a watermarked preview inspected visually; API round-trip as both admin and
+field coordinator (preview 201, wide-text 400 `TEXT_TOO_LONG`, issue `PAR-2026-000014`,
+list shows both kinds, reissue 409, resend 201, volunteer download 200); Mailpit
+received the custom email; browser run drove the full screen — picker keystrokes,
+live counter, preview dialog, confirm-and-issue toast (`PAR-2026-000015`), and four
+pdf.js thumbnails with real ink; fresh-boot dry-run applied all 27 migrations cleanly.
 
 ---
 

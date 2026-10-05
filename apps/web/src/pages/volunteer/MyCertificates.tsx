@@ -53,24 +53,34 @@ export function MyCertificates() {
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <Box>
                 <Typography variant="overline" sx={{ color: tokens.accentStrong }}>
-                  {cert.certType === 'corporate' ? 'Corporate appreciation' : 'Certificate of appreciation'}
+                  {cert.kind === 'custom'
+                    ? 'Personal appreciation'
+                    : cert.certType === 'corporate'
+                      ? 'Corporate appreciation'
+                      : 'Certificate of appreciation'}
                 </Typography>
                 <Typography variant="h5" sx={{ lineHeight: 1.25 }}>
-                  {cert.programName}
+                  {cert.kind === 'custom' ? 'From Parinaam Foundation' : cert.programName}
                 </Typography>
               </Box>
               <Typography sx={{ fontSize: '1.8rem' }}>🏆</Typography>
             </Box>
 
             <Typography sx={{ fontSize: '0.9rem', color: 'text.secondary' }}>
-              <strong>{cert.hours} hours</strong> across {cert.eventsAttended} session(s)
-              {cert.periodStart && (
+              {cert.kind === 'custom' ? (
+                <>A personal note of appreciation from the Parinaam team.</>
+              ) : (
                 <>
-                  {' · '}
-                  {fmtDate(cert.periodStart)}
-                  {cert.periodEnd && cert.periodEnd !== cert.periodStart
-                    ? ` – ${fmtDate(cert.periodEnd)}`
-                    : ''}
+                  <strong>{cert.hours} hours</strong> across {cert.eventsAttended} session(s)
+                  {cert.periodStart && (
+                    <>
+                      {' · '}
+                      {fmtDate(cert.periodStart)}
+                      {cert.periodEnd && cert.periodEnd !== cert.periodStart
+                        ? ` – ${fmtDate(cert.periodEnd)}`
+                        : ''}
+                    </>
+                  )}
                 </>
               )}
             </Typography>

@@ -36,7 +36,7 @@ export function RecognitionHub() {
         />
       </Box>
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2 }}>
         <Paper variant="outlined" sx={{ p: 3, borderRadius: 3 }}>
           <Typography variant="h5" sx={{ mb: 1 }}>🏆 Certificates</Typography>
           <Typography color="text.secondary" sx={{ mb: 2, fontSize: '0.9rem' }}>
@@ -46,6 +46,18 @@ export function RecognitionHub() {
           </Typography>
           <Button variant="pill" component={RouterLink} to="/admin/recognition/certificates">
             Manage certificates
+          </Button>
+        </Paper>
+
+        <Paper variant="outlined" sx={{ p: 3, borderRadius: 3 }}>
+          <Typography variant="h5" sx={{ mb: 1 }}>🖋 Custom certificates</Typography>
+          <Typography color="text.secondary" sx={{ mb: 2, fontSize: '0.9rem' }}>
+            A personal thank-you on the official artwork: you write the
+            appreciation paragraph, preview the exact PDF, and issue it — plus
+            every certificate a volunteer holds, in one place.
+          </Typography>
+          <Button variant="pill" component={RouterLink} to="/admin/recognition/custom-certificates">
+            Write a certificate
           </Button>
         </Paper>
 

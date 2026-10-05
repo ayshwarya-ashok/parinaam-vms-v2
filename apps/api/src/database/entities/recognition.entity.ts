@@ -40,12 +40,13 @@ export class Certificate {
   @JoinColumn({ name: 'volunteer_id' })
   volunteer!: Volunteer;
 
-  @Column({ name: 'program_id', type: 'uuid' })
-  programId!: string;
+  /** NULL on custom certificates (V027) — they certify no program. */
+  @Column({ name: 'program_id', type: 'uuid', nullable: true })
+  programId!: string | null;
 
-  @ManyToOne(() => Program, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Program, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'program_id' })
-  program!: Program;
+  program!: Program | null;
 
   @Column({ type: 'numeric', precision: 6, scale: 2 })
   hours!: string;
@@ -84,6 +85,14 @@ export class Certificate {
 
   @Column({ name: 'file_path', type: 'varchar', length: 500, nullable: true })
   filePath!: string | null;
+
+  /** program = computed from participation (BR-18); custom = staff-written (V027). */
+  @Column({ type: 'varchar', length: 10, default: 'program' })
+  kind!: 'program' | 'custom';
+
+  /** The staff-written body paragraph of a custom certificate. */
+  @Column({ name: 'custom_text', type: 'varchar', length: 600, nullable: true })
+  customText!: string | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;

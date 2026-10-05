@@ -2,7 +2,7 @@
 
 Volunteer Management System for Parinaam Foundation — a full rebuild derived from
 `VMS_prototype_v2.html` and `VMS_database_model.md`, delivered in eight phases and refined
-through forty-seven post-MVP review rounds (`docs/07-post-mvp-refinements.md`) and the client's
+through forty-eight post-MVP review rounds (`docs/07-post-mvp-refinements.md`) and the client's
 communities refinement (`docs/08`, `docs/09` — the phases half was later retired in Round 47).
 
 **Stack** React 18 + MUI · NestJS 10 · PostgreSQL 16 · Redis · **n8n** (email orchestration) ·
@@ -304,6 +304,12 @@ Admin → **Recognition**:
   corporate variant for CSR volunteers) is stored, downloadable, and **emailed as an
   attachment**. If attendance changes after issue the row shows *hours changed* with a
   **Reissue**.
+- **Custom certificates** (Round 48, admin + field coordinator) — a personal thank-you on the
+  same official artwork: pick any volunteer, **write the appreciation paragraph** (the only
+  editable part — capped and auto-fitted so the layout never distorts), **preview the exact
+  PDF** (watermarked, nothing stored), then issue — numbered from the same sequence, stored,
+  and emailed. The screen also lists **every certificate the volunteer holds**, each with a
+  real pdf.js **thumbnail**, in-app View, Download and Resend.
 - **Feedback** — per-occurrence ratings, NPS and tagged issues/improvements, with analytics
   (ranked tags). **Publish as testimonial** is an explicit act; only published quotes appear on
   the public page, attributed as first name + last initial.

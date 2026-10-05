@@ -80,6 +80,10 @@ const MATRIX = [
   ['GET',    '/coordinators',                           'D', 'D', 'D', 'A'],
   ['POST',   '/coordinators',                           'D', 'D', 'D', 'A'],
   ['GET',    '/certificates',                           'D', 'D', 'A', 'A'],
+  // Round 48: custom certificates — staff only (admin + field coordinator).
+  ['GET',    `/certificates/volunteer/${UUID}`,         'D', 'D', 'A', 'A'],
+  ['POST',   '/certificates/custom/preview',            'D', 'D', 'A', 'A'],
+  ['POST',   '/certificates/custom',                    'D', 'D', 'A', 'A'],
   ['POST',   '/certificates/issue',                     'D', 'D', 'A', 'A'],
   ['POST',   '/certificates/issue-bulk',                'D', 'D', 'A', 'A'],
   ['POST',   `/certificates/${UUID}/resend`,            'D', 'D', 'A', 'A'],

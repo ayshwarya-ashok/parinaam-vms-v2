@@ -9,5 +9,6 @@ export * from './ErrorBoundary';
 export * from './OfflineBanner';
 export * from './ChangePasswordCard';
 export * from './CertificatePreviewDialog';
+export * from './CertificateThumbnail';
 export * from './VolunteerPicker';
 export * from './StateCityFields';

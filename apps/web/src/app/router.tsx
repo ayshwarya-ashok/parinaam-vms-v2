@@ -30,6 +30,7 @@ import { TrainingForm } from '@/pages/admin/TrainingForm';
 import { AssessmentsPage } from '@/pages/admin/AssessmentsPage';
 import { FieldExecution } from '@/pages/admin/FieldExecution';
 import { SessionRecord } from '@/pages/admin/SessionRecord';
+import { CustomCertificates } from '@/pages/admin/CustomCertificates';
 import { RecognitionHub } from '@/pages/admin/RecognitionHub';
 import { CertificatesAdmin } from '@/pages/admin/CertificatesAdmin';
 import { FeedbackAdmin } from '@/pages/admin/FeedbackAdmin';
@@ -182,6 +183,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <RecognitionHub /> },
           { path: 'certificates', element: <CertificatesAdmin />, handle: { crumb: 'Certificates' } },
+          { path: 'custom-certificates', element: <CustomCertificates />, handle: { crumb: 'Custom certificates' } },
           { path: 'feedback', element: <FeedbackAdmin />, handle: { crumb: 'Feedback' } },
         ],
       },

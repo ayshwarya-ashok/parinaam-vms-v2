@@ -194,14 +194,7 @@ export class CertificatesService {
       }
 
       if (!row.certificateNumber) {
-        await manager.query(`SELECT pg_advisory_xact_lock(hashtext('certificate_number'))`);
-        const year = new Date().getFullYear();
-        const [{ next }]: Array<{ next: string }> = await manager.query(
-          `SELECT COALESCE(MAX(SUBSTRING(certificate_number FROM 10)::int), 0) + 1 AS next
-           FROM certificates WHERE certificate_number LIKE $1`,
-          [`PAR-${year}-%`],
-        );
-        row.certificateNumber = `PAR-${year}-${String(next).padStart(6, '0')}`;
+        row.certificateNumber = await this.nextCertificateNumber(manager);
       }
 
       row.hours = participation.total_hours;
@@ -280,6 +273,13 @@ export class CertificatesService {
   async reissueById(certificateId: string, issuedBy: string): Promise<Certificate> {
     const cert = await this.certs.findOne({ where: { id: certificateId } });
     if (!cert) throw new NotFoundException('Certificate not found');
+    if (cert.kind === 'custom' || !cert.programId) {
+      throw new BusinessException(
+        'CUSTOM_CERTIFICATE',
+        'A custom certificate has no computed figures to refresh — resend it, or issue a new one.',
+        409,
+      );
+    }
     return this.issue(cert.volunteerId, cert.programId, issuedBy, { reissue: true });
   }
 
@@ -293,7 +293,7 @@ export class CertificatesService {
       throw new NotFoundException('No issued certificate to resend');
     }
 
-    await this.sendCertificateEmail(cert, cert.volunteer, cert.program.name);
+    await this.sendCertificateEmail(cert, cert.volunteer, cert.program?.name ?? 'Certificate of Appreciation');
     await this.certs.update({ id: cert.id }, { resendCount: cert.resendCount + 1 });
     cert.resendCount += 1;
     return cert;
@@ -313,7 +313,8 @@ export class CertificatesService {
     return rows.map((c) => ({
       id: c.id,
       certificateNumber: c.certificateNumber,
-      programName: c.program.name,
+      kind: c.kind,
+      programName: c.program?.name ?? 'Certificate of Appreciation',
       hours: this.fmtHours(c.hours),
       eventsAttended: c.eventsAttended,
       periodStart: c.periodStart,
@@ -321,6 +322,107 @@ export class CertificatesService {
       certType: c.certType,
       issuedAt: c.issuedAt,
     }));
+  }
+
+  /**
+   * Everything issued to one volunteer, newest first — the staff view behind
+   * the custom-certificates screen (Round 48). Both kinds, one list.
+   */
+  async listForVolunteer(volunteerId: string): Promise<Array<Record<string, unknown>>> {
+    const volunteer = await this.volunteers.findOne({
+      where: { id: volunteerId },
+      relations: { user: true },
+    });
+    if (!volunteer) throw new NotFoundException('Volunteer not found');
+
+    const rows = await this.certs.find({
+      where: { volunteerId, issued: true },
+      relations: { program: true },
+      order: { issuedAt: 'DESC' },
+    });
+
+    return rows.map((c) => ({
+      id: c.id,
+      certificateNumber: c.certificateNumber,
+      kind: c.kind,
+      programName: c.program?.name ?? null,
+      customText: c.customText,
+      hours: this.fmtHours(c.hours),
+      eventsAttended: c.eventsAttended,
+      certType: c.certType,
+      issuedAt: c.issuedAt,
+      resendCount: c.resendCount,
+    }));
+  }
+
+  /**
+   * Render the custom certificate exactly as it would be issued — watermarked
+   * PREVIEW, nothing persisted, no number consumed.
+   */
+  async previewCustom(volunteerId: string, content: string): Promise<Buffer> {
+    const volunteer = await this.requireCertifiableVolunteer(volunteerId);
+    return this.pdf.renderCustom({
+      certificateNumber: '',
+      volunteerName: volunteer.fullName,
+      bodyText: content,
+      issuedOn: new Date().toISOString(),
+      preview: true,
+    });
+  }
+
+  /**
+   * Issue a custom certificate (Round 48): the official appreciation artwork
+   * with a staff-written body paragraph. Same number sequence, storage and
+   * email pipeline as program certificates; a volunteer may hold any number
+   * of custom certificates.
+   */
+  async issueCustom(volunteerId: string, content: string, issuedBy: string): Promise<Certificate> {
+    const volunteer = await this.requireCertifiableVolunteer(volunteerId);
+    const text = content.replace(/\s+/g, ' ').trim();
+
+    // Dry-run render BEFORE anything persists: text that cannot fit the
+    // artwork must fail here, not after a number is consumed and a row saved.
+    await this.pdf.renderCustom({
+      certificateNumber: '',
+      volunteerName: volunteer.fullName,
+      bodyText: text,
+      issuedOn: new Date().toISOString(),
+      preview: true,
+    });
+
+    const cert = await this.dataSource.transaction(async (manager) => {
+      const repo = manager.getRepository(Certificate);
+      const row = repo.create({
+        volunteerId,
+        programId: null,
+        kind: 'custom',
+        customText: text,
+        hours: '0',
+        eventsAttended: 0,
+        certType: 'individual',
+        issued: true,
+        issuedAt: new Date(),
+        issuedBy,
+      });
+      row.certificateNumber = await this.nextCertificateNumber(manager);
+      return repo.save(row);
+    });
+
+    const pdfBytes = await this.pdf.renderCustom({
+      certificateNumber: cert.certificateNumber!,
+      volunteerName: volunteer.fullName,
+      bodyText: text,
+      issuedOn: cert.issuedAt!.toISOString(),
+    });
+
+    const filePath = `certificates/${certificateFileName(cert.certificateNumber!)}`;
+    await this.storage.put(filePath, pdfBytes);
+    await this.certs.update({ id: cert.id }, { filePath });
+    cert.filePath = filePath;
+
+    await this.sendCertificateEmail(cert, volunteer, 'Certificate of Appreciation');
+    this.logger.log(`Issued custom certificate ${cert.certificateNumber} to ${volunteer.fullName}`);
+    return cert;
   }
 
   /** Back-office (admin / field coordinator), or the volunteer it belongs to. */
@@ -348,6 +450,44 @@ export class CertificatesService {
 
   // ── internals ───────────────────────────────────────────────────────────────
 
+  /**
+   * One sequence for both kinds; the advisory lock serialises concurrent
+   * assignment without a table lock.
+   */
+  private async nextCertificateNumber(manager: {
+    query: (sql: string, params?: unknown[]) => Promise<Array<{ next: string }>>;
+  }): Promise<string> {
+    await manager.query(`SELECT pg_advisory_xact_lock(hashtext('certificate_number'))`);
+    const year = new Date().getFullYear();
+    const [{ next }] = await manager.query(
+      `SELECT COALESCE(MAX(SUBSTRING(certificate_number FROM 10)::int), 0) + 1 AS next
+       FROM certificates WHERE certificate_number LIKE $1`,
+      [`PAR-${year}-%`],
+    );
+    return `PAR-${year}-${String(next).padStart(6, '0')}`;
+  }
+
+  /**
+   * A custom certificate still names a real person: the volunteer must exist
+   * and not be an erased husk (which would print "Erased Volunteer-…" on a
+   * formal document).
+   */
+  private async requireCertifiableVolunteer(volunteerId: string): Promise<Volunteer> {
+    const volunteer = await this.volunteers.findOne({
+      where: { id: volunteerId },
+      relations: { user: true },
+    });
+    if (!volunteer) throw new NotFoundException('Volunteer not found');
+    if (volunteer.user.email.endsWith('@erased.invalid')) {
+      throw new BusinessException(
+        'VOLUNTEER_ERASED',
+        'This volunteer’s data was erased — a certificate cannot name them.',
+        409,
+      );
+    }
+    return volunteer;
+  }
+
   private async participationOf(
     volunteerId: string,
     programId: string,
@@ -365,10 +505,11 @@ export class CertificatesService {
     programName: string,
   ): Promise<void> {
     await this.notifications.queueEmail({
-      templateKey: 'certificate_issued',
+      // A custom certificate's email talks about appreciation, not a program.
+      templateKey: cert.kind === 'custom' ? 'custom_certificate_issued' : 'certificate_issued',
       to: volunteer.user.email,
       recipientType: 'volunteer',
-      programId: cert.programId,
+      programId: cert.programId ?? undefined,
       volunteerId: cert.volunteerId,
       context: {
         firstName: volunteer.firstName,

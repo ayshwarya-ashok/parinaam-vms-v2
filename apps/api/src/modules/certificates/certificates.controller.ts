@@ -8,7 +8,7 @@ import {
   Res,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { IsIn, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
 import type { Response } from 'express';
 import {
   AuthPrincipal,
@@ -34,6 +34,16 @@ class ListQuery {
   @IsOptional() @IsIn(['issued', 'pending']) status?: 'issued' | 'pending';
 }
 
+/**
+ * Round 48 — the staff-written appreciation paragraph. The length cap mirrors
+ * what the artwork can hold; the renderer re-verifies the actual fit and
+ * refuses anything that would distort the layout.
+ */
+class CustomCertificateDto {
+  @Matches(UUID_PATTERN) volunteerId!: string;
+  @IsString() @MinLength(20) @MaxLength(480) content!: string;
+}
+
 @ApiTags('certificates')
 @Controller('certificates')
 export class CertificatesController {
@@ -44,6 +54,31 @@ export class CertificatesController {
   @ApiOperation({ summary: 'Certificate candidates — every attended (volunteer, program) pair with issue state' })
   async list(@Query() query: ListQuery) {
     return { data: await this.certificates.candidates(query) };
+  }
+
+  @Get('volunteer/:volunteerId')
+  @Roles('admin', 'field_coordinator')
+  @ApiOperation({ summary: 'Every certificate issued to one volunteer — program and custom alike' })
+  async forVolunteer(@Param('volunteerId', UuidPipe) volunteerId: string) {
+    return { data: await this.certificates.listForVolunteer(volunteerId) };
+  }
+
+  @Post('custom/preview')
+  @Roles('admin', 'field_coordinator')
+  @ApiOperation({ summary: 'Render the custom certificate as a watermarked PDF — nothing stored, no number used' })
+  async previewCustom(@Body() dto: CustomCertificateDto, @Res() res: Response) {
+    const data = await this.certificates.previewCustom(dto.volunteerId, dto.content);
+    res
+      .type('application/pdf')
+      .setHeader('Content-Disposition', 'inline; filename="certificate-preview.pdf"')
+      .send(data);
+  }
+
+  @Post('custom')
+  @Roles('admin', 'field_coordinator')
+  @ApiOperation({ summary: 'Issue a custom certificate — staff-written text on the official artwork, rendered, stored and emailed' })
+  issueCustom(@Body() dto: CustomCertificateDto, @CurrentUser() user: AuthPrincipal) {
+    return this.certificates.issueCustom(dto.volunteerId, dto.content, user.sub);
   }
 
   @Post('issue')

@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { PDFDocument, PDFFont, StandardFonts, rgb } from 'pdf-lib';
+import { degrees, PDFDocument, PDFFont, StandardFonts, rgb } from 'pdf-lib';
+import { BusinessException } from '../../common';
 
 export interface CertificateData {
   certificateNumber: string;
@@ -33,6 +34,51 @@ function fmtDate(iso: string | null): string {
     month: 'long',
     year: 'numeric',
   });
+}
+
+/**
+ * Wrap and auto-size the custom body paragraph into the editable band.
+ * Steps down through the template's own size first (12.5pt / 3 lines — the
+ * printed paragraph's exact rhythm), then two tighter settings; a single
+ * word wider than the band fails rather than overflowing. Returns null when
+ * nothing fits — the caller refuses the text instead of distorting the page.
+ */
+function fitBodyText(
+  text: string,
+  font: PDFFont,
+  band: { top: number; bottom: number; maxWidth: number },
+): { lines: string[]; size: number; lineHeight: number } | null {
+  const words = text.replace(/\s+/g, ' ').trim().split(' ');
+  if (words.length === 0 || words[0] === '') return null;
+
+  const settings = [
+    { size: 12.5, lineHeight: 17.5, maxLines: 3 },
+    { size: 11.5, lineHeight: 15.5, maxLines: 3 },
+    { size: 10.5, lineHeight: 12.8, maxLines: 4 },
+  ];
+
+  for (const s of settings) {
+    const lines: string[] = [];
+    let current = '';
+    let overflow = false;
+    for (const word of words) {
+      if (font.widthOfTextAtSize(word, s.size) > band.maxWidth) { overflow = true; break; }
+      const candidate = current ? `${current} ${word}` : word;
+      if (font.widthOfTextAtSize(candidate, s.size) <= band.maxWidth) {
+        current = candidate;
+      } else {
+        lines.push(current);
+        current = word;
+      }
+    }
+    if (overflow) continue;
+    if (current) lines.push(current);
+    const blockHeight = (lines.length - 1) * s.lineHeight + s.size * 0.72;
+    if (lines.length <= s.maxLines && blockHeight <= band.top - band.bottom) {
+      return { lines, size: s.size, lineHeight: s.lineHeight };
+    }
+  }
+  return null;
 }
 
 /**
@@ -160,6 +206,123 @@ export class CertificatePdfService {
       color: INK,
     });
 
+    return Buffer.from(await doc.save());
+  }
+
+  /**
+   * Custom certificate (Round 48): the official appreciation artwork with ONE
+   * editable region — the body paragraph between the recipient line and the
+   * "Presented through Goodhearts" strapline. Everything else (logo, title,
+   * signature, Goodhearts mark) is the fixed template.
+   *
+   * The region was measured off the artwork with a ruler overlay: the printed
+   * paragraph's three lines sit on baselines ≈278 / 260.5 / 243pt, bounded by
+   * the name-label band above (~299) and the cyan strapline below (cap top
+   * ≈234). User text is wrapped and auto-sized to stay inside that band; text
+   * that cannot fit even at the smallest size is refused rather than ever
+   * distorting the layout.
+   */
+  async renderCustom(data: {
+    certificateNumber: string;
+    volunteerName: string;
+    bodyText: string;
+    issuedOn: string;
+    preview?: boolean;
+  }): Promise<Buffer> {
+    const tpl = this.loadTemplate('individual');
+    if (!tpl) {
+      throw new BusinessException(
+        'TEMPLATE_MISSING',
+        'The certificate artwork is not installed on this server — custom certificates need it.',
+        503,
+      );
+    }
+
+    const doc = await PDFDocument.load(tpl);
+    const page = doc.getPage(0);
+    const { width } = page.getSize();
+    const sans = await doc.embedFont(StandardFonts.Helvetica);
+    const sansBold = await doc.embedFont(StandardFonts.HelveticaBold);
+    const sansItalic = await doc.embedFont(StandardFonts.HelveticaOblique);
+    const centerX = width / 2;
+
+    // The editable band (points from the bottom-left of the Letter page).
+    const BAND = { top: 288, bottom: 240, maxWidth: 620 };
+
+    const fit = fitBodyText(data.bodyText, sans, BAND);
+    if (!fit) {
+      throw new BusinessException(
+        'TEXT_TOO_LONG',
+        'That text does not fit the certificate — shorten it; the layout is never squeezed.',
+        400,
+      );
+    }
+
+    // Paint out the template's fixed paragraph, then the name-label band —
+    // same treatment the program certificate gives the label.
+    page.drawRectangle({ x: 76, y: 237, width: 640, height: 52, color: rgb(1, 1, 1) });
+    page.drawRectangle({ x: centerX - 165, y: 299, width: 330, height: 15.8, color: rgb(1, 1, 1) });
+
+    // Recipient name on the presentation line, auto-sized like the original.
+    let nameSize = 24;
+    while (nameSize > 12 && sansBold.widthOfTextAtSize(data.volunteerName, nameSize) > 380) nameSize -= 1;
+    page.drawText(data.volunteerName, {
+      x: centerX - sansBold.widthOfTextAtSize(data.volunteerName, nameSize) / 2,
+      y: 322,
+      size: nameSize,
+      font: sansBold,
+      color: INK,
+    });
+
+    // The quiet caption under the name: the number on an issued certificate,
+    // an unmissable notice on a preview.
+    const caption = data.preview ? 'PREVIEW — not issued' : data.certificateNumber;
+    page.drawText(caption, {
+      x: centerX - sansItalic.widthOfTextAtSize(caption, 8.5) / 2,
+      y: 302,
+      size: 8.5,
+      font: sansItalic,
+      color: MUTED,
+    });
+
+    // The staff-written paragraph, centered line by line like the original.
+    const bandMid = (BAND.top + BAND.bottom) / 2;
+    let baseline = bandMid + ((fit.lines.length - 1) * fit.lineHeight) / 2 - fit.size * 0.36;
+    for (const line of fit.lines) {
+      page.drawText(line, {
+        x: centerX - sans.widthOfTextAtSize(line, fit.size) / 2,
+        y: baseline,
+        size: fit.size,
+        font: sans,
+        color: INK,
+      });
+      baseline -= fit.lineHeight;
+    }
+
+    // Issue date on the date line.
+    const dateText = fmtDate(data.issuedOn);
+    page.drawText(dateText, {
+      x: 562 - sans.widthOfTextAtSize(dateText, 10.5) / 2,
+      y: 141.5,
+      size: 10.5,
+      font: sans,
+      color: INK,
+    });
+
+    if (data.preview) {
+      page.drawText('PREVIEW', {
+        x: 170,
+        y: 140,
+        size: 110,
+        font: sansBold,
+        color: rgb(0.55, 0.6, 0.66),
+        opacity: 0.16,
+        rotate: degrees(30),
+      });
+    }
+
+    doc.setTitle(`Certificate of Appreciation — ${data.volunteerName}`);
+    doc.setAuthor('Parinaam Foundation');
     return Buffer.from(await doc.save());
   }
 

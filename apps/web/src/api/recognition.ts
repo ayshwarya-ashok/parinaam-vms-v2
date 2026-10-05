@@ -51,6 +51,7 @@ export const useCertificateCandidates = (filters: {
 export interface MyCertificate {
   id: string;
   certificateNumber: string;
+  kind: 'program' | 'custom';
   programName: string;
   hours: string;
   eventsAttended: number;
@@ -77,6 +78,40 @@ export async function fetchCertificateBlob(id: string): Promise<{ blob: Blob; fi
   const disposition = String(res.headers['content-disposition'] ?? '');
   const filename = /filename="?([^";]+)"?/.exec(disposition)?.[1] ?? `certificate-${id}.pdf`;
   return { blob: res.data as Blob, filename };
+}
+
+// ── Custom certificates (Round 48) ───────────────────────────────────────────
+
+export interface VolunteerCertificate {
+  id: string;
+  certificateNumber: string;
+  kind: 'program' | 'custom';
+  programName: string | null;
+  customText: string | null;
+  hours: string;
+  eventsAttended: number;
+  certType: 'individual' | 'corporate';
+  issuedAt: string;
+  resendCount: number;
+}
+
+/** Every certificate issued to one volunteer — staff view. */
+export const useVolunteerCertificates = (volunteerId: string | null) =>
+  useQuery({
+    queryKey: ['certificates', 'volunteer', volunteerId],
+    queryFn: async () =>
+      (await api.get<{ data: VolunteerCertificate[] }>(`/certificates/volunteer/${volunteerId}`)).data.data,
+    enabled: !!volunteerId,
+  });
+
+/** Watermarked render of the custom certificate — nothing stored server-side. */
+export async function fetchCustomPreviewBlob(volunteerId: string, content: string): Promise<Blob> {
+  const res = await api.post(
+    '/certificates/custom/preview',
+    { volunteerId, content },
+    { responseType: 'blob' },
+  );
+  return res.data as Blob;
 }
 
 export async function openCertificate(id: string): Promise<void> {
