@@ -27,11 +27,14 @@ export class DataToolsController {
   @Post('reset')
   @Roles('admin')
   @ApiOperation({
-    summary: 'Reset to the client baseline (feature-flagged, admin only)',
+    summary: 'Reset & seed demo data (feature-flagged, admin only)',
     description:
-      'Keeps the client-document catalog (3 programs / 4 activities / 5 sessions), ten curated ' +
-      'volunteers, the primary admin and three field coordinators; removes everything else. ' +
-      'Requires confirm: "RESET".',
+      'Wipes the database back to a scripted client-demo baseline whose session dates are ' +
+      'computed from today, so every status is demoable whenever it runs: the client catalog ' +
+      '(3 programs / 4 activities / 10 sessions incl. draft, full-with-waitlist, running today, ' +
+      'in progress, completed and cancelled), 8 scenario volunteers, the primary admin, 3 field ' +
+      'coordinators, attendance, feedback, and real certificate PDFs (program + custom, one ' +
+      'deliberately stale). Requires confirm: "RESET".',
   })
   reset(@CurrentUser() user: AuthPrincipal, @Body() _dto: ResetDto) {
     return this.service.reset(user);

@@ -82,6 +82,10 @@ export interface ResetSummary {
   volunteers: number;
   fieldCoordinators: number;
   admins: number;
+  enrollments: number;
+  attendance: number;
+  feedback: number;
+  certificates: number;
 }
 
 /** Whether DATA_TOOLS_ENABLED is on — drives both the nav item and the page. */

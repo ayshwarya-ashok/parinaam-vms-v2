@@ -36,7 +36,7 @@ export function DataTools() {
       setConfirmText('');
       // Every cached list is stale now — refetch the world.
       void queryClient.invalidateQueries();
-      enqueueSnackbar('Data reset to the client baseline', { variant: 'success' });
+      enqueueSnackbar('Demo data reseeded — session dates anchored to today', { variant: 'success' });
     },
     onError: (err) =>
       enqueueSnackbar(asApiError(err)?.message ?? 'Reset failed', { variant: 'error' }),
@@ -62,21 +62,31 @@ export function DataTools() {
             variant="outlined"
             sx={{ p: 3, borderRadius: 3, borderColor: 'rgba(139,26,26,0.35)' }}
           >
-            <Typography variant="h6" sx={{ mb: 0.5 }}>⟲ Reset to the client baseline</Typography>
+            <Typography variant="h6" sx={{ mb: 0.5 }}>⟲ Reset &amp; seed demo data</Typography>
             <Typography sx={{ fontSize: '0.9rem', color: 'text.secondary', mb: 1.5 }}>
-              Returns the database to the client-document demo state, in one transaction:
+              Wipes the database and seeds a complete client-demo dataset whose <strong>session
+              dates are computed from today</strong> — run it any day and every status is ready
+              to show:
             </Typography>
             <Box component="ul" sx={{ m: 0, mb: 1.5, pl: 2.5, fontSize: '0.88rem', color: 'text.secondary', display: 'grid', gap: 0.5 }}>
               <li>
-                <strong>Kept:</strong> the client catalog — AAP, Chote Kadam and Activity-Based
-                Volunteering (3 programs, 4 activities, 5 sessions, restored to their canonical
-                state even if renamed, cancelled or deleted since) — plus 10 curated volunteers,
-                the primary admin, 3 field coordinators, trainings, coordinators and the audit trail.
+                <strong>Seeded:</strong> the client catalog (AAP, Chote Kadam, Activity-Based
+                Volunteering — one activity discontinued to demo the enrollment block); 10
+                sessions covering draft, upcoming, full-with-waitlist, running today, in
+                progress, completed ×3 and cancelled; enrollments, attendance (times, absence,
+                admin-recorded, walk-in), a coordinator report, feedback with a published
+                testimonial, and real certificate PDFs — individual, corporate, one custom, and
+                one deliberately stale for the Reissue demo.
               </li>
               <li>
-                <strong>Removed:</strong> every other program, activity and session; every other
-                volunteer account; all enrollments, waitlists, attendance, coordinator reports,
-                certificates (files included), feedback and email logs.
+                <strong>People:</strong> the primary admin, 3 field coordinators and 8 scenario
+                volunteers (certificate holder, waitlisted, consent gate, pending registration,
+                CSR + affiliate pair, absence on record) — all <code>Parinaam@123</code>.
+              </li>
+              <li>
+                <strong>Kept from the current data:</strong> only the training catalog and the
+                audit trail. Everything else — including volunteers registered since the last
+                run — is replaced.
               </li>
             </Box>
             <Alert severity="warning" sx={{ borderRadius: 2, mb: 2 }}>
@@ -97,7 +107,7 @@ export function DataTools() {
                 disabled={confirmText !== 'RESET' || reset.isPending}
                 onClick={() => reset.mutate()}
               >
-                {reset.isPending ? 'Resetting…' : '⟲ Reset data'}
+                {reset.isPending ? 'Seeding…' : '⟲ Reset & seed demo data'}
               </Button>
             </Box>
           </Paper>
@@ -105,12 +115,16 @@ export function DataTools() {
           {summary && (
             <Paper variant="outlined" sx={{ p: 3, borderRadius: 3 }}>
               <Typography variant="h6" sx={{ mb: 1.5 }}>After the reset</Typography>
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(3, 1fr)' }, gap: 1.5 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(5, 1fr)' }, gap: 1.5 }}>
                 <StatTile label="Programs" value={summary.programs} />
                 <StatTile label="Activities" value={summary.activities} />
                 <StatTile label="Sessions" value={summary.sessions} />
                 <StatTile label="Volunteers" value={summary.volunteers} />
                 <StatTile label="Field coordinators" value={summary.fieldCoordinators} />
+                <StatTile label="Enrollments" value={summary.enrollments} />
+                <StatTile label="Attendance" value={summary.attendance} />
+                <StatTile label="Feedback" value={summary.feedback} />
+                <StatTile label="Certificates" value={summary.certificates} />
                 <StatTile label="Admins" value={summary.admins} />
               </Box>
             </Paper>

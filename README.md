@@ -2,7 +2,7 @@
 
 Volunteer Management System for Parinaam Foundation — a full rebuild derived from
 `VMS_prototype_v2.html` and `VMS_database_model.md`, delivered in eight phases and refined
-through forty-nine post-MVP review rounds (`docs/07-post-mvp-refinements.md`) and the client's
+through fifty post-MVP review rounds (`docs/07-post-mvp-refinements.md`) and the client's
 communities refinement (`docs/08`, `docs/09` — the phases half was later retired in Round 47).
 
 **Stack** React 18 + MUI · NestJS 10 · PostgreSQL 16 · Redis · **n8n** (email orchestration) ·
@@ -339,16 +339,19 @@ Admin → **Recognition**:
 ## 2.9 Data tools (feature-flagged)
 
 Admin → **Data Tools** (visible only when `DATA_TOOLS_ENABLED=true`; admin-only — field
-coordinators never see it). One audited action: **reset to the client baseline** — keeps the
-client-document catalog (AAP, Chote Kadam, Activity-Based Volunteering: 3 programs,
-4 activities, 5 sessions restored to canonical state), 10 curated volunteers, the primary
-admin and 3 field coordinators (plus trainings, coordinators and the audit trail); removes
-every other program/activity/session/volunteer and all enrollments, attendance, certificates,
-feedback and email logs. The button arms only after typing **RESET**, the API additionally
-demands `confirm: "RESET"`, and running it twice lands on the same baseline. The reset is
-**database-only** — one transaction, nothing restarted, the app stays up. (Restoring the
-*full* demo dataset is the one thing it doesn't do; that remains the first-boot seed via
-`docker compose down -v && up`.)
+coordinators never see it). One audited action: **Reset & seed demo data** — wipes the
+database and plants a complete client-demo dataset whose **session dates are computed from
+the current date**, so every status is demoable whenever it runs: the client catalog (AAP,
+Chote Kadam, Activity-Based Volunteering, one activity discontinued for the enrollment-block
+demo), 10 sessions (draft / upcoming / full-with-waitlist / running **today** / in progress /
+completed ×3 / cancelled), enrollments and a waitlist, attendance in every capture style,
+a coordinator report, feedback with a published testimonial, and three **real certificate
+PDFs** (individual — deliberately stale for the Reissue demo —, corporate, and one custom).
+People: the primary admin, 3 field coordinators and 8 scenario volunteers, all
+`Parinaam@123`. Kept from the current data: only the training catalog and the audit trail.
+The button arms only after typing **RESET**, the API additionally demands
+`confirm: "RESET"`, running it twice lands on the identical baseline, and it is
+**database-only** — one transaction, nothing restarted, the app stays up.
 
 ## 2.10 Key workflows to try
 

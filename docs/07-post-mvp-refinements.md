@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-10-05 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across forty-nine review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across fifty review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -1339,6 +1339,57 @@ residue tables; flag-off behavior (`enabled:false`, reset 404); browser run — 
 the nav item, the type-in gate arms only on the exact word, the summary tiles render, and
 the field coordinator has no nav item and is bounced off the direct URL; the authz matrix
 passes at 312. The local stack was rebuilt to the full demo dataset afterwards.
+
+---
+
+## Round 50 — "Reset & seed demo data": the date-anchored demo baseline  (2026-10-05)
+
+Round 49's retain-based reset became a full **demo seeder** (product owner's request): the
+button now wipes the database and plants a complete, scripted client-demo dataset whose
+**session dates are computed from the current date** — run it any day and every status is
+ready to show. Same guardrails as before: `DATA_TOOLS_ENABLED` flag, admin-only, typed
+RESET + `confirm: "RESET"`, one transaction, audited, idempotent (deterministic ids — two
+consecutive runs produce the identical baseline).
+
+What a run seeds, anchored to "today":
+
+- **Catalog**: AAP, Chote Kadam, Activity-Based Volunteering; four activities, with
+  Corporate Day Outing **discontinued** (the BR-17 enrollment block demoable on its
+  upcoming Snow City session).
+- **10 sessions**: completed ×3 (T−30/−14/−7), **in progress** (T−10), **today** (the
+  dispatch / mark-completed demo), **full-with-waitlist** (T+7, 2/2 enrolled + 1 waiting),
+  open upcoming (T+21), **draft** (T+30), **cancelled** (T+3, with reason), and the
+  blocked outing (T+14).
+- **People**: the primary admin (kept, never recreated — it is the caller), 3 field
+  coordinators (priya / vikram / arjun), and 8 scenario volunteers — certificate holder,
+  pending-issue candidate, waitlisted custom-certificate holder, absence-on-record,
+  consent-gate (Onboarding), **pending registration** (In Training), and the CSR +
+  TechCorp-affiliate pair. Compliance is earned honestly: consents plus passing attempts
+  on every mandatory training, then `fn_recompute_volunteer_phase` — so Active/In
+  Training/Onboarding all appear for real reasons.
+- **Field execution**: enrollments, a waitlist, attendance covering times-derived,
+  plain present, absent-with-reason, admin-recorded and walk-in, plus a filed
+  coordinator report.
+- **Recognition**: feedback with ratings/NPS/tags and one **published testimonial**
+  (live on the public page), and three **real certificate PDFs** rendered through the
+  actual renderer — individual (deliberately made **stale** post-issue for the Reissue
+  demo), corporate (naming TechCorp), and one custom (Round 48).
+- **Kept from the live data**: only the training catalog and the audit trail. No emails
+  are sent while seeding — every email flow stays demoable live.
+
+The implementation lives in `data-tools.service.ts` (the API can render PDFs and call the
+lifecycle function — things a SQL seed cannot), which also ends the Round 49 duplication
+with S005. The first-boot SQL seeds are untouched. Three seed-time constraint lessons are
+encoded: discontinued activities and cancelled events must set their timestamp columns
+with the status (CHECKs), and `vol_again` is an enum (Definitely/Probably/Not sure/Unlikely).
+
+Verified: two consecutive runs return the identical summary (3/4/10/8/3/1 + 10 enrollments,
+7 attendance, 4 feedback, 3 certificates); SQL inspection of statuses and date offsets
+against the IST anchor date; capacity view shows the full session (2/2 + 1 waiting) and the
+discontinued block (`is_enrollable = false`); the certificates list flags the stale one and
+the wallet/custom listings are right; the public page carries the testimonial; browser run
+drove the renamed button end to end and checked the volunteer-facing browse (today's
+session, full session, waitlist) and wallet; authz matrix 312 — unchanged and passing.
 
 ---
 
