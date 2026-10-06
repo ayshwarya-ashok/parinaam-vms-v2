@@ -180,7 +180,6 @@ function FeedbackCard({
   onOpen: () => void;
 }) {
   return (
-    <Tooltip title="View the full feedback in a side panel" placement="top-start" enterDelay={600}>
     <Paper
       variant="outlined"
       onClick={onOpen}
@@ -267,7 +266,6 @@ function FeedbackCard({
         </Tooltip>
       </Box>
     </Paper>
-    </Tooltip>
   );
 }
 
