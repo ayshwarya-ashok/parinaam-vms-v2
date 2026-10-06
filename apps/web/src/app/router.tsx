@@ -45,6 +45,7 @@ import { FeedbackPage } from '@/pages/volunteer/FeedbackPage';
 import { AttendanceFormPage } from '@/pages/public/AttendanceForm';
 import { CoordinatorReportPage } from '@/pages/public/CoordinatorReport';
 import { FeedbackFormPage } from '@/pages/public/FeedbackForm';
+import { ShareFeedbackPage } from '@/pages/public/ShareFeedback';
 import { Landing } from '@/pages/Landing';
 import { ImpactPage } from '@/pages/public/ImpactPage';
 import { NotFound } from '@/pages/NotFound';
@@ -93,6 +94,8 @@ export const router = createBrowserRouter([
   { path: '/attendance/:token', element: <AttendanceFormPage /> },
   { path: '/report/:token', element: <CoordinatorReportPage /> },
   { path: '/feedback/:token', element: <FeedbackFormPage /> },
+  // Round 53 — the standing anonymous form: stable URL, shareable anywhere.
+  { path: '/share-feedback', element: <ShareFeedbackPage /> },
 
   // ── Volunteer ───────────────────────────────────────────────────────────────
   {

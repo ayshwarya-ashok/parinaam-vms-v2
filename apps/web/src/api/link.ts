@@ -6,7 +6,7 @@ import { API_BASE_URL, type ApiError } from './client';
  * client carries no bearer token, no cookies, and no silent-refresh
  * interceptor — the token in the URL is the whole identity.
  */
-const linkApi = axios.create({ baseURL: API_BASE_URL, timeout: 30_000 });
+export const linkApi = axios.create({ baseURL: API_BASE_URL, timeout: 30_000 });
 
 export interface LinkEventInfo {
   name: string;

@@ -89,13 +89,13 @@ export class PublicService {
     const testimonials = await this.dataSource.query(
       `SELECT COALESCE(NULLIF(TRIM(f.comments), ''), NULLIF(TRIM(f.went_well), '')) AS comments,
               f.overall_rating,
-              v.first_name || ' ' || LEFT(v.last_name, 1) || '.' AS attribution,
-              p.name AS program_name
+              COALESCE(v.first_name || ' ' || LEFT(v.last_name, 1) || '.', 'Anonymous') AS attribution,
+              COALESCE(p.name, f.about_label, 'Goodhearts volunteering') AS program_name
        FROM feedback_submissions f
-       JOIN volunteers v ON v.id = f.volunteer_id
-       JOIN events e ON e.id = f.event_id
-       JOIN activities a ON a.id = e.activity_id
-       JOIN programs p ON p.id = a.program_id
+       LEFT JOIN volunteers v ON v.id = f.volunteer_id
+       LEFT JOIN events e ON e.id = f.event_id
+       LEFT JOIN activities a ON a.id = e.activity_id
+       LEFT JOIN programs p ON p.id = a.program_id
        WHERE f.is_published_testimonial
          AND COALESCE(NULLIF(TRIM(f.comments), ''), NULLIF(TRIM(f.went_well), '')) IS NOT NULL
        ORDER BY f.submitted_at DESC

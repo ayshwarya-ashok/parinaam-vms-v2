@@ -33,6 +33,9 @@ const MATRIX = [
   // /files/signed is @Public, but an invalid signature is 401 for EVERYONE —
   // identical treatment across roles is exactly what this row asserts.
   ['GET',    `/files/signed?path=x&exp=1&sig=x`,        'D', 'D', 'D', 'D'],
+  // Round 53: the standing anonymous form — public by design; an empty body
+  // fails validation (400), which the matrix reads as admitted.
+  ['POST',   '/feedback/anonymous',                     'A', 'A', 'A', 'A'],
   // Round 51: the feedback link form is @Public; an invalid token is 401 for
   // everyone on GET. The POST probe's empty body fails validation (400) before
   // the token is even looked at — the guard admits everyone identically, and

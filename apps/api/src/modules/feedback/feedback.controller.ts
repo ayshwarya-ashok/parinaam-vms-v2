@@ -64,6 +64,14 @@ const toArray = ({ value }: { value: unknown }) => {
   return undefined;
 };
 
+/** The public form captures opinions, never identity (Round 53). */
+class AnonymousFeedbackDto {
+  @IsInt() @Min(1) @Max(5) overallRating!: number;
+  @IsInt() @Min(0) @Max(10) npsScore!: number;
+  @IsOptional() @IsString() @MaxLength(255) about?: string;
+  @IsOptional() @IsString() @MaxLength(4000) comments?: string;
+}
+
 class LinkFeedbackDto {
   @Transform(toInt) @IsInt() @Min(1) @Max(5) overallRating!: number;
   @Transform(toInt) @IsInt() @Min(0) @Max(10) npsScore!: number;
@@ -86,6 +94,18 @@ export class FeedbackController {
   @ApiOperation({ summary: 'Active issue/improvement tag vocabulary for the form' })
   options() {
     return this.feedback.optionCatalog();
+  }
+
+  // ── Anonymous public form (Round 53) — no login, no identity ──────────────
+
+  @Public()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Post('anonymous')
+  @ApiOperation({
+    summary: 'Anonymous feedback from the public /share-feedback form — no login, nothing identifying stored',
+  })
+  submitAnonymous(@Body() dto: AnonymousFeedbackDto) {
+    return this.feedback.submitAnonymous(dto);
   }
 
   // ── Link-token form (Round 51) — the token IS the authentication ──────────

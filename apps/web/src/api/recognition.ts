@@ -199,9 +199,11 @@ export interface AdminFeedbackRow {
   comments: string | null;
   is_published_testimonial: boolean;
   submitted_at: string;
+  is_anonymous: boolean;
   volunteer_name: string;
   event_name: string;
-  event_date: string;
+  /** NULL on anonymous submissions — they concern no single session. */
+  event_date: string | null;
   program_id: string;
   program_name: string;
   issues: string[];

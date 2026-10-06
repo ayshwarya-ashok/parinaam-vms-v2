@@ -77,6 +77,22 @@ export function FeedbackAdmin() {
     <PageShell
       title="Volunteer Feedback"
       description="Every rating points at one specific session. Publishing a testimonial is an explicit act — nothing surfaces publicly without it."
+      actions={
+        <Tooltip title="Copy the public feedback form's link — share it over email or chat; submissions are anonymous and need no login">
+          <Button
+            variant="pillOutlined"
+            onClick={() => {
+              const link = `${window.location.origin}/share-feedback`;
+              void navigator.clipboard
+                .writeText(link)
+                .then(() => enqueueSnackbar(`Feedback link copied: ${link}`, { variant: 'success' }))
+                .catch(() => enqueueSnackbar(link, { variant: 'info' }));
+            }}
+          >
+            🔗 Copy feedback link
+          </Button>
+        </Tooltip>
+      }
     >
       <Box
         sx={{
@@ -199,8 +215,11 @@ function FeedbackCard({
         <Box>
           <Typography sx={{ fontWeight: 700, fontSize: '0.95rem' }}>
             {row.volunteer_name}
+            {row.is_anonymous && (
+              <Chip label="Anonymous" size="small" sx={{ ml: 0.75, height: 18, fontSize: '0.68rem' }} />
+            )}
             <Typography component="span" sx={{ color: 'text.secondary', fontSize: '0.82rem' }}>
-              {' '}· {row.event_name} · {fmtDate(row.event_date)}
+              {' '}· {row.event_name}{row.event_date ? ` · ${fmtDate(row.event_date)}` : ''}
             </Typography>
           </Typography>
           <Typography sx={{ fontSize: '0.78rem', color: 'text.secondary' }}>
@@ -293,7 +312,7 @@ function FeedbackDetailDrawer({ row, onClose }: { row: AdminFeedbackRow | null; 
                 {row.volunteer_name}
               </Typography>
               <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>
-                {row.event_name} · {fmtDate(row.event_date)}
+                {row.event_name}{row.event_date ? ` · ${fmtDate(row.event_date)}` : ''}
               </Typography>
               <Typography sx={{ fontSize: '0.78rem', color: 'text.secondary' }}>
                 {row.program_name} · submitted {fmtDate(row.submitted_at)}

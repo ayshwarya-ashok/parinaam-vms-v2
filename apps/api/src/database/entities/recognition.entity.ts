@@ -130,19 +130,29 @@ export class FeedbackSubmission {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'volunteer_id', type: 'uuid' })
-  volunteerId!: string;
+  /** NULL on anonymous submissions (V028) — no identity is captured. */
+  @Column({ name: 'volunteer_id', type: 'uuid', nullable: true })
+  volunteerId!: string | null;
 
-  @ManyToOne(() => Volunteer, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Volunteer, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'volunteer_id' })
-  volunteer!: Volunteer;
+  volunteer!: Volunteer | null;
 
-  @Column({ name: 'event_id', type: 'uuid' })
-  eventId!: string;
+  /** NULL on anonymous submissions (V028) — they concern no single session. */
+  @Column({ name: 'event_id', type: 'uuid', nullable: true })
+  eventId!: string | null;
 
-  @ManyToOne(() => EventOccurrence, { onDelete: 'CASCADE' })
+  @ManyToOne(() => EventOccurrence, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'event_id' })
-  event!: EventOccurrence;
+  event!: EventOccurrence | null;
+
+  /** TRUE = submitted through the public /share-feedback form (Round 53). */
+  @Column({ name: 'is_anonymous', type: 'boolean', default: false })
+  isAnonymous!: boolean;
+
+  /** Anonymous only: the submitter's own words on what the feedback concerns. */
+  @Column({ name: 'about_label', type: 'varchar', length: 255, nullable: true })
+  aboutLabel!: string | null;
 
   @Column({ name: 'overall_rating', type: 'smallint' })
   overallRating!: number;

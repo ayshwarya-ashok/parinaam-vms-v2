@@ -252,6 +252,30 @@ export class FeedbackService {
     );
   }
 
+  /**
+   * Anyone, no login, no identity (Round 53): the public /share-feedback form.
+   * Rows land beside the signed-in submissions so staff review one list.
+   */
+  async submitAnonymous(input: {
+    overallRating: number;
+    npsScore: number;
+    about?: string;
+    comments?: string;
+  }): Promise<{ id: string }> {
+    const saved = await this.submissions.save(
+      this.submissions.create({
+        volunteerId: null,
+        eventId: null,
+        isAnonymous: true,
+        aboutLabel: input.about?.trim() || null,
+        overallRating: input.overallRating,
+        npsScore: input.npsScore,
+        comments: input.comments?.trim() || null,
+      }),
+    );
+    return { id: saved.id };
+  }
+
   /** Admin list, newest first, with the tag rows inlined. */
   async list(filters: {
     programId?: string;
@@ -262,10 +286,11 @@ export class FeedbackService {
     return this.dataSource.query(
       `SELECT f.id, f.overall_rating, f.nps_score, f.vol_again,
               f.went_well, f.went_wrong_detail, f.improvement_detail, f.comments,
-              f.is_published_testimonial, f.submitted_at,
-              v.first_name || ' ' || v.last_name AS volunteer_name,
-              COALESCE(e.name, a.name) AS event_name, e.date AS event_date,
-              p.id AS program_id, p.name AS program_name,
+              f.is_published_testimonial, f.submitted_at, f.is_anonymous,
+              COALESCE(v.first_name || ' ' || v.last_name, 'Anonymous') AS volunteer_name,
+              COALESCE(e.name, a.name, f.about_label, 'General feedback') AS event_name,
+              e.date AS event_date,
+              p.id AS program_id, COALESCE(p.name, '—') AS program_name,
               COALESCE((SELECT array_agg(i.issue_label) FROM feedback_issues i
                         WHERE i.feedback_id = f.id), '{}') AS issues,
               COALESCE((SELECT array_agg(m.improvement_label) FROM feedback_improvements m
@@ -273,10 +298,10 @@ export class FeedbackService {
               (SELECT COUNT(*)::int FROM event_photos ph
                 WHERE ph.feedback_id = f.id) AS photo_count
        FROM feedback_submissions f
-       JOIN volunteers v ON v.id = f.volunteer_id
-       JOIN events e ON e.id = f.event_id
-       JOIN activities a ON a.id = e.activity_id
-       JOIN programs p ON p.id = a.program_id
+       LEFT JOIN volunteers v ON v.id = f.volunteer_id
+       LEFT JOIN events e ON e.id = f.event_id
+       LEFT JOIN activities a ON a.id = e.activity_id
+       LEFT JOIN programs p ON p.id = a.program_id
        WHERE ($1::uuid IS NULL OR p.id = $1)
          AND ($2::uuid IS NULL OR e.id = $2)
          AND ($3::int IS NULL OR f.overall_rating = $3)
@@ -297,9 +322,11 @@ export class FeedbackService {
    * would-volunteer-again distribution, and the ranked tag leaderboards.
    */
   async analytics(programId?: string): Promise<Record<string, unknown>> {
+    // LEFT JOINs so anonymous submissions (no event) count in the overall
+    // picture; a program filter naturally excludes them.
     const scope = `FROM feedback_submissions f
-       JOIN events e ON e.id = f.event_id
-       JOIN activities a ON a.id = e.activity_id
+       LEFT JOIN events e ON e.id = f.event_id
+       LEFT JOIN activities a ON a.id = e.activity_id
        WHERE ($1::uuid IS NULL OR a.program_id = $1)`;
 
     const [summary] = await this.dataSource.query(

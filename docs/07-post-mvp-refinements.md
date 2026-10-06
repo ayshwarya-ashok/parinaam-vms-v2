@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-10-05 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across fifty-two review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across fifty-three review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -1470,6 +1470,40 @@ payload is cached in-process for 5 minutes, which read as "publishing doesn't wo
 load. Verified live: publish → quote on `/public/impact` immediately (went-well fallback,
 "Deepa K."), retract → gone immediately. The drawer's overline also lost its
 "— read only" suffix (product owner request).
+
+---
+
+## Round 53 — The anonymous feedback link  (2026-10-06)
+
+A **standing, shareable feedback form** anyone can submit — no login, nothing identifying
+stored. It lives at a stable URL (`/share-feedback`), which is exactly what makes it both
+shareable over email **and** safe to hardcode behind the impact page's button (a generated
+token would add nothing once the URL sits on a public page).
+
+- **The impact page's "✏️ Submit Feedback" button** now opens the form (it used to route
+  to the login page); its caption says plainly: anonymous, no sign-in, two minutes.
+- **The form** (LinkFormShell styling): star rating and NPS 0–10 required; an optional
+  "what is this about?" line and free comments. An info note tells recent volunteers
+  their post-session email carries a personal link that ties feedback to the session.
+- **Sharing over email**: Recognition → Feedback gains a **"🔗 Copy feedback link"**
+  action that puts the URL on the clipboard, ready for any email or chat.
+- **Schema (V028)**: `feedback_submissions.volunteer_id`/`event_id` now nullable,
+  `is_anonymous` + `about_label` added, with a CHECK that a row is either fully
+  attributed (BR-09) or fully anonymous — never half of each. The
+  `UNIQUE (volunteer_id, event_id)` never binds anonymous rows.
+- **Staff see everything in one place**: anonymous rows appear in the same Feedback
+  screen (admin + field coordinator) as "Anonymous" with an Anonymous chip, the
+  about-text where the session name would be, and no date; the detail drawer renders
+  them read-only like any other. Analytics LEFT-JOIN so anonymous submissions count in
+  the overall numbers and drop out naturally under a program filter. Publishing an
+  anonymous testimonial attributes it as **"Anonymous"** on the public page.
+- `POST /feedback/anonymous` is `@Public` with a tight throttle (5/min per client);
+  the matrix grew to **82 endpoints × 4 roles = 328 checks**.
+
+Verified: anonymous submit with no auth (201) and range validation (400); the staff list
+shows the row as Anonymous/about-text/no-date; a browser run walked the impact page
+button → form → submit → thank-you; the authz matrix passes; a fresh-boot dry-run applied
+all 28 migrations cleanly.
 
 ---
 

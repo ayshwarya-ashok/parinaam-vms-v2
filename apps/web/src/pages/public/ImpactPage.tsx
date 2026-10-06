@@ -477,13 +477,13 @@ export function ImpactPage() {
             <Button
               variant="pill"
               component={RouterLink}
-              to="/login"
+              to="/share-feedback"
               sx={{ minWidth: '12rem', fontSize: '1rem' }}
             >
               ✏️ Submit Feedback
             </Button>
             <Typography sx={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.85rem' }}>
-              Sign in to rate a session you attended
+              Anonymous — no sign-in needed, two minutes
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', gap: 4, mt: 4, flexWrap: 'wrap' }}>
