@@ -12,6 +12,7 @@ import {
   EventPhoto,
 } from '../../database/entities';
 import { LinkTokenService } from '../attendance/link-token.service';
+import { PublicService } from '../public/public.service';
 import { SignedUrlService } from '../storage/signed-url.service';
 import { StorageService } from '../storage/storage.service';
 
@@ -44,6 +45,7 @@ export class FeedbackService {
     private readonly storage: StorageService,
     private readonly linkTokens: LinkTokenService,
     private readonly signer: SignedUrlService,
+    private readonly publicPage: PublicService,
   ) {}
 
   /** The admin-curated tag vocabulary the form renders from. */
@@ -378,8 +380,23 @@ export class FeedbackService {
 
   /** BR-16: nothing a volunteer wrote surfaces publicly without this flag. */
   async setPublished(id: string, publish: boolean): Promise<void> {
+    if (publish) {
+      // The public page quotes comments, falling back to "what went well" —
+      // publishing a submission with neither would silently show nothing.
+      const row = await this.submissions.findOne({ where: { id } });
+      if (!row) throw new NotFoundException('Feedback submission not found');
+      if (!row.comments?.trim() && !row.wentWell?.trim()) {
+        throw new BusinessException(
+          'NOTHING_TO_PUBLISH',
+          'This submission has no quotable text — neither comments nor a "what went well" answer.',
+          409,
+        );
+      }
+    }
     const result = await this.submissions.update({ id }, { isPublishedTestimonial: publish });
     if (!result.affected) throw new NotFoundException('Feedback submission not found');
+    // Reflect on the public page immediately, not after the 5-minute cache.
+    this.publicPage.invalidate();
   }
 
   /**

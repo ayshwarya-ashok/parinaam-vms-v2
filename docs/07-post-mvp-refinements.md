@@ -1460,6 +1460,17 @@ photo (screenshot), closes on the X, publish-from-card fires its toast without o
 drawer; the photos endpoint and its signed URL were fetched end-to-end (200, image/jpeg);
 the matrix passes at 324.
 
+**Fix (same round) — "published it, but the impact page doesn't show it":** two causes
+stacked. The public testimonials query quoted only `comments`, so a published submission
+whose text lived in *What went well* (common on the link form) vanished silently — the
+quote now **falls back to the went-well answer**, and publishing a submission with
+*neither* is refused outright (`NOTHING_TO_PUBLISH`, with a clear message). And the public
+payload is cached in-process for 5 minutes, which read as "publishing doesn't work" —
+**publish/retract now invalidates that cache**, so the page reflects on the very next
+load. Verified live: publish → quote on `/public/impact` immediately (went-well fallback,
+"Deepa K."), retract → gone immediately. The drawer's overline also lost its
+"— read only" suffix (product owner request).
+
 ---
 
 ## Conventions the refinements established

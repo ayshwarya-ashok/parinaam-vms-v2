@@ -289,7 +289,7 @@ function FeedbackDetailDrawer({ row, onClose }: { row: AdminFeedbackRow | null; 
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
             <Box>
               <Typography variant="overline" sx={{ color: tokens.accentStrong }}>
-                Feedback — read only
+                Feedback
               </Typography>
               <Typography sx={{ fontWeight: 700, fontSize: '1.1rem', lineHeight: 1.3 }}>
                 {row.volunteer_name}

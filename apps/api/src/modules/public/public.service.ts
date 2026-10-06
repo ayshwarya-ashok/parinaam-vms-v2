@@ -27,6 +27,15 @@ export class PublicService {
     private readonly signer: SignedUrlService,
   ) {}
 
+  /**
+   * Drop the cached payload so a change shows on the very next page load —
+   * publishing or retracting a testimonial calls this (Round 52 fix: a
+   * 5-minute stale window read as "publishing doesn't work").
+   */
+  invalidate(): void {
+    this.cache = null;
+  }
+
   async impact(): Promise<Record<string, unknown>> {
     if (this.cache && this.cache.expires > Date.now()) return this.cache.data;
 
@@ -74,8 +83,11 @@ export class PublicService {
     );
 
     // BR-16 lives in this WHERE clause. First name + last initial, full stop.
+    // The quote prefers the volunteer's comments and falls back to their
+    // "what went well" answer (Round 52 fix — a published row with only the
+    // latter used to vanish from the page silently).
     const testimonials = await this.dataSource.query(
-      `SELECT f.comments,
+      `SELECT COALESCE(NULLIF(TRIM(f.comments), ''), NULLIF(TRIM(f.went_well), '')) AS comments,
               f.overall_rating,
               v.first_name || ' ' || LEFT(v.last_name, 1) || '.' AS attribution,
               p.name AS program_name
@@ -85,7 +97,7 @@ export class PublicService {
        JOIN activities a ON a.id = e.activity_id
        JOIN programs p ON p.id = a.program_id
        WHERE f.is_published_testimonial
-         AND f.comments IS NOT NULL AND LENGTH(TRIM(f.comments)) > 0
+         AND COALESCE(NULLIF(TRIM(f.comments), ''), NULLIF(TRIM(f.went_well), '')) IS NOT NULL
        ORDER BY f.submitted_at DESC
        LIMIT 6`,
     );

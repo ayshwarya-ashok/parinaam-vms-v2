@@ -9,6 +9,7 @@ import {
   Volunteer,
 } from '../../database/entities';
 import { AttendanceModule } from '../attendance/attendance.module';
+import { PublicModule } from '../public/public.module';
 import { StorageModule } from '../storage/storage.module';
 import { FeedbackRequestSweeper } from './feedback-request.sweeper';
 import { FeedbackController } from './feedback.controller';
@@ -32,6 +33,8 @@ const workerOnly = role === 'api' ? [] : [FeedbackRequestSweeper];
     // module — Round 51 reuses it for login-free feedback.
     AttendanceModule,
     StorageModule,
+    // Publishing a testimonial busts the public page's 5-minute cache.
+    PublicModule,
   ],
   controllers: [FeedbackController],
   providers: [FeedbackService, ...workerOnly],
