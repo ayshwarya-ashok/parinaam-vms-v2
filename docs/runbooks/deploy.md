@@ -2,7 +2,12 @@
 
 Two deployment shapes exist. **Local / fresh machine** is the laptop recipe. **The
 Parinaam VM** (`volunteer@164.52.223.64`) runs v2 **alongside v1 for A/B testing** —
-v1 keeps serving `volunteer.parinaam.ai` untouched; v2 answers at `vms.parinaam.ai`.
+v1 keeps serving `volunteer.parinaam.ai` untouched; v2 answers at `vms.parinaam.ai`
+(interim public hostname: `https://parinaam-vms.duckdns.org`).
+
+> Deployed through **Round 53 / migration V028** (2026-10-06). The iron rule on the VM:
+> touch only the `pvms-*` containers under `/opt/parinaam-vms-v2`; never the v1 stack
+> (`parinam-*` / `parinaam-vms-*` containers, nocodb on 8080) or the host Caddy.
 
 ## The Parinaam VM (A/B alongside v1) — deployed 2026-09-17
 
@@ -59,20 +64,39 @@ internet ──443──▶ host Caddy (systemd, /etc/caddy/Caddyfile)
      a plain `docker compose --profile app up -d` starts the stragglers. A truly broken
      init is instead cured by a clean re-init: `down -v && up -d` (images are cached).
 
-### VM upgrade (subsequent deploys)
+### VM upgrade (subsequent deploys) — the procedure actually used, Rounds 32–53
 
 ```sh
 # on the laptop
-git bundle create vms-v2.bundle feature/ayshwarya
-cat vms-v2.bundle | ssh -i vm-ssh-key volunteer@164.52.223.64 'cat > vms-v2.bundle'
+git bundle create /tmp/vms-v2.bundle feature/ayshwarya
+cat /tmp/vms-v2.bundle | ssh -i vm-ssh-key -o IdentitiesOnly=yes volunteer@164.52.223.64 \
+  'cat > /home/volunteer/vms-v2.bundle'
+
 # on the VM
 cd /opt/parinaam-vms-v2
-git fetch /home/volunteer/vms-v2.bundle feature/ayshwarya && git reset --hard FETCH_HEAD
+git fetch /home/volunteer/vms-v2.bundle feature/ayshwarya:refs/remotes/bundle/ayshwarya
+git merge --ff-only bundle/ayshwarya      # (or: git checkout -B feature/ayshwarya bundle/ayshwarya)
+
+# any NEW migration: apply from stdin, then record it in the ledger with the
+# file's sha256 (compute the checksum on the laptop: sha256sum database/migrations/V0XX*.sql)
 docker compose exec -T db psql -U parinaam -d parinaam_vms -v ON_ERROR_STOP=1 \
-  -f /database/migrations/V0XX__*.sql        # any NEW migrations, then the
-                                             # schema_migrations row (see database/README)
-docker compose --profile app up -d --build api worker web
+  < database/migrations/V0XX__name.sql
+docker compose exec -T db psql -U parinaam -d parinaam_vms -c "INSERT INTO schema_migrations
+  (version, filename, checksum) VALUES ('V0XX','V0XX__name.sql','<sha256>')
+  ON CONFLICT (version) DO NOTHING;"
+
+docker compose restart api worker          # dev-mode containers recompile the mounted source
 ```
+
+Two extra cases:
+- **`apps/web/package.json` changed** (new dependency, e.g. Round 48's pdfjs-dist):
+  `docker compose exec web npm install` — node_modules live in an anonymous volume,
+  so a code sync alone does not install packages. (Vite hot-reloads plain web code;
+  no web restart needed otherwise.)
+- **`docker-compose.yml` or `.env` changed**: `docker compose up -d <service>` recreates
+  just that service with the new config (e.g. the Round 48 adminer port fix, or flipping
+  `DATA_TOOLS_ENABLED` — set to `true` on the VM since Round 49 for the admin
+  Data Tools page and its "Reset & seed demo data" action).
 
 ## Local / fresh machine
 
@@ -100,7 +124,9 @@ MSYS_NO_PATHCONV=1 docker compose exec -T api sh -c "node /app/gen.mjs && rm /ap
 curl -s localhost:3001/api/v1/health/ready        # db + redis + n8n all "up"
 node scripts/n8n-drift-check.mjs                  # live workflow matches repo
 docker compose exec -T api node scripts/authz-matrix.mjs http://localhost:3000/api/v1
-                                                  # 81 endpoints × 4 roles = 324 checks
+                                                  # 82 endpoints × 4 roles = 328 checks as of
+                                                  # Round 53 — the script's own output is the
+                                                  # authoritative count; ALL must pass
 curl -s -X POST localhost:3001/api/v1/internal/test-email \
   -H "Content-Type: application/json" -d '{"to":"deploy.check@example.com"}'
 # → message must appear in Mailpit (locally http://localhost:8026/mailpit/) within ~15 s
