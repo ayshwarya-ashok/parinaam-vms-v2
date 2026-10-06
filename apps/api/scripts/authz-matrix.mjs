@@ -97,6 +97,8 @@ const MATRIX = [
   ['GET',    '/feedback',                               'D', 'D', 'A', 'A'],
   ['GET',    '/feedback/analytics',                     'D', 'D', 'A', 'A'],
   ['PATCH',  `/feedback/${UUID}/publish`,               'D', 'D', 'A', 'A'],
+  // Round 52: the detail drawer's photo links — staff only.
+  ['GET',    `/feedback/${UUID}/photos`,                'D', 'D', 'A', 'A'],
   ['GET',    '/reports/volunteers',                     'D', 'D', 'D', 'A'],
   ['POST',   '/reports/export',                         'D', 'D', 'D', 'A'],
   ['GET',    '/reports/runs',                           'D', 'D', 'D', 'A'],

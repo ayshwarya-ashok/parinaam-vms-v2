@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-10-05 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across fifty-one review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across fifty-two review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -1430,6 +1430,35 @@ live tag options, stars + NPS picked, submitted, thank-you page shown — with t
 visible to the field coordinator in `GET /feedback` seconds later. A forged-token API
 pass additionally proved context, tag + photo storage (1 photo stored), grace-window
 resubmission (`replaced: true`), and 401s on invalid tokens.
+
+---
+
+## Round 52 — Feedback detail drawer  (2026-10-06)
+
+Every card on Recognition → Feedback (admin **and** field coordinator) is now **clickable**:
+hovering hints at it, and a click (or Enter/Space — the cards are keyboard-reachable) opens
+the full submission **read-only in a right-side drawer** — volunteer, session and program
+facts, the star rating and NPS as tiles, would-volunteer-again, every tag and free-text
+answer, the published state, and — new — the **photos the volunteer attached**, as
+thumbnails that open full-size in a new tab.
+
+- `GET /feedback/:id/photos` (staff only; matrix now **81 endpoints × 4 = 324 checks**)
+  returns two-hour signed URLs; the list rows gained a `photo_count` (shown as a 📷 badge
+  on the card).
+- **One real bug found and fixed on the way**: the API signs photo URLs against its public
+  host (`PUBLIC_API_URL`), but the app serves from one origin and helmet's
+  `Cross-Origin-Resource-Policy: same-origin` blocks cross-origin images — the thumbnail
+  rendered broken. The signature covers only path+expiry, so the web client now routes the
+  same signed query through its **own `/api` base** (same origin via Caddy/Vite proxy),
+  which works identically on local and the VM.
+- The card's **Publish/Retract button stays independent** (`stopPropagation`) — clicking it
+  never opens the drawer; the drawer itself is strictly read-only (no inputs) and points
+  back at the card's button for publishing.
+
+Verified in the browser: drawer opens from a card click with all content and a loaded
+photo (screenshot), closes on the X, publish-from-card fires its toast without opening the
+drawer; the photos endpoint and its signed URL were fetched end-to-end (200, image/jpeg);
+the matrix passes at 324.
 
 ---
 

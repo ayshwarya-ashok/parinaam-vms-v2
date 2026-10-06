@@ -172,6 +172,13 @@ export class FeedbackController {
     return this.feedback.analytics(programId || undefined);
   }
 
+  @Get(':id/photos')
+  @Roles('admin', 'field_coordinator')
+  @ApiOperation({ summary: 'Photos attached to one submission, as short-lived signed URLs (Round 52 detail drawer)' })
+  async photos(@Param('id', UuidPipe) id: string) {
+    return { data: await this.feedback.photosOf(id) };
+  }
+
   @Patch(':id/publish')
   @Roles('admin', 'field_coordinator')
   @ApiOperation({ summary: 'Publish or retract a testimonial (BR-16: publish is an explicit admin act)' })

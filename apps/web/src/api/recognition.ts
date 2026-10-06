@@ -206,7 +206,36 @@ export interface AdminFeedbackRow {
   program_name: string;
   issues: string[];
   improvements: string[];
+  photo_count: number;
 }
+
+export interface FeedbackPhoto {
+  id: string;
+  url: string;
+  fullUrl: string;
+}
+
+/**
+ * The API signs photo URLs against its public host, but the app serves from
+ * one origin (Caddy/Vite proxy) and helmet's Cross-Origin-Resource-Policy
+ * blocks cross-origin images. The signature covers only path+expiry, so the
+ * same signed query is valid through the app's own /api base — rewrite to it.
+ */
+function sameOriginSigned(url: string): string {
+  const query = url.split('/files/signed')[1] ?? '';
+  return `${api.defaults.baseURL}/files/signed${query}`;
+}
+
+/** Photos attached to one submission — staff detail drawer (Round 52). */
+export const useFeedbackPhotos = (feedbackId: string | null) =>
+  useQuery({
+    queryKey: ['feedback', 'photos', feedbackId],
+    queryFn: async () => {
+      const rows = (await api.get<{ data: FeedbackPhoto[] }>(`/feedback/${feedbackId}/photos`)).data.data;
+      return rows.map((p) => ({ ...p, url: sameOriginSigned(p.url), fullUrl: sameOriginSigned(p.fullUrl) }));
+    },
+    enabled: !!feedbackId,
+  });
 
 export const useAdminFeedback = (filters: { programId?: string; rating?: string }) =>
   useQuery({

@@ -12,6 +12,7 @@ import {
   EventPhoto,
 } from '../../database/entities';
 import { LinkTokenService } from '../attendance/link-token.service';
+import { SignedUrlService } from '../storage/signed-url.service';
 import { StorageService } from '../storage/storage.service';
 
 export interface SubmitFeedbackInput {
@@ -42,6 +43,7 @@ export class FeedbackService {
     @InjectRepository(EventPhoto) private readonly photos: Repository<EventPhoto>,
     private readonly storage: StorageService,
     private readonly linkTokens: LinkTokenService,
+    private readonly signer: SignedUrlService,
   ) {}
 
   /** The admin-curated tag vocabulary the form renders from. */
@@ -265,7 +267,9 @@ export class FeedbackService {
               COALESCE((SELECT array_agg(i.issue_label) FROM feedback_issues i
                         WHERE i.feedback_id = f.id), '{}') AS issues,
               COALESCE((SELECT array_agg(m.improvement_label) FROM feedback_improvements m
-                        WHERE m.feedback_id = f.id), '{}') AS improvements
+                        WHERE m.feedback_id = f.id), '{}') AS improvements,
+              (SELECT COUNT(*)::int FROM event_photos ph
+                WHERE ph.feedback_id = f.id) AS photo_count
        FROM feedback_submissions f
        JOIN volunteers v ON v.id = f.volunteer_id
        JOIN events e ON e.id = f.event_id
@@ -354,6 +358,22 @@ export class FeedbackService {
       topIssues: issues,
       topImprovements: improvements,
     };
+  }
+
+  /**
+   * The photos a volunteer attached to one submission, as short-lived signed
+   * URLs the staff detail drawer can render (Round 52). Viewing is staff-only
+   * (controller); the links grant exactly these files, for two hours.
+   */
+  async photosOf(feedbackId: string): Promise<Array<Record<string, unknown>>> {
+    const submission = await this.submissions.findOne({ where: { id: feedbackId } });
+    if (!submission) throw new NotFoundException('Feedback submission not found');
+    const rows = await this.photos.find({ where: { feedbackId } });
+    return rows.map((p) => ({
+      id: p.id,
+      url: this.signer.publicUrl(p.thumbnailPath ?? p.filePath, undefined, 120),
+      fullUrl: this.signer.publicUrl(p.filePath, undefined, 120),
+    }));
   }
 
   /** BR-16: nothing a volunteer wrote surfaces publicly without this flag. */
