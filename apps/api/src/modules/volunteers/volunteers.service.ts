@@ -792,6 +792,21 @@ export class VolunteersService {
       await this.sendWelcomeBack(id);
     }
 
+    // The mirror image (Round 55): deactivation tells the volunteer too —
+    // neutral wording, record kept, a door back via admin@. Without this the
+    // next thing they would see is a failed login with no explanation.
+    if (dto.isActive === false && before.isActive === true && volunteer.user) {
+      await this.notifications
+        .queueEmail({
+          templateKey: 'account_deactivated',
+          to: volunteer.user.email,
+          recipientType: 'volunteer',
+          volunteerId: id,
+          context: { firstName: volunteer.firstName },
+        })
+        .catch(() => undefined);
+    }
+
     return this.adminGet(id);
   }
 

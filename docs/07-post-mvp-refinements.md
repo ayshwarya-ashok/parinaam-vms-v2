@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-10-05 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across fifty-four review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across fifty-five review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -1534,6 +1534,23 @@ both emails landed in Mailpit with the exact password and the first-login notice
 accounts carry `must_change_password = true`; the no-password account then logged in with
 the default, changed its password (204 → flag cleared, sessions revoked), and signed in
 normally with the new one.
+
+---
+
+## Round 55 — Deactivation tells the volunteer  (2026-10-09)
+
+Reactivation has always emailed the volunteer (the Welcome-Back mail, on the inactive →
+active transition); deactivation was silent — the next thing a deactivated volunteer saw
+was a failed login with no explanation. Now the **active → inactive transition sends an
+`account_deactivated` email**: neutral wording (no reason is exposed), the assurance that
+their record — hours, trainings, certificates — is kept and returns with the account, and
+a way back (`admin@parinaam.org`). Like every notification, a failed send never blocks
+the admin action, and only real transitions fire — toggling an already-inactive or
+already-active account sends nothing.
+
+Verified: deactivate → email in Mailpit and login refused with `ACCOUNT_DEACTIVATED`;
+reactivate → Welcome-Back exactly as before; a repeat activate (no transition) sent
+nothing.
 
 ---
 
