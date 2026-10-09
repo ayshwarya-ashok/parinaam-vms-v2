@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-10-05 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across fifty-five review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across fifty-six review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -1551,6 +1551,38 @@ already-active account sends nothing.
 Verified: deactivate → email in Mailpit and login refused with `ACCOUNT_DEACTIVATED`;
 reactivate → Welcome-Back exactly as before; a repeat activate (no transition) sent
 nothing.
+
+---
+
+## Round 56 — A year of silence closes the account, politely  (2026-10-09)
+
+A new daily sweep (worker, 09:15 IST) **auto-deactivates volunteers with no activity for
+over a year** and emails them about it.
+
+- **"Activity" is deliberately broader than the letter of the rule** (no enrollment in a
+  year): the anchor is the LATEST of their last enrollment, their last attendance record
+  (walk-ins never enroll — deactivating someone who walked into a session last month
+  would be absurd), and the account's own creation — so a volunteer who registered eleven
+  months ago and never enrolled still has their full first year.
+- **Scope**: approved, currently-active volunteer accounts only. Pending and rejected
+  registrations have their own lifecycle; erased accounts are husks.
+- **The mechanism is exactly the admin's manual toggle** (`users.is_active = false`):
+  sign-in blocked, sessions die on rotation, the record keeps — and an admin reactivating
+  later fires the existing Welcome-Back email, closing the loop.
+- **The email** (`account_inactivity_deactivated`) is warm, not bureaucratic: "it has
+  been over a year since you last joined a session", the record is kept, and the way back
+  is one mail to admin@parinaam.org.
+- Each deactivation is **audited** (`volunteer.auto_deactivated`, system actor, with the
+  computed last-activity date), each volunteer is processed independently (one bad row
+  never strands the batch), and the sweep is naturally idempotent — deactivated rows no
+  longer match. Batch-limited to 100 per run.
+- One SQL lesson encoded: every bare parameter inside `jsonb_build_object` needs an
+  explicit cast — Postgres cannot infer its type there.
+
+Verified with a synthetic subject (created, backdated 400 days, no enrollments): the
+forced sweep deactivated exactly that account, wrote the audit row, and delivered exactly
+one "We miss you" email; a second sweep did nothing; all ten real volunteers stayed
+active. The subject and its artifacts were removed afterwards.
 
 ---
 

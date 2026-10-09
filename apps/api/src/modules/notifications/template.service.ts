@@ -49,6 +49,7 @@ export class TemplateService implements OnModuleInit {
     custom_certificate_issued: 'A certificate of appreciation from Parinaam Foundation',
     volunteer_account_created: 'Your Parinaam volunteer account — sign in details',
     account_deactivated: 'Your Parinaam volunteer account has been deactivated',
+    account_inactivity_deactivated: 'We miss you — your Parinaam account is now inactive',
     feedback_request: 'How was {{eventName}}? Two minutes of feedback',
     report_ready: '📊 {{reportName}} — your scheduled report',
     compliance_expiring: 'Your {{trainingName}} certification expires soon',
