@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-10-05 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across fifty-three review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across fifty-four review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -1504,6 +1504,36 @@ Verified: anonymous submit with no auth (201) and range validation (400); the st
 shows the row as Anonymous/about-text/no-date; a browser run walked the impact page
 button → form → submit → thank-you; the authz matrix passes; a fresh-boot dry-run applied
 all 28 migrations cleanly.
+
+---
+
+## Round 54 — Admin-created volunteers get their credentials emailed, and must set their own password  (2026-10-09)
+
+The admin "Add volunteer" flow used to leave the initial password as word-of-mouth
+("blank uses Parinaam@123 — ask them to change it"). Now, **with or without a custom
+initial password**:
+
+- **The volunteer is emailed their sign-in details** the moment the account is created —
+  a new `volunteer_account_created` template carrying the login email, the exact initial
+  password (the admin's custom one, or the default), the sign-in button, and the plain
+  statement that **the first login will ask them to set a password of their own**.
+- **That statement is enforced, not aspirational**: admin-created accounts start with
+  `must_change_password = true`, so the existing guard (the same one the admin
+  password-reset flow uses) pins their first session to the password-change screen;
+  changing it clears the flag and revokes old sessions.
+- The Add-volunteer dialog's helper text and the success toast now say what actually
+  happens ("their sign-in details were emailed; they must set their own password on first
+  login"), and the audit row records `credentialsEmailed: true`. A failed email send
+  never blocks account creation (same stance as the approve/reject mails).
+- **Scope**: the single Add-volunteer path only. Self-registration is untouched (those
+  volunteers choose their own password on the form — nothing to email, nothing to force),
+  and the bulk Excel import keeps its advisory-only default, as before.
+
+Verified end-to-end: created one volunteer without a password and one with a custom one —
+both emails landed in Mailpit with the exact password and the first-login notice; both
+accounts carry `must_change_password = true`; the no-password account then logged in with
+the default, changed its password (204 → flag cleared, sessions revoked), and signed in
+normally with the new one.
 
 ---
 

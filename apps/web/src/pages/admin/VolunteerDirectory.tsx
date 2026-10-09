@@ -286,9 +286,7 @@ export function VolunteerDirectory() {
       setAddForm(null);
       void queryClient.invalidateQueries({ queryKey: ['directory'] });
       enqueueSnackbar(
-        res.defaultPasswordUsed
-          ? `${res.email} added — initial password Parinaam@123 (ask them to change it)`
-          : `${res.email} added`,
+        `${res.email} added — their sign-in details were emailed; they must set their own password on first login`,
         { variant: 'success' },
       );
     },
@@ -1052,7 +1050,7 @@ export function VolunteerDirectory() {
             )}
           </Box>
           <TextField label="Initial password (optional)" value={addForm?.password ?? ''}
-            helperText="Blank uses Parinaam@123 — ask them to change it after first login"
+            helperText="Blank uses Parinaam@123. Either way it is emailed to the volunteer, who must set their own password on first login"
             onChange={(e) => setAddForm((f) => (f ? { ...f, password: e.target.value } : f))} />
           <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>
             Created <strong>approved</strong> (you are the reviewer); consent still gates

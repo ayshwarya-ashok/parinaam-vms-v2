@@ -912,13 +912,20 @@ export class VolunteersService {
       areasOfInterest?: string[]; availability?: string | null;
       availabilityNotes?: string | null;
     },
+    /** Round 54: the single-add path forces a password change on first login. */
+    opts: { mustChangePassword?: boolean } = {},
   ): Promise<Volunteer> {
     const passwordHash = await this.passwords.hash(
       data.password?.trim() || VolunteersService.IMPORT_DEFAULT_PASSWORD,
     );
     return this.dataSource.transaction(async (manager) => {
       const user = await manager.save(
-        manager.create(User, { email: data.email, passwordHash, role: 'volunteer' as const }),
+        manager.create(User, {
+          email: data.email,
+          passwordHash,
+          role: 'volunteer' as const,
+          mustChangePassword: opts.mustChangePassword ?? false,
+        }),
       );
       return manager.save(
         manager.create(Volunteer, {
@@ -974,19 +981,41 @@ export class VolunteersService {
       const org = await this.organizations.findOne({ where: { id: organizationId, isActive: true } });
       if (!org) throw new NotFoundException('Organization not found');
     }
-    const volunteer = await this.createApproved(principal, {
-      ...dto, email, phone, category, organizationId,
-    });
+    // Round 54: the account's first password is a shared secret only until
+    // first login — the volunteer is emailed their credentials and the guard
+    // forces them onto their own password before anything else.
+    const initialPassword = dto.password?.trim() || VolunteersService.IMPORT_DEFAULT_PASSWORD;
+    const volunteer = await this.createApproved(
+      principal,
+      { ...dto, email, phone, category, organizationId },
+      { mustChangePassword: true },
+    );
+    await this.notifications
+      .queueEmail({
+        templateKey: 'volunteer_account_created',
+        to: email,
+        recipientType: 'volunteer',
+        volunteerId: volunteer.id,
+        context: {
+          firstName: dto.firstName,
+          email,
+          initialPassword,
+        },
+      })
+      // A template hiccup must never block account creation — same stance as
+      // the approve/reject mails above.
+      .catch(() => undefined);
     await this.audit.record(principal, {
       action: 'volunteer.admin_created',
       entity: 'volunteers',
       entityId: volunteer.id,
-      after: { email, defaultPassword: !dto.password },
+      after: { email, defaultPassword: !dto.password, credentialsEmailed: true },
     });
     return {
       id: volunteer.id,
       email,
       defaultPasswordUsed: !dto.password?.trim(),
+      credentialsEmailed: true,
     };
   }
 

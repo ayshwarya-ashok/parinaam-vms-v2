@@ -2,7 +2,7 @@
 
 Volunteer Management System for Parinaam Foundation — a full rebuild derived from
 `VMS_prototype_v2.html` and `VMS_database_model.md`, delivered in eight phases and refined
-through fifty-three post-MVP review rounds (`docs/07-post-mvp-refinements.md`) and the client's
+through fifty-four post-MVP review rounds (`docs/07-post-mvp-refinements.md`) and the client's
 communities refinement (`docs/08`, `docs/09` — the phases half was later retired in Round 47).
 
 **Stack** React 18 + MUI · NestJS 10 · PostgreSQL 16 · Redis · **n8n** (email orchestration) ·
