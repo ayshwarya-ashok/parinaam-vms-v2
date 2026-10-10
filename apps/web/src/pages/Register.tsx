@@ -23,6 +23,7 @@ import axios from 'axios';
 import { API_BASE_URL, api, asApiError } from '@/api/client';
 import { useAuth } from '@/app/auth';
 import {
+  emailError,
   firstProblem,
   phoneForApi,
   validateProfile,
@@ -173,8 +174,9 @@ export function Register() {
     setError(null);
 
     if (standalone) {
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(account.email.trim())) {
-        setError('Enter a valid email address.');
+      const badEmail = emailError(account.email, true);
+      if (badEmail) {
+        setError(badEmail);
         return;
       }
       if (account.password.length < 8) {

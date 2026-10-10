@@ -36,6 +36,36 @@ export function phoneError(input: string | null | undefined, required = false): 
   return null;
 }
 
+/**
+ * Round 57 — one email rule for every form in the app. Pragmatic shape check
+ * (something@something.tld), mirroring the API's @IsEmail: the point is the
+ * message arriving without a round trip, not re-implementing RFC 5321.
+ */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+export function emailError(input: string | null | undefined, required = false): string | null {
+  const raw = (input ?? '').trim();
+  if (raw === '') return required ? 'An email address is required.' : null;
+  if (!EMAIL_RE.test(raw)) return 'Enter a valid email address, like name@example.org.';
+  return null;
+}
+
+/** For comma/space/newline-separated lists (invites, report recipients). */
+export function emailListError(input: string | null | undefined, required = false): string | null {
+  const raw = (input ?? '').trim();
+  if (raw === '') return required ? 'At least one email address is required.' : null;
+  const bad = raw
+    .split(/[\s,;]+/)
+    .filter(Boolean)
+    .filter((e) => !EMAIL_RE.test(e));
+  if (bad.length > 0) {
+    return bad.length === 1
+      ? `"${bad[0]}" is not a valid email address.`
+      : `${bad.length} entries are not valid email addresses (first: "${bad[0]}").`;
+  }
+  return null;
+}
+
 /** What we send once it passes: the bare ten digits. */
 export function phoneForApi(input: string | null | undefined): string | undefined {
   const raw = (input ?? '').trim();

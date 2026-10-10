@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-10-05 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across fifty-six review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across fifty-seven review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -1583,6 +1583,41 @@ Verified with a synthetic subject (created, backdated 400 days, no enrollments):
 forced sweep deactivated exactly that account, wrote the audit row, and delivered exactly
 one "We miss you" email; a second sweep did nothing; all ten real volunteers stayed
 active. The subject and its artifacts were removed afterwards.
+
+---
+
+## Round 57 — Email validation everywhere, and cancellations that always notify  (2026-10-10)
+
+**Item 2 — one email rule across the application.** The API already validated every email
+field (`@IsEmail` on register, login, check-email, admin-create, invite, reset, sponsor
+pack, coordinators) — the gaps were client-side messages and one real server hole:
+
+- `validation.ts` gains the shared `emailError` / `emailListError` helpers (mirroring the
+  API's rule, like `phoneError`), and every form with an email field now uses them:
+  **register** (replacing its private inline regex), **both logins** (bad format never
+  leaves the browser), the **Add-volunteer dialog** (inline error + disabled submit), the
+  **invite dialog** (the multi-address list names its first bad entry), the
+  **reset-password dialog**, the **sponsor-pack email**, and **scheduled-report
+  recipients** (per-entry message under the comma-separated field).
+- The server hole: scheduled-report **recipients** were checked only as "a string ≤ 2000
+  chars" — a typo'd address sailed through and failed silently at send time. Create and
+  update now validate every entry and refuse with `INVALID_EMAIL` naming the bad ones.
+
+**Item 3 — program/activity/session cancellation always emails the enrolled.** The
+per-session cancel has notified since BR-07; the catalog **delete cascade deliberately
+did not** ("a catalog delete is bookkeeping", Round 36). That stance is reversed by
+product decision: deleting a program or activity now immediately emails **every enrolled
+and waitlisted volunteer** of each session the cascade cancels — same `event_cancelled`
+template, with the admin's reason — and the audit row and API response carry the
+`notified` count. A notification failure never un-deletes the catalog. (Discontinue
+still cancels nothing and so notifies nobody.)
+
+Verified: a scratch program → activity → published future session with two enrollments;
+deleting the program returned `{sessionsCancelled: 1, notified: 2}` and both volunteers
+received "Cancelled: … on 20 November 2026" with the reason in the body; scheduled-report
+creation with a bad entry returned `INVALID_EMAIL: not-an-email` while a clean list
+created (and was removed); a browser run submitted the login form with a malformed email
+and got the inline message with no request leaving the page. Scratch data removed.
 
 ---
 

@@ -37,6 +37,7 @@ import {
   VolunteerPicker,
 } from '@/components';
 import type { PickerVolunteer } from '@/components';
+import { emailError } from '@/app/validation';
 import { tokens } from '@/theme';
 
 const ABSENCE_REASONS = [
@@ -558,6 +559,8 @@ export function SessionRecord() {
             required
             type="email"
             value={sponsorEmail}
+            error={!!sponsorEmail.trim() && emailError(sponsorEmail) !== null}
+            helperText={sponsorEmail.trim() ? emailError(sponsorEmail) : undefined}
             onChange={(e) => setSponsorEmail(e.target.value)}
           />
           <TextField
@@ -572,7 +575,7 @@ export function SessionRecord() {
           </Button>
           <Button
             variant="pill"
-            disabled={sponsorPack.isPending || !/.+@.+\..+/.test(sponsorEmail.trim())}
+            disabled={sponsorPack.isPending || emailError(sponsorEmail, true) !== null}
             onClick={() => sponsorPack.mutate()}
           >
             Send pack

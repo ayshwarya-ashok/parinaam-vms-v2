@@ -16,6 +16,7 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { API_BASE_URL, api } from '@/api/client';
 import { authErrorMessage, isMissingAccount, useAuth, type SessionUser } from '@/app/auth';
+import { emailError } from '@/app/validation';
 import { PasswordField } from '@/components/PasswordField';
 
 interface PublicStats {
@@ -64,6 +65,11 @@ export function Landing() {
     e.preventDefault();
     setError(null);
     setOfferSignup(false);
+    const badEmail = emailError(email, true);
+    if (badEmail) {
+      setError(badEmail);
+      return;
+    }
     setBusy(true);
     try {
       if (tab === 'signup') {

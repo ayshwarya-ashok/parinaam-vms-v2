@@ -45,6 +45,8 @@ import {
 import { isUnchanged, useToast } from '@/app/toast';
 import {
   firstProblem,
+  emailError,
+  emailListError,
   phoneError,
   phoneForApi,
   validateProfile,
@@ -749,7 +751,7 @@ export function VolunteerDirectory() {
           </Button>
           <Button
             variant="pill"
-            disabled={resetPassword.isPending || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(resetEmail)}
+            disabled={resetPassword.isPending || emailError(resetEmail, true) !== null}
             onClick={() => resetPassword.mutate(resetEmail.trim())}
           >
             {resetPassword.isPending ? 'Resetting…' : 'Reset password'}
@@ -882,6 +884,8 @@ export function VolunteerDirectory() {
             <Typography sx={{ color: 'error.main', fontSize: '0.88rem' }}>{addError}</Typography>
           )}
           <TextField label="Email" required type="email" value={addForm?.email ?? ''}
+            error={!!addForm?.email.trim() && emailError(addForm?.email) !== null}
+            helperText={addForm?.email.trim() ? emailError(addForm?.email) : undefined}
             onChange={(e) => { setAddError(null); setAddForm((f) => (f ? { ...f, email: e.target.value } : f)); }} />
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
             <TextField label="First name" required value={addForm?.firstName ?? ''}
@@ -1063,7 +1067,8 @@ export function VolunteerDirectory() {
             variant="pill"
             disabled={
               addVolunteer.isPending ||
-              !addForm?.email.trim() || !addForm?.firstName.trim() || !addForm?.lastName.trim() ||
+              emailError(addForm?.email, true) !== null ||
+              !addForm?.firstName.trim() || !addForm?.lastName.trim() ||
               !addForm?.gender || !addForm?.ageGroup || !addForm?.city.trim() ||
               !addForm?.state.trim() || phoneError(addForm?.phone, true) !== null ||
               (addForm?.category === 'CSR' && !addForm?.organization.trim())
@@ -1090,6 +1095,8 @@ export function VolunteerDirectory() {
             minRows={3}
             placeholder={'one@techcorp.in\ntwo@techcorp.in — commas, spaces or new lines all work'}
             value={inviteEmails}
+            error={!!inviteEmails.trim() && emailListError(inviteEmails) !== null}
+            helperText={inviteEmails.trim() ? emailListError(inviteEmails) : undefined}
             onChange={(e) => setInviteEmails(e.target.value)}
           />
           <TextField
@@ -1119,7 +1126,7 @@ export function VolunteerDirectory() {
           </Button>
           <Button
             variant="pill"
-            disabled={invite.isPending || !inviteEmails.trim()}
+            disabled={invite.isPending || emailListError(inviteEmails, true) !== null}
             onClick={() => invite.mutate()}
           >
             Send invites

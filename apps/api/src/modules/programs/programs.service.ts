@@ -10,6 +10,7 @@ import {
   ProgramTraining,
 } from '../../database/entities';
 import { AuditService } from '../audit/audit.service';
+import { NotificationsService } from '../notifications';
 import {
   CreateActivityDto,
   CreateProgramDto,
@@ -27,6 +28,7 @@ export class ProgramsService {
     @InjectRepository(Coordinator) private readonly coordinators: Repository<Coordinator>,
     private readonly dataSource: DataSource,
     private readonly audit: AuditService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   // ── Programs ─────────────────────────────────────────────────────────────
@@ -250,8 +252,9 @@ export class ProgramsService {
     );
 
     // …and so do the not-yet-completed sessions: cancelled with the reason on
-    // record. Deliberately NO emails — the explicit per-session cancel is the
-    // flow that notifies people; a catalog delete is bookkeeping.
+    // record. Round 57 reverses the earlier no-email stance: every enrolled
+    // and waitlisted volunteer on those sessions is told immediately, exactly
+    // like the per-session cancel (BR-07).
     // (TypeORM returns [rows, affected] for UPDATE … RETURNING on postgres.)
     const [cancelledRows] = await this.dataSource.query(
       `UPDATE events e SET status = 'cancelled', cancelled_at = now(), cancelled_by = $2,
@@ -263,15 +266,78 @@ export class ProgramsService {
       [id, principal.sub, `Program deleted: ${dto.reason}`],
     );
     const sessionsCancelled = Array.isArray(cancelledRows) ? cancelledRows.length : 0;
+    const notified = await this.notifyCancelledSessions(
+      (cancelledRows as Array<{ id: string }>).map((r) => r.id),
+      dto.reason,
+    );
 
     await this.audit.record(principal, {
       action: 'program.deleted',
       entity: 'programs',
       entityId: id,
-      after: { reason: dto.reason, sessionsCancelled },
+      after: { reason: dto.reason, sessionsCancelled, notified },
     });
 
-    return { deleted: true, sessionsCancelled };
+    return { deleted: true, sessionsCancelled, notified };
+  }
+
+  /**
+   * Round 57 — a catalog delete that cancels sessions notifies the people on
+   * them, immediately and through the same template the per-session cancel
+   * uses. Enrolled AND waitlisted, one email per volunteer per session. A
+   * notification failure never un-deletes the catalog.
+   */
+  private async notifyCancelledSessions(eventIds: string[], reason: string): Promise<number> {
+    if (eventIds.length === 0) return 0;
+    const fmt = (iso: string) =>
+      new Date(`${String(iso).slice(0, 10)}T00:00:00`).toLocaleDateString('en-IN', {
+        day: 'numeric', month: 'long', year: 'numeric',
+      });
+
+    const recipients: Array<{
+      event_id: string; display_name: string; date: string; program_id: string;
+      volunteer_id: string; email: string; first_name: string;
+    }> = await this.dataSource.query(
+      `SELECT e.id AS event_id, COALESCE(e.name, a.name) AS display_name, e.date,
+              a.program_id, v.id AS volunteer_id, u.email, v.first_name
+       FROM events e
+       JOIN activities a ON a.id = e.activity_id
+       JOIN event_enrollments en ON en.event_id = e.id AND en.status = 'enrolled'
+       JOIN volunteers v ON v.id = en.volunteer_id
+       JOIN users u ON u.id = v.user_id
+       WHERE e.id = ANY($1::uuid[])
+       UNION
+       SELECT e.id, COALESCE(e.name, a.name), e.date, a.program_id, v.id, u.email, v.first_name
+       FROM events e
+       JOIN activities a ON a.id = e.activity_id
+       JOIN waitlist_entries w ON w.event_id = e.id
+       JOIN volunteers v ON v.id = w.volunteer_id
+       JOIN users u ON u.id = v.user_id
+       WHERE e.id = ANY($1::uuid[])`,
+      [eventIds],
+    );
+
+    let notified = 0;
+    for (const r of recipients) {
+      await this.notifications
+        .queueEmail({
+          templateKey: 'event_cancelled',
+          to: r.email,
+          recipientType: 'volunteer',
+          volunteerId: r.volunteer_id,
+          eventId: r.event_id,
+          programId: r.program_id,
+          context: {
+            firstName: r.first_name,
+            eventName: r.display_name,
+            eventDate: fmt(r.date),
+            reason,
+          },
+        })
+        .then(() => { notified += 1; })
+        .catch(() => undefined);
+    }
+    return notified;
   }
 
   async reactivate(principal: AuthPrincipal, id: string) {
@@ -453,15 +519,20 @@ export class ProgramsService {
       [id, principal.sub, `Activity deleted: ${dto.reason}`],
     );
     const sessionsCancelled = Array.isArray(cancelledRows) ? cancelledRows.length : 0;
+    // Round 57: the cascade notifies, same as the program delete.
+    const notified = await this.notifyCancelledSessions(
+      (cancelledRows as Array<{ id: string }>).map((r) => r.id),
+      dto.reason,
+    );
 
     await this.audit.record(principal, {
       action: 'activity.deleted',
       entity: 'activities',
       entityId: id,
-      after: { reason: dto.reason, sessionsCancelled },
+      after: { reason: dto.reason, sessionsCancelled, notified },
     });
 
-    return { deleted: true, sessionsCancelled };
+    return { deleted: true, sessionsCancelled, notified };
   }
 
   async reactivateActivity(principal: AuthPrincipal, id: string) {

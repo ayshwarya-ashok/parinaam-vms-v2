@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
+import { emailListError } from '@/app/validation';
 import { useState } from 'react';
 import { ScheduledReportRow, useScheduledReports } from '@/api/analytics';
 import { api, asApiError } from '@/api/client';
@@ -274,7 +275,11 @@ export function ScheduledReportsPage() {
             </Box>
             <TextField
               label="Recipients"
-              helperText="Comma-separated email addresses"
+              error={!!form.recipients.trim() && emailListError(form.recipients) !== null}
+              helperText={
+                (form.recipients.trim() && emailListError(form.recipients)) ||
+                'Comma-separated email addresses'
+              }
               value={form.recipients}
               onChange={(e) => setForm({ ...form, recipients: e.target.value })}
               placeholder="funders@parinaam.org, director@parinaam.org"
@@ -285,7 +290,7 @@ export function ScheduledReportsPage() {
           <Button variant="pillOutlined" onClick={() => setForm(null)}>Cancel</Button>
           <Button
             variant="pill"
-            disabled={!form?.name || !form?.recipients || save.isPending}
+            disabled={!form?.name || emailListError(form?.recipients, true) !== null || save.isPending}
             onClick={() => form && save.mutate(form)}
           >
             {save.isPending ? 'Saving…' : 'Save schedule'}

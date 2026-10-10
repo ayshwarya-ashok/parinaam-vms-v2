@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { BusinessException } from '../../common';
 import { ReportFormat, ReportFrequency, ScheduledReport } from '../../database/entities';
 
 export interface ScheduleInput {
@@ -71,7 +72,29 @@ export class ScheduledReportsService {
     return schedule;
   }
 
+  /**
+   * Round 57: recipients is a comma-separated list the dispatcher mails one
+   * by one — a typo'd address used to sail through the string-length check
+   * and fail silently at send time. Validate every entry on the way in.
+   */
+  private assertRecipients(raw: string): void {
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    const entries = raw.split(/[\s,;]+/).filter(Boolean);
+    if (entries.length === 0) {
+      throw new BusinessException('INVALID_EMAIL', 'At least one recipient email address is required.', 400);
+    }
+    const bad = entries.filter((e) => !EMAIL_RE.test(e));
+    if (bad.length > 0) {
+      throw new BusinessException(
+        'INVALID_EMAIL',
+        `Not a valid email address: ${bad.join(', ')}`,
+        400,
+      );
+    }
+  }
+
   async create(input: ScheduleInput, createdBy: string): Promise<ScheduledReport> {
+    this.assertRecipients(input.recipients);
     const timezone = input.timezone ?? 'Asia/Kolkata';
     return this.schedules.save(
       this.schedules.create({
@@ -91,6 +114,7 @@ export class ScheduledReportsService {
   }
 
   async update(id: string, patch: Partial<ScheduleInput> & { isActive?: boolean }): Promise<ScheduledReport> {
+    if (patch.recipients !== undefined) this.assertRecipients(patch.recipients);
     const schedule = await this.findOne(id);
 
     const wasActive = schedule.isActive;

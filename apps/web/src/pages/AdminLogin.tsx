@@ -14,6 +14,7 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { API_BASE_URL } from '@/api/client';
 import { authErrorMessage, useAuth } from '@/app/auth';
+import { emailError } from '@/app/validation';
 import { PasswordField } from '@/components/PasswordField';
 
 interface PublicStats {
@@ -59,6 +60,11 @@ export function AdminLogin() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    const badEmail = emailError(email, true);
+    if (badEmail) {
+      setError(badEmail);
+      return;
+    }
     setBusy(true);
     try {
       const sessionUser = await login(email, password);
