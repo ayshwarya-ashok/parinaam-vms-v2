@@ -1648,6 +1648,15 @@ workshop and once as Enrolled on an upcoming session with attended/hours blank; 
 in-progress mentor session's hours stay blank. Excel (PK) and PDF (%PDF) render the same
 17 columns.
 
+**4a (same round, product owner's column list):** the report grew to **27 columns** —
+program start/end dates and activity start/end dates (the V025 planning windows, blank
+when unset), the date column renamed **Session date**, **session start and end time**
+(end derived as start + duration), **Volunteers enrolled** (the session's live enrolled
+count), **Beneficiary community**, **Volunteer status** (registration status, shown as
+`inactive` when the account is deactivated) and **Volunteer type** (Individual/CSR), and
+Hours renamed **Attendance hours**. Re-verified in CSV (all columns populated as
+expected, 10:00→14:00 derived end on a 4-hour session) and generated in Excel + PDF.
+
 ---
 
 ## Conventions the refinements established

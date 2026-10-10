@@ -267,15 +267,29 @@ export class ReportQueryService {
   async consolidated(): Promise<ReportData> {
     const participantColumns = `
        p.name AS program, p.status::text AS program_status,
+       COALESCE(TO_CHAR(p.start_date, 'YYYY-MM-DD'), '') AS program_start,
+       COALESCE(TO_CHAR(p.end_date, 'YYYY-MM-DD'), '') AS program_end,
        a.name AS activity, a.status::text AS activity_status,
+       COALESCE(TO_CHAR(a.start_date, 'YYYY-MM-DD'), '') AS activity_start,
+       COALESCE(TO_CHAR(a.end_date, 'YYYY-MM-DD'), '') AS activity_end,
        a.default_duration_hours AS default_hours,
        e.code AS session_code, COALESCE(e.name, a.name) AS session,
-       TO_CHAR(e.date, 'YYYY-MM-DD') AS date,
+       TO_CHAR(e.date, 'YYYY-MM-DD') AS session_date,
+       TO_CHAR(e.start_time, 'HH24:MI') AS session_start,
+       TO_CHAR(e.start_time + make_interval(secs => e.duration_hours * 3600), 'HH24:MI') AS session_end,
        e.status::text AS session_status,
        COALESCE(e.location, '') AS location,
+       (SELECT COUNT(*)::int FROM event_enrollments ec
+         WHERE ec.event_id = e.id AND ec.status = 'enrolled') AS enrolled_count,
+       COALESCE((SELECT STRING_AGG(bc.name, ', ' ORDER BY bc.name)
+         FROM event_communities evc JOIN beneficiary_communities bc ON bc.id = evc.community_id
+         WHERE evc.event_id = e.id), '') AS community,
        v.first_name || ' ' || v.last_name AS volunteer,
        COALESCE(v.code, '') AS volunteer_code,
-       u.email::text AS email`;
+       u.email::text AS email,
+       CASE WHEN NOT u.is_active THEN 'inactive'
+            ELSE v.registration_status::text END AS volunteer_status,
+       v.category::text AS volunteer_type`;
 
     const rows = await this.dataSource.query(
       `SELECT ${participantColumns},
@@ -313,7 +327,7 @@ export class ReportQueryService {
            SELECT 1 FROM event_enrollments en2
            WHERE en2.event_id = ar.event_id AND en2.volunteer_id = ar.volunteer_id
              AND en2.status = 'enrolled')
-       ORDER BY program, date, session_code, volunteer`,
+       ORDER BY program, session_date, session_code, volunteer`,
     );
 
     return {
@@ -321,21 +335,31 @@ export class ReportQueryService {
       columns: [
         { key: 'program', label: 'Program' },
         { key: 'program_status', label: 'Program status' },
+        { key: 'program_start', label: 'Program start date' },
+        { key: 'program_end', label: 'Program end date' },
         { key: 'activity', label: 'Activity' },
         { key: 'activity_status', label: 'Activity status' },
+        { key: 'activity_start', label: 'Activity start date' },
+        { key: 'activity_end', label: 'Activity end date' },
         { key: 'default_hours', label: 'Default hours', align: 'right' },
         { key: 'session_code', label: 'Session code' },
         { key: 'session', label: 'Session' },
-        { key: 'date', label: 'Date' },
+        { key: 'session_date', label: 'Session date' },
+        { key: 'session_start', label: 'Session start time' },
+        { key: 'session_end', label: 'Session end time' },
         { key: 'session_status', label: 'Session status' },
         { key: 'location', label: 'Location' },
+        { key: 'enrolled_count', label: 'Volunteers enrolled', align: 'right' },
+        { key: 'community', label: 'Beneficiary community' },
         { key: 'volunteer', label: 'Volunteer' },
         { key: 'volunteer_code', label: 'Volunteer code' },
         { key: 'email', label: 'Email' },
+        { key: 'volunteer_status', label: 'Volunteer status' },
+        { key: 'volunteer_type', label: 'Volunteer type' },
         { key: 'participation', label: 'Participation' },
         { key: 'enrolled_on', label: 'Enrolled on' },
         { key: 'attended', label: 'Attended' },
-        { key: 'hours', label: 'Hours', align: 'right' },
+        { key: 'hours', label: 'Attendance hours', align: 'right' },
       ],
       rows,
     };
