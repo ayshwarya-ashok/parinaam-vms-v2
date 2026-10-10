@@ -202,14 +202,31 @@ export function ProgramDetail() {
         </Alert>
       )}
 
-      {(program.startDate || program.endDate) && (
-        <Typography sx={{ mb: 2, fontSize: '0.9rem', color: 'text.secondary' }}>
-          🗓 Planned window:{' '}
-          {program.startDate ? new Date(`${String(program.startDate).slice(0, 10)}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '…'}
-          {' – '}
-          {program.endDate ? new Date(`${String(program.endDate).slice(0, 10)}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'open-ended'}
-        </Typography>
-      )}
+      {/* Round 60 — everything captured at creation, read-only; Edit changes it. */}
+      <Paper variant="outlined" sx={{ p: 2, borderRadius: 3, mb: 3 }}>
+        <Typography sx={{ fontWeight: 700, fontSize: '0.92rem', mb: 1 }}>Program details</Typography>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(4, 1fr)' }, gap: 1.5 }}>
+          <DetailField label="Code" value={program.code} />
+          <DetailField label="Status" value={program.status} />
+          <DetailField label="Default coordinator" value={program.defaultCoordinator?.name ?? '—'} />
+          <DetailField
+            label="Planned window"
+            value={
+              program.startDate || program.endDate
+                ? `${program.startDate ? fmtWindowDate(String(program.startDate)) : '…'} – ${program.endDate ? fmtWindowDate(String(program.endDate)) : 'open-ended'}`
+                : '—'
+            }
+          />
+        </Box>
+        {program.description && (
+          <Typography sx={{ mt: 1.5, fontSize: '0.88rem', whiteSpace: 'pre-wrap' }}>
+            <Box component="span" sx={{ fontWeight: 700, color: 'text.secondary', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block' }}>
+              Description
+            </Box>
+            {program.description}
+          </Typography>
+        )}
+      </Paper>
 
       {/* Program-level trainings */}
       <Box sx={{ mb: 3 }}>
@@ -428,5 +445,22 @@ export function ProgramDetail() {
       </Dialog>
 
     </PageShell>
+  );
+}
+
+function fmtWindowDate(iso: string): string {
+  return new Date(`${iso.slice(0, 10)}T00:00:00`).toLocaleDateString('en-IN', {
+    day: 'numeric', month: 'short', year: 'numeric',
+  });
+}
+
+function DetailField({ label, value }: { label: string; value: string }) {
+  return (
+    <Box>
+      <Typography sx={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'text.secondary', fontWeight: 700 }}>
+        {label}
+      </Typography>
+      <Typography sx={{ fontSize: '0.9rem' }}>{value}</Typography>
+    </Box>
   );
 }

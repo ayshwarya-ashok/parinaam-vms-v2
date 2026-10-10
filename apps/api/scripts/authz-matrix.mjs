@@ -103,6 +103,8 @@ const MATRIX = [
   // Round 52: the detail drawer's photo links — staff only.
   ['GET',    `/feedback/${UUID}/photos`,                'D', 'D', 'A', 'A'],
   ['GET',    '/reports/volunteers',                     'D', 'D', 'D', 'A'],
+  // Round 60: the on-screen preview of any report type.
+  ['GET',    '/reports/preview?type=programs',          'D', 'D', 'D', 'A'],
   ['POST',   '/reports/export',                         'D', 'D', 'D', 'A'],
   ['GET',    '/reports/runs',                           'D', 'D', 'D', 'A'],
   ['GET',    '/reports/scheduled',                      'D', 'D', 'D', 'A'],

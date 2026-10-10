@@ -21,9 +21,11 @@ import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import {
   exportAndDownload,
+  useReportPreview,
   useReportRuns,
   useVolunteerReport,
 } from '@/api/analytics';
+import { alpha } from '@mui/material/styles';
 import { asApiError } from '@/api/client';
 import { FilterBar, PageShell, SortableCell, useColumnFilters, useTableSort } from '@/components';
 import { tokens } from '@/theme';
@@ -37,11 +39,31 @@ function fmtDateTime(iso: string): string {
   });
 }
 
-/** Reports screen: the volunteer table with attendance bars, three export buttons, run history. */
+/**
+ * Round 60 — the redesigned Reports screen: pick a report, scope it with the
+ * period control, preview it on screen, export it in any format. The volunteer
+ * summary keeps its rich table (bars, funnels); every other report previews
+ * through the generic endpoint that renders exactly what the exports contain.
+ */
+const REPORTS = [
+  { type: 'volunteers', label: 'Volunteer summary', period: true },
+  { type: 'consolidated', label: 'Consolidated', period: true },
+  { type: 'programs', label: 'Programs', period: true },
+  { type: 'activities', label: 'Activities', period: true },
+  { type: 'volunteer_activities', label: 'Volunteer–activity', period: true },
+  { type: 'volunteer_directory', label: 'Volunteer directory', period: false },
+  { type: 'calendar', label: 'Annual calendar', period: false },
+] as const;
+type ReportType = (typeof REPORTS)[number]['type'];
 export function ReportsPage() {
   const [q, setQ] = useState('');
   const [exporting, setExporting] = useState<string | null>(null);
   const { enqueueSnackbar } = useSnackbar();
+
+  // Round 60 — which report the whole screen is about.
+  const [reportType, setReportType] = useState<ReportType>('volunteers');
+  const report = REPORTS.find((r) => r.type === reportType)!;
+  const [year, setYear] = useState(String(new Date().getFullYear()));
 
   // Round 59 — the period control: All covers everything; Custom range scopes
   // the table and every export to sessions (and trainings, feedback,
@@ -49,13 +71,21 @@ export function ReportsPage() {
   const [period, setPeriod] = useState<'all' | 'custom'>('all');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
-  const rangeReady = period === 'all' || (!!from && !!to && from <= to);
+  const rangeReady =
+    !report.period || period === 'all' || (!!from && !!to && from <= to);
   const range: { from?: string; to?: string } =
-    period === 'custom' && rangeReady ? { from, to } : {};
+    report.period && period === 'custom' && !!from && !!to && from <= to ? { from, to } : {};
 
   // Live search: debounced query + previous rows kept while loading.
   const dq = useDebouncedValue(q);
   const { data: rows } = useVolunteerReport({ q: dq, category: 'all', phase: 'all', ...range });
+
+  // Every non-volunteer report previews through the generic endpoint.
+  const preview = useReportPreview(
+    reportType,
+    { ...range, year: reportType === 'calendar' ? year : undefined },
+    reportType !== 'volunteers' && rangeReady,
+  );
   const { data: runs, refetch: refetchRuns } = useReportRuns();
 
   // Column funnels (Round 39): distinct values straight from the rows.
@@ -94,55 +124,19 @@ export function ReportsPage() {
     return sel.length === 1 ? sel[0] : undefined;
   };
 
-  const doCalendarExport = async () => {
-    setExporting('Calendar');
-    try {
-      await exportAndDownload('calendar', 'Excel', { year: new Date().getFullYear() });
-      void refetchRuns();
-      enqueueSnackbar('Annual calendar downloaded', { variant: 'success' });
-    } catch (err) {
-      enqueueSnackbar(asApiError(err)?.message ?? 'Calendar export failed', { variant: 'error' });
-    } finally {
-      setExporting(null);
-    }
-  };
-
-  /** The one-click list exports — each is a whole dataset, always as Excel. */
-  const LIST_EXPORTS = [
-    // Round 58 — the everything-on-one-line export: program → activity →
-    // session → participant, with statuses, the activity's default hours, and
-    // attendance hours once a session is completed.
-    { type: 'consolidated', label: 'Consolidated' },
-    { type: 'programs', label: 'Programs' },
-    { type: 'activities', label: 'Activities' },
-    { type: 'volunteer_directory', label: 'Volunteers' },
-    { type: 'volunteer_activities', label: 'Volunteer–activity' },
-  ] as const;
-
-  const doListExport = async (type: string, label: string) => {
-    setExporting(type);
-    try {
-      await exportAndDownload(type, 'Excel', { ...range });
-      void refetchRuns();
-      enqueueSnackbar(`${label} export downloaded`, { variant: 'success' });
-    } catch (err) {
-      enqueueSnackbar(asApiError(err)?.message ?? `${label} export failed`, { variant: 'error' });
-    } finally {
-      setExporting(null);
-    }
-  };
-
+  /** One export path for whatever report is selected, in any format. */
   const doExport = async (format: 'CSV' | 'Excel' | 'PDF') => {
     setExporting(format);
     try {
-      await exportAndDownload('volunteers', format, {
-        q: q || undefined,
-        category: single('category'),
-        phase: single('phase'),
-        ...range,
-      });
+      const filters: Record<string, unknown> =
+        reportType === 'volunteers'
+          ? { q: q || undefined, category: single('category'), phase: single('phase'), ...range }
+          : reportType === 'calendar'
+            ? { year }
+            : { ...range };
+      await exportAndDownload(reportType, format, filters);
       void refetchRuns();
-      enqueueSnackbar(`${format} export downloaded`, { variant: 'success' });
+      enqueueSnackbar(`${report.label} downloaded as ${format}`, { variant: 'success' });
     } catch (err) {
       enqueueSnackbar(asApiError(err)?.message ?? `${format} export failed`, { variant: 'error' });
     } finally {
@@ -153,11 +147,11 @@ export function ReportsPage() {
   return (
     <PageShell
       title="Reports"
-      description="The volunteer summary — programs, sessions, hours, attendance, trainings and certificates per person. All three exports contain exactly the rows below."
+      description="Pick a report, scope it, preview it on screen, export it — the preview and every format contain exactly the same rows."
       actions={
         <>
           {(['CSV', 'Excel', 'PDF'] as const).map((format) => (
-            <Tooltip key={format} title={`Download the volunteer table below as a ${format} file`}>
+            <Tooltip key={format} title={`Download the ${report.label} (as previewed below) as a ${format} file`}>
               <span>
                 <Button
                   variant="pillOutlined"
@@ -169,17 +163,6 @@ export function ReportsPage() {
               </span>
             </Tooltip>
           ))}
-          <Tooltip title="Download this year's full session calendar as an Excel file">
-            <span>
-              <Button
-                variant="pillOutlined"
-                disabled={exporting !== null}
-                onClick={() => void doCalendarExport()}
-              >
-                {exporting === 'Calendar' ? 'Exporting…' : `📅 ${new Date().getFullYear()} calendar`}
-              </Button>
-            </span>
-          </Tooltip>
           <Tooltip title="Manage reports that email themselves on a schedule">
             <Button variant="pill" component={RouterLink} to="/admin/reports/scheduled">
               🕐 Automated reports
@@ -188,6 +171,40 @@ export function ReportsPage() {
         </>
       }
     >
+      {/* Round 60 — the report picker: one selection drives the preview and
+          the export buttons alike. */}
+      <Paper
+        variant="outlined"
+        sx={{ p: 1.5, px: 2, mb: 2, borderRadius: 3, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', bgcolor: 'rgba(255,255,255,0.6)' }}
+      >
+        <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', mr: 1 }}>Report</Typography>
+        {REPORTS.map((r) => (
+          <Button
+            key={r.type}
+            size="small"
+            variant="pillOutlined"
+            onClick={() => setReportType(r.type)}
+            sx={
+              reportType === r.type
+                ? {
+                    bgcolor: `${alpha(tokens.accent, 0.14)} !important`,
+                    borderColor: `${tokens.accent} !important`,
+                    fontWeight: 700,
+                  }
+                : undefined
+            }
+          >
+            {r.label}
+          </Button>
+        ))}
+        {reportType === 'calendar' && (
+          <TextField
+            label="Year" type="number" size="small" sx={{ width: 110 }}
+            InputLabelProps={{ shrink: true }}
+            value={year} onChange={(e) => setYear(e.target.value)}
+          />
+        )}
+      </Paper>
       {/* Round 59 — the period control. Applies to the table and every export
           below; the calendar export keeps its own year. */}
       <Paper
@@ -225,47 +242,64 @@ export function ReportsPage() {
           </>
         )}
         <Typography sx={{ fontSize: '0.78rem', color: rangeReady ? 'text.secondary' : 'error.main' }}>
-          {period === 'all'
-            ? 'The table and every export cover all time.'
-            : rangeReady
-              ? `The table and every export cover ${from} to ${to} (inclusive).`
-              : 'Pick both dates (From on or before To) to apply the range.'}
+          {!report.period
+            ? `The ${report.label.toLowerCase()} ignores the period${reportType === 'calendar' ? ' — it covers the chosen year' : ' — it describes who people are, not what they did'}.`
+            : period === 'all'
+              ? 'The preview and every export cover all time.'
+              : rangeReady
+                ? `The preview and every export cover ${from} to ${to} (inclusive).`
+                : 'Pick both dates (From on or before To) to apply the range.'}
         </Typography>
       </Paper>
 
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 1.5,
-          px: 2,
-          mb: 2,
-          borderRadius: 3,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          flexWrap: 'wrap',
-          bgcolor: 'rgba(255,255,255,0.6)',
-        }}
-      >
-        <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', mr: 1 }}>
-          List exports (Excel)
-        </Typography>
-        {LIST_EXPORTS.map((x) => (
-          <Tooltip key={x.type} title={`Download the complete ${x.label.toLowerCase()} dataset as Excel`}>
-            <span>
-              <Button
-                size="small"
-                variant="pillOutlined"
-                disabled={exporting !== null || !rangeReady}
-                onClick={() => void doListExport(x.type, x.label)}
-              >
-                {exporting === x.type ? 'Exporting…' : `⬇ ${x.label}`}
-              </Button>
-            </span>
-          </Tooltip>
-        ))}
-      </Paper>
+      {/* The preview — the volunteer summary keeps its rich table; every other
+          report renders the generic preview of exactly what the export holds. */}
+      {reportType !== 'volunteers' && (
+        <>
+          <Typography variant="h6" sx={{ mb: 1 }}>
+            {preview.data?.title ?? report.label}
+            {preview.data && (
+              <Typography component="span" sx={{ ml: 1, fontSize: '0.8rem', color: 'text.secondary' }}>
+                {preview.data.total} row(s){preview.data.truncated ? ' — preview shows the first 500; exports contain all' : ''}
+              </Typography>
+            )}
+          </Typography>
+          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3, mb: 3, overflowX: 'auto' }}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  {(preview.data?.columns ?? []).map((c) => (
+                    <TableCell key={c.key} sx={{ whiteSpace: 'nowrap', fontWeight: 700 }}>{c.label}</TableCell>
+                  ))}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {(preview.data?.data ?? []).map((row, i) => (
+                  <TableRow key={i}>
+                    {(preview.data?.columns ?? []).map((c) => (
+                      <TableCell key={c.key} sx={{ fontSize: '0.82rem', whiteSpace: 'nowrap' }}>
+                        {row[c.key] === null || row[c.key] === undefined || row[c.key] === ''
+                          ? '—'
+                          : String(row[c.key])}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+                {preview.data && preview.data.data.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={preview.data.columns.length} sx={{ py: 3, color: 'text.secondary' }}>
+                      No rows in this period.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </>
+      )}
 
+      {reportType === 'volunteers' && (
+        <>
       {/* Category/Phase moved into their column funnels (Round 39). */}
       <FilterBar search={{ value: q, onChange: setQ, placeholder: 'Search name or email…' }} />
 
@@ -327,6 +361,8 @@ export function ReportsPage() {
           </TableBody>
         </Table>
       </TableContainer>
+        </>
+      )}
 
       <Typography variant="h6" sx={{ mb: 1 }}>Recent exports</Typography>
       <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3 }}>

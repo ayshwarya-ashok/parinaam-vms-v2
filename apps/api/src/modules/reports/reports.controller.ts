@@ -24,6 +24,7 @@ import {
   CurrentUser,
   Roles,
 } from '../../common/decorators/auth.decorators';
+import { BusinessException } from '../../common';
 import { UuidPipe } from '../../common/pipes/uuid.pipe';
 import { ReportFormat, ReportFrequency } from '../../database/entities';
 import { ReportDispatcher } from './report.dispatcher';
@@ -91,6 +92,35 @@ export class ReportsController {
   ) {
     const data = await this.queries.volunteers({ q, category, phase, city, from, to });
     return { columns: data.columns, data: data.rows };
+  }
+
+  @Get('preview')
+  @ApiOperation({
+    summary: 'Round 60 — on-screen preview of any report type, same query the exports render',
+  })
+  async preview(
+    @Query('type') type?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('q') q?: string,
+    @Query('year') year?: string,
+  ) {
+    if (!type || !REPORT_TYPES.includes(type)) {
+      throw new BusinessException(
+        'UNKNOWN_REPORT_TYPE',
+        `Pass type as one of: ${REPORT_TYPES.join(', ')}.`,
+        400,
+      );
+    }
+    const data = await this.queries.run(type, { from, to, q, year });
+    const MAX_PREVIEW_ROWS = 500;
+    return {
+      title: data.title,
+      columns: data.columns,
+      total: data.rows.length,
+      truncated: data.rows.length > MAX_PREVIEW_ROWS,
+      data: data.rows.slice(0, MAX_PREVIEW_ROWS),
+    };
   }
 
   @Post('export')

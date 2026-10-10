@@ -122,6 +122,38 @@ export const useReportRuns = () =>
   });
 
 /** Export → poll-free: the API generates synchronously and we download the run. */
+// ── Round 60: on-screen preview of any report type ───────────────────────────
+
+export interface ReportPreview {
+  title: string;
+  columns: Array<{ key: string; label: string; align?: 'left' | 'right' }>;
+  total: number;
+  truncated: boolean;
+  data: Array<Record<string, unknown>>;
+}
+
+export const useReportPreview = (
+  type: string,
+  filters: { from?: string; to?: string; year?: string },
+  enabled: boolean,
+) =>
+  useQuery({
+    queryKey: ['report-preview', type, filters],
+    queryFn: async () =>
+      (
+        await api.get<ReportPreview>('/reports/preview', {
+          params: {
+            type,
+            from: filters.from || undefined,
+            to: filters.to || undefined,
+            year: filters.year || undefined,
+          },
+        })
+      ).data,
+    enabled,
+    placeholderData: (prev) => prev,
+  });
+
 export async function exportAndDownload(
   reportType: string,
   format: 'PDF' | 'Excel' | 'CSV',

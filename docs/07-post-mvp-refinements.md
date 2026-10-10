@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-10-05 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across fifty-nine review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across sixty review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -1684,6 +1684,42 @@ session date inside the window) and to 0 for an empty window; Ananya's summary h
 from 6.50 all-time to exactly 2.50 for Sep 20–30 (her corrected reading-circle
 attendance); a browser run switched the radio, saw exports disable until both dates were
 picked, and watched the table recompute live (screenshot).
+
+---
+
+## Round 60 — Detail panels, compact buttons, and the Reports redesign  (2026-10-10)
+
+Three observations from hands-on testing, delivered together.
+
+1. **Program and Activity pages now show what was captured at creation.** Each detail
+   page gains a read-only details panel between the header and its child list: Programs
+   show Code, Status, Default coordinator, Planned window, and Description; Activities
+   show Program, Status, Type, Planned window, Default duration, Default capacity,
+   Default location, Skill required, and Intended outcome. Absent optional fields render
+   as "—" rather than disappearing. **Edit** keeps its existing job — the panel is for
+   reading, the dialog for changing.
+2. **Compact buttons app-wide.** The two pill button variants in the theme drop from
+   `0.75rem 1.5rem` to `0.45rem 1.1rem` padding — one change, every button in the app.
+3. **The Reports section is redesigned around pick → scope → preview → export.**
+   - A **report picker** (chips) puts all seven reports a click apart: Volunteer summary,
+     Consolidated, Programs, Activities, Volunteer–activity, Volunteer directory, Annual
+     calendar — closing the Round 58/59 gap where only the volunteer summary could be
+     seen before exporting.
+   - A new admin endpoint `GET /reports/preview?type&from&to&q&year` runs **the same
+     registry query the exports render** (capped at 500 rows, with a truncation notice),
+     so the preview and every format contain exactly the same rows by construction.
+   - The volunteer summary keeps its rich table (search, filters, attendance bars); every
+     other report gets a generic scrollable preview table with row totals. The annual
+     calendar gets a year field; the period bar's hint now says in words when a report
+     ignores the range (directory, calendar).
+   - The header's CSV/Excel/PDF buttons export **the selected report** with the current
+     scope; the old separate export list is gone.
+
+Verified: typecheck clean both apps; the authorization matrix grew to **332 checks across
+83 endpoints × 4 roles — all passed** (preview is admin-only); browser runs confirmed the
+consolidated preview rendering its 27 columns, the calendar preview with its year field
+and "ignores the period" hint, both detail panels field-by-field, and the compacted
+buttons (screenshots).
 
 ---
 

@@ -245,6 +245,36 @@ export function ActivityDetail() {
         ))}
       </Box>
 
+      {/* Round 60 — everything captured at creation, read-only; Edit changes it. */}
+      <Paper variant="outlined" sx={{ p: 2, borderRadius: 3, mb: 3 }}>
+        <Typography sx={{ fontWeight: 700, fontSize: '0.92rem', mb: 1 }}>Activity details</Typography>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(4, 1fr)' }, gap: 1.5 }}>
+          <ActivityDetailField label="Program" value={activity.programName} />
+          <ActivityDetailField label="Status" value={activity.status} />
+          <ActivityDetailField label="Type" value={activity.type} />
+          <ActivityDetailField
+            label="Planned window"
+            value={
+              activity.startDate || activity.endDate
+                ? `${activity.startDate ? fmtDate(String(activity.startDate)) : '…'} – ${activity.endDate ? fmtDate(String(activity.endDate)) : 'open-ended'}`
+                : '—'
+            }
+          />
+          <ActivityDetailField label="Default duration" value={activity.defaultDurationHours ? `${Number(activity.defaultDurationHours)}h` : '—'} />
+          <ActivityDetailField label="Default capacity" value={activity.defaultMaxSlots ? `${activity.defaultMaxSlots} volunteers` : '—'} />
+          <ActivityDetailField label="Default location" value={activity.defaultLocation ?? '—'} />
+          <ActivityDetailField label="Skill required" value={activity.skillRequired ?? '—'} />
+        </Box>
+        {activity.outcome && (
+          <Typography sx={{ mt: 1.5, fontSize: '0.88rem', whiteSpace: 'pre-wrap' }}>
+            <Box component="span" sx={{ fontWeight: 700, color: 'text.secondary', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block' }}>
+              Intended outcome
+            </Box>
+            {activity.outcome}
+          </Typography>
+        )}
+      </Paper>
+
       <Typography sx={{ fontWeight: 700, fontSize: '1.1rem', mb: 1.5 }}>
         Sessions ({activity.events.length})
       </Typography>
@@ -440,5 +470,16 @@ export function ActivityDetail() {
         </DialogActions>
       </Dialog>
     </PageShell>
+  );
+}
+
+function ActivityDetailField({ label, value }: { label: string; value: string }) {
+  return (
+    <Box>
+      <Typography sx={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'text.secondary', fontWeight: 700 }}>
+        {label}
+      </Typography>
+      <Typography sx={{ fontSize: '0.9rem' }}>{value}</Typography>
+    </Box>
   );
 }

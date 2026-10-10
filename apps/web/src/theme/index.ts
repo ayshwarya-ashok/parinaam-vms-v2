@@ -85,7 +85,7 @@ export const theme = createTheme({
           props: { variant: 'pill' },
           style: {
             borderRadius: 999,
-            padding: '0.75rem 1.5rem',
+            padding: '0.45rem 1.1rem', // Round 60: compact buttons app-wide
             color: '#fff',
             background: `linear-gradient(135deg, ${tokens.accent} 0%, ${tokens.accentStrong} 100%)`,
             boxShadow: '0 14px 30px rgba(27,110,160,0.25)',
@@ -102,7 +102,7 @@ export const theme = createTheme({
           props: { variant: 'pillOutlined' },
           style: {
             borderRadius: 999,
-            padding: '0.75rem 1.5rem',
+            padding: '0.45rem 1.1rem', // Round 60: compact buttons app-wide
             color: tokens.textMain,
             border: `1px solid ${alpha(tokens.textMain, 0.12)}`,
             background: 'rgba(255,255,255,0.65)',
