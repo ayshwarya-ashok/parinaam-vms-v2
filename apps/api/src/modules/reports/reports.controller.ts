@@ -35,6 +35,7 @@ const REPORT_TYPES = [
   'volunteers', 'volunteer_summary', 'programs', 'program', 'program_summary',
   'calendar', 'annual_calendar',
   'activities', 'volunteer_directory', 'volunteer_activities',
+  'consolidated',
 ];
 
 class ExportDto {

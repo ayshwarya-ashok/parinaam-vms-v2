@@ -256,6 +256,7 @@ export function ScheduledReportsPage() {
                 onChange={(e) => setForm({ ...form, reportType: e.target.value })}>
                 <MenuItem value="volunteers">Volunteer summary</MenuItem>
                 <MenuItem value="programs">Program summary</MenuItem>
+                <MenuItem value="consolidated">Consolidated (sessions × participants)</MenuItem>
               </TextField>
               <TextField select label="Format" value={form.format}
                 onChange={(e) => setForm({ ...form, format: e.target.value })}>

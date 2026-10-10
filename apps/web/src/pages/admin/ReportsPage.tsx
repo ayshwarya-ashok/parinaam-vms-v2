@@ -95,6 +95,10 @@ export function ReportsPage() {
 
   /** The one-click list exports — each is a whole dataset, always as Excel. */
   const LIST_EXPORTS = [
+    // Round 58 — the everything-on-one-line export: program → activity →
+    // session → participant, with statuses, the activity's default hours, and
+    // attendance hours once a session is completed.
+    { type: 'consolidated', label: 'Consolidated' },
     { type: 'programs', label: 'Programs' },
     { type: 'activities', label: 'Activities' },
     { type: 'volunteer_directory', label: 'Volunteers' },

@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-10-05 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across fifty-seven review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across fifty-eight review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -1618,6 +1618,35 @@ received "Cancelled: … on 20 November 2026" with the reason in the body; sched
 creation with a bad entry returned `INVALID_EMAIL: not-an-email` while a clean list
 created (and was removed); a browser run submitted the login form with a malformed email
 and got the inline message with no request leaving the page. Scratch data removed.
+
+---
+
+## Round 58 — The consolidated report  (2026-10-10)
+
+Reports gains a **Consolidated** export: one row per participant per session, with the
+whole hierarchy on every line — built so a single spreadsheet answers "who was attached
+to what, what state is each level in, and what did it amount to".
+
+- **Columns (17)**: program + status, activity + status, the activity's **default
+  hours**, session code / name / date / status / location, volunteer name / code /
+  email, **participation** (Enrolled or **Walk-in** — attendance without an enrollment),
+  enrolled-on date, attended (Present/Absent), and **hours — shown only once the session
+  is completed** (the product rule as specified: an in-progress session's logged hours
+  stay blank until it closes).
+- Rows cover enrolled volunteers plus walk-ins; erased volunteers stay out per the
+  standing reports rule; ordering is program → date → session → volunteer.
+- It plugs into the whole report machinery via the single registry
+  (`report-query.service`): the one-click **Excel export on the Reports page** (first in
+  the list-exports row), `POST /reports/export` in **all three formats**, run history,
+  and the **scheduled-reports** dropdown ("Consolidated (sessions × participants)") for
+  automated delivery by email.
+
+Verified: the CSV contains the exact expected rows from the demo baseline — Ananya and
+Rahul Present with 4.00 h on the completed Exposure Visit while Sanjay shows Absent with
+blank hours; Kavya appears twice, once as **Walk-in** with 2.00 h on the completed story
+workshop and once as Enrolled on an upcoming session with attended/hours blank; the
+in-progress mentor session's hours stay blank. Excel (PK) and PDF (%PDF) render the same
+17 columns.
 
 ---
 

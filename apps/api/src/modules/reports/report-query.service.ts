@@ -49,10 +49,12 @@ export class ReportQueryService {
         return this.volunteerDirectory();
       case 'volunteer_activities':
         return this.volunteerActivities();
+      case 'consolidated':
+        return this.consolidated();
       default:
         throw new BusinessException(
           'UNKNOWN_REPORT_TYPE',
-          `Unknown report type "${reportType}". Available: volunteers, programs, activities, volunteer_directory, volunteer_activities, calendar.`,
+          `Unknown report type "${reportType}". Available: volunteers, programs, activities, volunteer_directory, volunteer_activities, calendar, consolidated.`,
           400,
         );
     }
@@ -248,6 +250,91 @@ export class ReportQueryService {
         { key: 'activity_status', label: 'Activity status' },
         { key: 'sessions_enrolled', label: 'Enrolled', align: 'right' },
         { key: 'sessions_attended', label: 'Attended', align: 'right' },
+        { key: 'hours', label: 'Hours', align: 'right' },
+      ],
+      rows,
+    };
+  }
+
+  /**
+   * Round 58 — the consolidated export: one row per participant per session,
+   * the whole hierarchy on every line. Enrolled volunteers plus walk-ins
+   * (who never enrolled but have an attendance record), with the program /
+   * activity / session statuses, the activity's default hours, and — per the
+   * product rule — attendance hours only once the session is completed.
+   * Erased volunteers stay out, per the standing reports rule.
+   */
+  async consolidated(): Promise<ReportData> {
+    const participantColumns = `
+       p.name AS program, p.status::text AS program_status,
+       a.name AS activity, a.status::text AS activity_status,
+       a.default_duration_hours AS default_hours,
+       e.code AS session_code, COALESCE(e.name, a.name) AS session,
+       TO_CHAR(e.date, 'YYYY-MM-DD') AS date,
+       e.status::text AS session_status,
+       COALESCE(e.location, '') AS location,
+       v.first_name || ' ' || v.last_name AS volunteer,
+       COALESCE(v.code, '') AS volunteer_code,
+       u.email::text AS email`;
+
+    const rows = await this.dataSource.query(
+      `SELECT ${participantColumns},
+              'Enrolled' AS participation,
+              TO_CHAR(en.enrolled_at, 'YYYY-MM-DD') AS enrolled_on,
+              CASE WHEN ar.id IS NULL THEN ''
+                   WHEN ar.attended THEN 'Present' ELSE 'Absent' END AS attended,
+              CASE WHEN e.status = 'completed' AND ar.attended
+                   THEN ar.hours_contributed END AS hours
+       FROM event_enrollments en
+       JOIN events e ON e.id = en.event_id
+       JOIN activities a ON a.id = e.activity_id
+       JOIN programs p ON p.id = a.program_id
+       JOIN volunteers v ON v.id = en.volunteer_id
+       JOIN users u ON u.id = v.user_id
+       LEFT JOIN attendance_records ar
+         ON ar.event_id = e.id AND ar.volunteer_id = v.id
+       WHERE en.status = 'enrolled'
+         AND u.email::text NOT LIKE '%@erased.invalid'
+       UNION ALL
+       SELECT ${participantColumns},
+              'Walk-in' AS participation,
+              TO_CHAR(ar.recorded_at, 'YYYY-MM-DD') AS enrolled_on,
+              CASE WHEN ar.attended THEN 'Present' ELSE 'Absent' END AS attended,
+              CASE WHEN e.status = 'completed' AND ar.attended
+                   THEN ar.hours_contributed END AS hours
+       FROM attendance_records ar
+       JOIN events e ON e.id = ar.event_id
+       JOIN activities a ON a.id = e.activity_id
+       JOIN programs p ON p.id = a.program_id
+       JOIN volunteers v ON v.id = ar.volunteer_id
+       JOIN users u ON u.id = v.user_id
+       WHERE u.email::text NOT LIKE '%@erased.invalid'
+         AND NOT EXISTS (
+           SELECT 1 FROM event_enrollments en2
+           WHERE en2.event_id = ar.event_id AND en2.volunteer_id = ar.volunteer_id
+             AND en2.status = 'enrolled')
+       ORDER BY program, date, session_code, volunteer`,
+    );
+
+    return {
+      title: 'Consolidated Report',
+      columns: [
+        { key: 'program', label: 'Program' },
+        { key: 'program_status', label: 'Program status' },
+        { key: 'activity', label: 'Activity' },
+        { key: 'activity_status', label: 'Activity status' },
+        { key: 'default_hours', label: 'Default hours', align: 'right' },
+        { key: 'session_code', label: 'Session code' },
+        { key: 'session', label: 'Session' },
+        { key: 'date', label: 'Date' },
+        { key: 'session_status', label: 'Session status' },
+        { key: 'location', label: 'Location' },
+        { key: 'volunteer', label: 'Volunteer' },
+        { key: 'volunteer_code', label: 'Volunteer code' },
+        { key: 'email', label: 'Email' },
+        { key: 'participation', label: 'Participation' },
+        { key: 'enrolled_on', label: 'Enrolled on' },
+        { key: 'attended', label: 'Attended' },
         { key: 'hours', label: 'Hours', align: 'right' },
       ],
       rows,
