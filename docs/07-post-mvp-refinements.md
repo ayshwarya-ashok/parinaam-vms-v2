@@ -1727,7 +1727,7 @@ buttons (screenshots).
 
 The two separate bars (report picker, period control) merge into **one card**, so the
 period visibly belongs to the selected report rather than floating as page-wide state:
-the Report row on top, a hairline divider, the Period row beneath.
+the Period row on top, a hairline divider, the Report row beneath.
 
 - The hint line now **names the selected report and its downloads**: "The Volunteer
   summary preview and its CSV / Excel / PDF downloads contain only 2026-09-01 to

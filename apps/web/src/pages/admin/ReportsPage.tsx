@@ -179,36 +179,6 @@ export function ReportsPage() {
         variant="outlined"
         sx={{ p: 1.5, px: 2, mb: 2, borderRadius: 3, display: 'flex', flexDirection: 'column', gap: 1.25, bgcolor: 'rgba(255,255,255,0.6)' }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-          <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', minWidth: 56 }}>Report</Typography>
-          {REPORTS.map((r) => (
-            <Button
-              key={r.type}
-              size="small"
-              variant="pillOutlined"
-              onClick={() => setReportType(r.type)}
-              sx={
-                reportType === r.type
-                  ? {
-                      bgcolor: `${alpha(tokens.accent, 0.14)} !important`,
-                      borderColor: `${tokens.accent} !important`,
-                      fontWeight: 700,
-                    }
-                  : undefined
-              }
-            >
-              {r.label}
-            </Button>
-          ))}
-          {reportType === 'calendar' && (
-            <TextField
-              label="Year" type="number" size="small" sx={{ width: 110 }}
-              InputLabelProps={{ shrink: true }}
-              value={year} onChange={(e) => setYear(e.target.value)}
-            />
-          )}
-        </Box>
-        <Divider sx={{ borderColor: 'rgba(31,43,54,0.08)' }} />
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
           <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', minWidth: 56 }}>Period</Typography>
           <RadioGroup row value={period} onChange={(e) => setPeriod(e.target.value as 'all' | 'custom')}>
@@ -239,6 +209,36 @@ export function ReportsPage() {
                   ? `The ${report.label} preview and its CSV / Excel / PDF downloads contain only ${from} to ${to} (inclusive).`
                   : 'Pick both dates (From on or before To) to apply the range to the downloads.'}
           </Typography>
+        </Box>
+        <Divider sx={{ borderColor: 'rgba(31,43,54,0.08)' }} />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+          <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', minWidth: 56 }}>Report</Typography>
+          {REPORTS.map((r) => (
+            <Button
+              key={r.type}
+              size="small"
+              variant="pillOutlined"
+              onClick={() => setReportType(r.type)}
+              sx={
+                reportType === r.type
+                  ? {
+                      bgcolor: `${alpha(tokens.accent, 0.14)} !important`,
+                      borderColor: `${tokens.accent} !important`,
+                      fontWeight: 700,
+                    }
+                  : undefined
+              }
+            >
+              {r.label}
+            </Button>
+          ))}
+          {reportType === 'calendar' && (
+            <TextField
+              label="Year" type="number" size="small" sx={{ width: 110 }}
+              InputLabelProps={{ shrink: true }}
+              value={year} onChange={(e) => setYear(e.target.value)}
+            />
+          )}
         </Box>
       </Paper>
 
