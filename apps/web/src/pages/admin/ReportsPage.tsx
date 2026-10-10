@@ -1,6 +1,7 @@
 import {
   Box,
   Button,
+  Divider,
   FormControlLabel,
   Paper,
   Radio,
@@ -171,85 +172,74 @@ export function ReportsPage() {
         </>
       }
     >
-      {/* Round 60 — the report picker: one selection drives the preview and
-          the export buttons alike. */}
+      {/* Round 61 — one card for the whole scope: pick the report, then the
+          period that report covers. The hint names the selected report so it
+          reads unambiguously as "this period filters these downloads". */}
       <Paper
         variant="outlined"
-        sx={{ p: 1.5, px: 2, mb: 2, borderRadius: 3, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', bgcolor: 'rgba(255,255,255,0.6)' }}
+        sx={{ p: 1.5, px: 2, mb: 2, borderRadius: 3, display: 'flex', flexDirection: 'column', gap: 1.25, bgcolor: 'rgba(255,255,255,0.6)' }}
       >
-        <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', mr: 1 }}>Report</Typography>
-        {REPORTS.map((r) => (
-          <Button
-            key={r.type}
-            size="small"
-            variant="pillOutlined"
-            onClick={() => setReportType(r.type)}
-            sx={
-              reportType === r.type
-                ? {
-                    bgcolor: `${alpha(tokens.accent, 0.14)} !important`,
-                    borderColor: `${tokens.accent} !important`,
-                    fontWeight: 700,
-                  }
-                : undefined
-            }
-          >
-            {r.label}
-          </Button>
-        ))}
-        {reportType === 'calendar' && (
-          <TextField
-            label="Year" type="number" size="small" sx={{ width: 110 }}
-            InputLabelProps={{ shrink: true }}
-            value={year} onChange={(e) => setYear(e.target.value)}
-          />
-        )}
-      </Paper>
-      {/* Round 59 — the period control. Applies to the table and every export
-          below; the calendar export keeps its own year. */}
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 1.5,
-          px: 2,
-          mb: 2,
-          borderRadius: 3,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 2,
-          flexWrap: 'wrap',
-          bgcolor: 'rgba(255,255,255,0.6)',
-        }}
-      >
-        <Typography sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Period</Typography>
-        <RadioGroup row value={period} onChange={(e) => setPeriod(e.target.value as 'all' | 'custom')}>
-          <FormControlLabel value="all" control={<Radio size="small" />}
-            label={<Typography sx={{ fontSize: '0.9rem' }}>All</Typography>} />
-          <FormControlLabel value="custom" control={<Radio size="small" />}
-            label={<Typography sx={{ fontSize: '0.9rem' }}>Custom range</Typography>} />
-        </RadioGroup>
-        {period === 'custom' && (
-          <>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+          <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', minWidth: 56 }}>Report</Typography>
+          {REPORTS.map((r) => (
+            <Button
+              key={r.type}
+              size="small"
+              variant="pillOutlined"
+              onClick={() => setReportType(r.type)}
+              sx={
+                reportType === r.type
+                  ? {
+                      bgcolor: `${alpha(tokens.accent, 0.14)} !important`,
+                      borderColor: `${tokens.accent} !important`,
+                      fontWeight: 700,
+                    }
+                  : undefined
+              }
+            >
+              {r.label}
+            </Button>
+          ))}
+          {reportType === 'calendar' && (
             <TextField
-              label="From" type="date" size="small" InputLabelProps={{ shrink: true }}
-              value={from} onChange={(e) => setFrom(e.target.value)}
+              label="Year" type="number" size="small" sx={{ width: 110 }}
+              InputLabelProps={{ shrink: true }}
+              value={year} onChange={(e) => setYear(e.target.value)}
             />
-            <TextField
-              label="To" type="date" size="small" InputLabelProps={{ shrink: true }}
-              value={to} onChange={(e) => setTo(e.target.value)}
-              error={!!from && !!to && from > to}
-            />
-          </>
-        )}
-        <Typography sx={{ fontSize: '0.78rem', color: rangeReady ? 'text.secondary' : 'error.main' }}>
-          {!report.period
-            ? `The ${report.label.toLowerCase()} ignores the period${reportType === 'calendar' ? ' — it covers the chosen year' : ' — it describes who people are, not what they did'}.`
-            : period === 'all'
-              ? 'The preview and every export cover all time.'
-              : rangeReady
-                ? `The preview and every export cover ${from} to ${to} (inclusive).`
-                : 'Pick both dates (From on or before To) to apply the range.'}
-        </Typography>
+          )}
+        </Box>
+        <Divider sx={{ borderColor: 'rgba(31,43,54,0.08)' }} />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+          <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', minWidth: 56 }}>Period</Typography>
+          <RadioGroup row value={period} onChange={(e) => setPeriod(e.target.value as 'all' | 'custom')}>
+            <FormControlLabel value="all" control={<Radio size="small" />} disabled={!report.period}
+              label={<Typography sx={{ fontSize: '0.9rem' }}>All</Typography>} />
+            <FormControlLabel value="custom" control={<Radio size="small" />} disabled={!report.period}
+              label={<Typography sx={{ fontSize: '0.9rem' }}>Custom range</Typography>} />
+          </RadioGroup>
+          {report.period && period === 'custom' && (
+            <>
+              <TextField
+                label="From" type="date" size="small" InputLabelProps={{ shrink: true }}
+                value={from} onChange={(e) => setFrom(e.target.value)}
+              />
+              <TextField
+                label="To" type="date" size="small" InputLabelProps={{ shrink: true }}
+                value={to} onChange={(e) => setTo(e.target.value)}
+                error={!!from && !!to && from > to}
+              />
+            </>
+          )}
+          <Typography sx={{ fontSize: '0.78rem', color: rangeReady ? 'text.secondary' : 'error.main' }}>
+            {!report.period
+              ? `The ${report.label.toLowerCase()} ignores the period${reportType === 'calendar' ? ' — it covers the chosen year' : ' — it describes who people are, not what they did'}.`
+              : period === 'all'
+                ? `The ${report.label} preview and its CSV / Excel / PDF downloads cover all time.`
+                : rangeReady
+                  ? `The ${report.label} preview and its CSV / Excel / PDF downloads contain only ${from} to ${to} (inclusive).`
+                  : 'Pick both dates (From on or before To) to apply the range to the downloads.'}
+          </Typography>
+        </Box>
       </Paper>
 
       {/* The preview — the volunteer summary keeps its rich table; every other

@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-10-05 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across sixty review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across sixty-one review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -1720,6 +1720,28 @@ Verified: typecheck clean both apps; the authorization matrix grew to **332 chec
 consolidated preview rendering its 27 columns, the calendar preview with its year field
 and "ignores the period" hint, both detail panels field-by-field, and the compacted
 buttons (screenshots).
+
+---
+
+## Round 61 — Report and Period become one scope card  (2026-10-10)
+
+The two separate bars (report picker, period control) merge into **one card**, so the
+period visibly belongs to the selected report rather than floating as page-wide state:
+the Report row on top, a hairline divider, the Period row beneath.
+
+- The hint line now **names the selected report and its downloads**: "The Volunteer
+  summary preview and its CSV / Excel / PDF downloads contain only 2026-09-01 to
+  2026-09-30 (inclusive)" — making explicit that the period filters what gets
+  downloaded, not just what is shown.
+- For the two reports that ignore the period (directory, calendar), the radios now
+  **disable** and the date pickers hide, alongside the existing explanation — the
+  control can no longer look operable when it is not.
+- Switching reports keeps the chosen range, so comparing the same window across
+  reports takes one click.
+
+Verified in the browser: the combined card with both rows, the report-named hints in
+All and Custom modes, disabled radios + no pickers on the directory, and the range
+surviving a report switch (screenshots).
 
 ---
 
