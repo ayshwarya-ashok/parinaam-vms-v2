@@ -86,8 +86,10 @@ export class ReportsController {
     @Query('category') category?: string,
     @Query('phase') phase?: string,
     @Query('city') city?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
   ) {
-    const data = await this.queries.volunteers({ q, category, phase, city });
+    const data = await this.queries.volunteers({ q, category, phase, city, from, to });
     return { columns: data.columns, data: data.rows };
   }
 

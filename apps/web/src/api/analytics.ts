@@ -81,6 +81,8 @@ export const useVolunteerReport = (filters: {
   category?: string;
   phase?: string;
   city?: string;
+  from?: string;
+  to?: string;
 }) =>
   useQuery({
     queryKey: ['report-volunteers', filters],
@@ -89,6 +91,8 @@ export const useVolunteerReport = (filters: {
         await api.get<{ data: VolunteerReportRow[] }>('/reports/volunteers', {
           params: {
             q: filters.q || undefined,
+            from: filters.from || undefined,
+            to: filters.to || undefined,
             category: filters.category && filters.category !== 'all' ? filters.category : undefined,
             phase: filters.phase && filters.phase !== 'all' ? filters.phase : undefined,
             city: filters.city && filters.city !== 'all' ? filters.city : undefined,

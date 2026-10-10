@@ -1,13 +1,17 @@
 import {
   Box,
   Button,
+  FormControlLabel,
   Paper,
+  Radio,
+  RadioGroup,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -39,9 +43,19 @@ export function ReportsPage() {
   const [exporting, setExporting] = useState<string | null>(null);
   const { enqueueSnackbar } = useSnackbar();
 
+  // Round 59 — the period control: All covers everything; Custom range scopes
+  // the table and every export to sessions (and trainings, feedback,
+  // certificates) inside the inclusive from–to window.
+  const [period, setPeriod] = useState<'all' | 'custom'>('all');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const rangeReady = period === 'all' || (!!from && !!to && from <= to);
+  const range: { from?: string; to?: string } =
+    period === 'custom' && rangeReady ? { from, to } : {};
+
   // Live search: debounced query + previous rows kept while loading.
   const dq = useDebouncedValue(q);
-  const { data: rows } = useVolunteerReport({ q: dq, category: 'all', phase: 'all' });
+  const { data: rows } = useVolunteerReport({ q: dq, category: 'all', phase: 'all', ...range });
   const { data: runs, refetch: refetchRuns } = useReportRuns();
 
   // Column funnels (Round 39): distinct values straight from the rows.
@@ -108,7 +122,7 @@ export function ReportsPage() {
   const doListExport = async (type: string, label: string) => {
     setExporting(type);
     try {
-      await exportAndDownload(type, 'Excel', {});
+      await exportAndDownload(type, 'Excel', { ...range });
       void refetchRuns();
       enqueueSnackbar(`${label} export downloaded`, { variant: 'success' });
     } catch (err) {
@@ -125,6 +139,7 @@ export function ReportsPage() {
         q: q || undefined,
         category: single('category'),
         phase: single('phase'),
+        ...range,
       });
       void refetchRuns();
       enqueueSnackbar(`${format} export downloaded`, { variant: 'success' });
@@ -146,7 +161,7 @@ export function ReportsPage() {
               <span>
                 <Button
                   variant="pillOutlined"
-                  disabled={exporting !== null}
+                  disabled={exporting !== null || !rangeReady}
                   onClick={() => void doExport(format)}
                 >
                   {exporting === format ? 'Exporting…' : `⬇ ${format}`}
@@ -173,6 +188,51 @@ export function ReportsPage() {
         </>
       }
     >
+      {/* Round 59 — the period control. Applies to the table and every export
+          below; the calendar export keeps its own year. */}
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 1.5,
+          px: 2,
+          mb: 2,
+          borderRadius: 3,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          flexWrap: 'wrap',
+          bgcolor: 'rgba(255,255,255,0.6)',
+        }}
+      >
+        <Typography sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Period</Typography>
+        <RadioGroup row value={period} onChange={(e) => setPeriod(e.target.value as 'all' | 'custom')}>
+          <FormControlLabel value="all" control={<Radio size="small" />}
+            label={<Typography sx={{ fontSize: '0.9rem' }}>All</Typography>} />
+          <FormControlLabel value="custom" control={<Radio size="small" />}
+            label={<Typography sx={{ fontSize: '0.9rem' }}>Custom range</Typography>} />
+        </RadioGroup>
+        {period === 'custom' && (
+          <>
+            <TextField
+              label="From" type="date" size="small" InputLabelProps={{ shrink: true }}
+              value={from} onChange={(e) => setFrom(e.target.value)}
+            />
+            <TextField
+              label="To" type="date" size="small" InputLabelProps={{ shrink: true }}
+              value={to} onChange={(e) => setTo(e.target.value)}
+              error={!!from && !!to && from > to}
+            />
+          </>
+        )}
+        <Typography sx={{ fontSize: '0.78rem', color: rangeReady ? 'text.secondary' : 'error.main' }}>
+          {period === 'all'
+            ? 'The table and every export cover all time.'
+            : rangeReady
+              ? `The table and every export cover ${from} to ${to} (inclusive).`
+              : 'Pick both dates (From on or before To) to apply the range.'}
+        </Typography>
+      </Paper>
+
       <Paper
         variant="outlined"
         sx={{
@@ -196,7 +256,7 @@ export function ReportsPage() {
               <Button
                 size="small"
                 variant="pillOutlined"
-                disabled={exporting !== null}
+                disabled={exporting !== null || !rangeReady}
                 onClick={() => void doListExport(x.type, x.label)}
               >
                 {exporting === x.type ? 'Exporting…' : `⬇ ${x.label}`}

@@ -19,6 +19,19 @@ export interface VolunteerReportFilters {
   category?: string;
   phase?: string;
   city?: string;
+  from?: string;
+  to?: string;
+}
+
+/**
+ * Round 59 — the Reports screen's period control. A report either covers all
+ * time (both null) or one inclusive date range; anything that does not look
+ * like YYYY-MM-DD is ignored rather than trusted.
+ */
+function dateRange(filters: { from?: unknown; to?: unknown }): { from: string | null; to: string | null } {
+  const pick = (v: unknown) =>
+    typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
+  return { from: pick(filters.from), to: pick(filters.to) };
 }
 
 /**
@@ -39,18 +52,18 @@ export class ReportQueryService {
       case 'programs':
       case 'program':
       case 'program_summary':
-        return this.programs();
+        return this.programs(filters);
       case 'calendar':
       case 'annual_calendar':
         return this.calendar(filters as { year?: number | string });
       case 'activities':
-        return this.activities();
+        return this.activities(filters);
       case 'volunteer_directory':
         return this.volunteerDirectory();
       case 'volunteer_activities':
-        return this.volunteerActivities();
+        return this.volunteerActivities(filters);
       case 'consolidated':
-        return this.consolidated();
+        return this.consolidated(filters);
       default:
         throw new BusinessException(
           'UNKNOWN_REPORT_TYPE',
@@ -61,18 +74,84 @@ export class ReportQueryService {
   }
 
   async volunteers(filters: VolunteerReportFilters): Promise<ReportData> {
-    const rows = await this.dataSource.query(
-      `SELECT volunteer_name, email, location, category, phase,
-              programs_joined, events_enrolled, total_hours, attendance_pct,
-              trainings_passed, COALESCE(avg_rating, 0) AS avg_rating, certificates_issued
-       FROM v_volunteer_report_summary
-       WHERE ($1::text IS NULL OR volunteer_name ILIKE '%' || $1 || '%' OR email ILIKE '%' || $1 || '%')
-         AND ($2::text IS NULL OR category::text = $2)
-         AND ($3::text IS NULL OR phase::text = $3)
-         AND ($4::text IS NULL OR location = $4)
-       ORDER BY total_hours DESC, volunteer_name`,
-      [filters.q || null, filters.category || null, filters.phase || null, filters.city || null],
-    );
+    const { from, to } = dateRange(filters);
+    // All time rides the precomputed view; a period recomputes every figure
+    // inside the range — sessions by their date, trainings by attempt date,
+    // feedback by submission date, certificates by issue date. Every
+    // volunteer stays listed: zeros say "inactive this period".
+    const rows = from || to
+      ? await this.dataSource.query(
+          `SELECT v.first_name || ' ' || v.last_name AS volunteer_name, u.email,
+                  v.city AS location, v.category, v.phase,
+                  COALESCE(pp.program_count, 0) AS programs_joined,
+                  COALESCE(en.event_count, 0) AS events_enrolled,
+                  COALESCE(att.total_hours, 0) AS total_hours,
+                  COALESCE(att.attendance_pct, 0) AS attendance_pct,
+                  COALESCE(tr.trainings_passed, 0) AS trainings_passed,
+                  COALESCE(fb.avg_rating, 0) AS avg_rating,
+                  COALESCE(cert.certificates_issued, 0) AS certificates_issued
+           FROM volunteers v
+           JOIN users u ON u.id = v.user_id
+           LEFT JOIN (SELECT ar.volunteer_id, COUNT(DISTINCT a.program_id)::int AS program_count
+                      FROM attendance_records ar
+                      JOIN events e ON e.id = ar.event_id
+                      JOIN activities a ON a.id = e.activity_id
+                      WHERE ar.attended AND e.date >= COALESCE($5::date, '-infinity')
+                        AND e.date <= COALESCE($6::date, 'infinity')
+                      GROUP BY ar.volunteer_id) pp ON pp.volunteer_id = v.id
+           LEFT JOIN (SELECT en.volunteer_id, COUNT(*)::int AS event_count
+                      FROM event_enrollments en
+                      JOIN events e ON e.id = en.event_id
+                      WHERE en.status = 'enrolled' AND e.date >= COALESCE($5::date, '-infinity')
+                        AND e.date <= COALESCE($6::date, 'infinity')
+                      GROUP BY en.volunteer_id) en ON en.volunteer_id = v.id
+           LEFT JOIN (SELECT ar.volunteer_id,
+                             COALESCE(SUM(ar.hours_contributed) FILTER (WHERE ar.attended), 0) AS total_hours,
+                             ROUND(100.0 * COUNT(DISTINCT ar.event_id) FILTER (WHERE ar.attended)
+                               / NULLIF(COUNT(DISTINCT ar.event_id), 0), 0) AS attendance_pct
+                      FROM attendance_records ar
+                      JOIN events e ON e.id = ar.event_id
+                      WHERE e.date >= COALESCE($5::date, '-infinity')
+                        AND e.date <= COALESCE($6::date, 'infinity')
+                      GROUP BY ar.volunteer_id) att ON att.volunteer_id = v.id
+           LEFT JOIN (SELECT ta.volunteer_id, COUNT(*)::int AS trainings_passed
+                      FROM training_attempts ta
+                      WHERE ta.passed AND NOT ta.is_superseded
+                        AND ta.attempted_at::date >= COALESCE($5::date, '-infinity')
+                        AND ta.attempted_at::date <= COALESCE($6::date, 'infinity')
+                      GROUP BY ta.volunteer_id) tr ON tr.volunteer_id = v.id
+           LEFT JOIN (SELECT f.volunteer_id, ROUND(AVG(f.overall_rating), 1) AS avg_rating
+                      FROM feedback_submissions f
+                      WHERE f.submitted_at::date >= COALESCE($5::date, '-infinity')
+                        AND f.submitted_at::date <= COALESCE($6::date, 'infinity')
+                      GROUP BY f.volunteer_id) fb ON fb.volunteer_id = v.id
+           LEFT JOIN (SELECT c.volunteer_id, COUNT(*)::int AS certificates_issued
+                      FROM certificates c
+                      WHERE c.issued AND c.issued_at::date >= COALESCE($5::date, '-infinity')
+                        AND c.issued_at::date <= COALESCE($6::date, 'infinity')
+                      GROUP BY c.volunteer_id) cert ON cert.volunteer_id = v.id
+           WHERE u.email::text NOT LIKE '%@erased.invalid'
+             AND ($1::text IS NULL OR v.first_name || ' ' || v.last_name ILIKE '%' || $1 || '%'
+                  OR u.email::text ILIKE '%' || $1 || '%')
+             AND ($2::text IS NULL OR v.category::text = $2)
+             AND ($3::text IS NULL OR v.phase::text = $3)
+             AND ($4::text IS NULL OR v.city = $4)
+           ORDER BY total_hours DESC, volunteer_name`,
+          [filters.q || null, filters.category || null, filters.phase || null,
+           filters.city || null, from, to],
+        )
+      : await this.dataSource.query(
+          `SELECT volunteer_name, email, location, category, phase,
+                  programs_joined, events_enrolled, total_hours, attendance_pct,
+                  trainings_passed, COALESCE(avg_rating, 0) AS avg_rating, certificates_issued
+           FROM v_volunteer_report_summary
+           WHERE ($1::text IS NULL OR volunteer_name ILIKE '%' || $1 || '%' OR email ILIKE '%' || $1 || '%')
+             AND ($2::text IS NULL OR category::text = $2)
+             AND ($3::text IS NULL OR phase::text = $3)
+             AND ($4::text IS NULL OR location = $4)
+           ORDER BY total_hours DESC, volunteer_name`,
+          [filters.q || null, filters.category || null, filters.phase || null, filters.city || null],
+        );
 
     return {
       title: 'Volunteer Summary',
@@ -94,7 +173,8 @@ export class ReportQueryService {
     };
   }
 
-  async programs(): Promise<ReportData> {
+  async programs(filters: Record<string, unknown> = {}): Promise<ReportData> {
+    const { from, to } = dateRange(filters);
     const rows = await this.dataSource.query(
       `SELECT p.code, p.name, p.status,
               COUNT(DISTINCT a.id)::int AS activities,
@@ -107,9 +187,11 @@ export class ReportQueryService {
        FROM programs p
        LEFT JOIN activities a ON a.program_id = p.id
        LEFT JOIN events e ON e.activity_id = a.id
+         AND e.date >= COALESCE($1::date, '-infinity') AND e.date <= COALESCE($2::date, 'infinity')
        LEFT JOIN v_event_attendance va ON va.event_id = e.id
        GROUP BY p.id, p.code, p.name, p.status
        ORDER BY p.name`,
+      [from, to],
     );
 
     return {
@@ -131,7 +213,8 @@ export class ReportQueryService {
   }
 
   /** Every activity with its program, status and session tallies. */
-  async activities(): Promise<ReportData> {
+  async activities(filters: Record<string, unknown> = {}): Promise<ReportData> {
+    const { from, to } = dateRange(filters);
     const rows = await this.dataSource.query(
       `SELECT p.name AS program, a.name AS activity, a.type::text AS type,
               a.status::text AS status,
@@ -144,8 +227,10 @@ export class ReportQueryService {
        FROM activities a
        JOIN programs p ON p.id = a.program_id
        LEFT JOIN events e ON e.activity_id = a.id
+         AND e.date >= COALESCE($1::date, '-infinity') AND e.date <= COALESCE($2::date, 'infinity')
        GROUP BY p.name, a.id
        ORDER BY p.name, a.sort_order, a.name`,
+      [from, to],
     );
     return {
       title: 'Activities',
@@ -217,7 +302,8 @@ export class ReportQueryService {
    * activity's own status — the "who is attached to what, and is that thing
    * still running" view. Hours count attended records only (V012).
    */
-  async volunteerActivities(): Promise<ReportData> {
+  async volunteerActivities(filters: Record<string, unknown> = {}): Promise<ReportData> {
+    const { from, to } = dateRange(filters);
     const rows = await this.dataSource.query(
       `SELECT v.first_name || ' ' || v.last_name AS volunteer,
               u.email::text AS email,
@@ -237,8 +323,10 @@ export class ReportQueryService {
          ON ar.event_id = en.event_id AND ar.volunteer_id = en.volunteer_id
        WHERE en.status = 'enrolled'
          AND u.email::text NOT LIKE '%@erased.invalid'
+         AND e.date >= COALESCE($1::date, '-infinity') AND e.date <= COALESCE($2::date, 'infinity')
        GROUP BY v.id, u.email, p.name, a.id
        ORDER BY volunteer, p.name, a.name`,
+      [from, to],
     );
     return {
       title: 'Volunteer Activities',
@@ -264,7 +352,8 @@ export class ReportQueryService {
    * product rule — attendance hours only once the session is completed.
    * Erased volunteers stay out, per the standing reports rule.
    */
-  async consolidated(): Promise<ReportData> {
+  async consolidated(filters: Record<string, unknown> = {}): Promise<ReportData> {
+    const { from, to } = dateRange(filters);
     const participantColumns = `
        p.name AS program, p.status::text AS program_status,
        COALESCE(TO_CHAR(p.start_date, 'YYYY-MM-DD'), '') AS program_start,
@@ -309,6 +398,7 @@ export class ReportQueryService {
          ON ar.event_id = e.id AND ar.volunteer_id = v.id
        WHERE en.status = 'enrolled'
          AND u.email::text NOT LIKE '%@erased.invalid'
+         AND e.date >= COALESCE($1::date, '-infinity') AND e.date <= COALESCE($2::date, 'infinity')
        UNION ALL
        SELECT ${participantColumns},
               'Walk-in' AS participation,
@@ -327,7 +417,9 @@ export class ReportQueryService {
            SELECT 1 FROM event_enrollments en2
            WHERE en2.event_id = ar.event_id AND en2.volunteer_id = ar.volunteer_id
              AND en2.status = 'enrolled')
+         AND e.date >= COALESCE($1::date, '-infinity') AND e.date <= COALESCE($2::date, 'infinity')
        ORDER BY program, session_date, session_code, volunteer`,
+      [from, to],
     );
 
     return {

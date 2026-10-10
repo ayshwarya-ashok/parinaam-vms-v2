@@ -4,7 +4,7 @@
 |---|---|
 | **Scope** | Everything changed after the eight implementation phases (the MVP) were delivered |
 | **Period** | 2026-08-20 → 2026-10-05 (ongoing) |
-| **Driver** | Hands-on testing by the product owner across fifty-eight review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
+| **Driver** | Hands-on testing by the product owner across fifty-nine review rounds, one full-codebase audit, and the client's phased-sessions refinement (`08`/`09`) |
 | **Baseline** | Commit `da5fe2f` — "Phase 8: public impact page, hardening, data lifecycle, runbooks" |
 
 The MVP was built in eight phases (see `02-implementation-plan.md`). What followed was not a
@@ -1656,6 +1656,34 @@ count), **Beneficiary community**, **Volunteer status** (registration status, sh
 `inactive` when the account is deactivated) and **Volunteer type** (Individual/CSR), and
 Hours renamed **Attendance hours**. Re-verified in CSV (all columns populated as
 expected, 10:00→14:00 derived end on a 4-hour session) and generated in Excel + PDF.
+
+---
+
+## Round 59 — The Reports period control: All, or a custom date range  (2026-10-10)
+
+The Reports screen gains a **Period** bar — radio choice between **All** and **Custom
+range** with two native date pickers — and the choice flows through everything on the
+page: the on-screen volunteer table AND every export.
+
+- **All** (the default) behaves exactly as before: the precomputed all-time view, the
+  complete datasets.
+- **Custom range** scopes each report to the inclusive from–to window, with each figure
+  recomputed against its own natural date: sessions by session date, trainings by attempt
+  date, feedback by submission date, certificates by issue date. Every volunteer stays
+  listed in the summary — zeros read as "inactive this period". The date-scoped reports:
+  volunteer summary (table + its CSV/Excel/PDF), **consolidated**, programs, activities,
+  and volunteer–activity. The volunteer directory (who people are, not what they did) and
+  the annual calendar (which has its own year) deliberately ignore the range.
+- **Guardrails**: export buttons disable until both dates are set with From ≤ To, the bar
+  says in words exactly what the current choice covers, and the server independently
+  ignores anything that is not a well-formed `YYYY-MM-DD`. Scheduled reports can carry
+  `from`/`to` in their stored filters through the same mechanism.
+
+Verified: the consolidated export dropped from 13 all-time rows to 8 for September (every
+session date inside the window) and to 0 for an empty window; Ananya's summary hours went
+from 6.50 all-time to exactly 2.50 for Sep 20–30 (her corrected reading-circle
+attendance); a browser run switched the radio, saw exports disable until both dates were
+picked, and watched the table recompute live (screenshot).
 
 ---
 
